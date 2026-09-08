@@ -104,9 +104,8 @@ Os Deployments já têm a anotação `newrelic.com/inject-dotnet: "true"` — o 
 
 ## Fora do escopo (deliberado)
 
-- Migrar produção de verdade — decisão futura separada.
 - Banco além de SQLite, múltiplas réplicas por serviço (incompatível com SQLite-por-arquivo).
-- Ingress Controller / TLS no cluster local.
+- Ingress Controller / TLS no cluster local (Kubernetes) — a VPS de produção usa Nginx/Certbot direto.
 - CI/CD para esta estrutura.
 
 ## Status
@@ -133,7 +132,27 @@ Os Deployments já têm a anotação `newrelic.com/inject-dotnet: "true"` — o 
       é coberto por `shareAll()` nem por `skip` no `federation.config.mjs`, e falha em runtime; a
       correção foi copiar o array de dados do locale para um arquivo local do projeto
       (`shell/src/locale-pt.ts`) e importá-lo por caminho relativo, o que contorna o import map do
-      Native Federation por completo. Ainda faltam: Dockerfiles pros 3 apps, manifests de Kubernetes,
-      e verificar as demais telas (produto, carrinho, checkout, outras telas de admin).
+      Native Federation por completo. Testado ponta a ponta no navegador cobrindo todas as telas
+      públicas (home, loja, produto com customização de bordado, carrinho, cadastro com ViaCEP,
+      checkout, confirmação de pedido com PDF, minha conta, sobre, galeria, contato) e todas as
+      telas de admin (dashboard, produtos, encomendas, cupons, clientes, mensagens, imagens do
+      site, galeria, newsletter, auditoria, segurança).
+- [x] **Migração de produção real** (2026-09-08) — `layettebaby.com.br` na VPS Hostinger roda a
+      arquitetura de microsserviços via Docker Compose, substituindo o monólito. Dados reais
+      migrados (clientes, pedidos, produtos, imagens, mensagens de contato, newsletter, auditoria)
+      do banco único do monólito para os 4 bancos por serviço via `ATTACH DATABASE` + `INSERT
+      SELECT` com listas de colunas nomeadas (a ordem das colunas difere entre o monólito, que
+      acumulou 20 migrations incrementais, e os novos serviços, com uma única migration gerada de
+      uma vez — usar `SELECT *` teria inserido valores nas colunas erradas). Hashes de senha BCrypt
+      são portáveis como estão (mesmo algoritmo/work factor nos dois lados). Correções feitas antes
+      do corte: `docker-compose.yml` passou a receber segredos via `.env` (antes rodava só com os
+      valores vazios já commitados), RabbitMQ/Gateway passaram a expor portas só em `127.0.0.1`
+      (antes expostos a `0.0.0.0`, incluindo RabbitMQ com credenciais padrão `guest`/`guest`), e o
+      frontend ganhou `fileReplacements` no `angular.json` (sem isso, `environment.production.ts`
+      nunca era aplicado) e resolução de URL dos remotes por hostname em vez de hardcoded
+      `localhost`. Frontend servido como arquivos estáticos pelo Nginx (não containerizado) em
+      `/` (shell) e `/mf/storefront/`, `/mf/admin/` (remotes) — mesma abordagem já usada para o
+      monólito, evitando a necessidade de Dockerfiles para os 3 apps Angular. O monólito antigo
+      fica parado (não removido) por algumas semanas como rollback, com banco/uploads intactos.
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
       nos manifests; falta aplicar num cluster ativo e uma license key real.
