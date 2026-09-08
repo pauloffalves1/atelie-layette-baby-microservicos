@@ -5,6 +5,11 @@ Disallow: /checkout
 Disallow: /minha-conta
 Disallow: /entrar
 Disallow: /cadastro
+Disallow: /esqueci-senha
+Disallow: /redefinir-senha
+Disallow: /verificar-email
+Disallow: /favoritos
+Disallow: /carrinho
 Disallow: /pedido/
 Disallow: /pagamento-simulado/
 

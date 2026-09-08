@@ -4,7 +4,7 @@ export const environment = {
   // a real deployment (out of scope for this learning exercise, see plano de arquitetura's "fora do
   // escopo": actual production migration is a separate future decision).
   apiUrl: '/api',
-  siteUrl: '',
+  siteUrl: 'https://layettebaby.com.br',
   analytics: {
     googleAnalyticsId: '',
     metaPixelId: '',

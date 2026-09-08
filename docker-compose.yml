@@ -58,6 +58,7 @@ services:
     environment:
       RabbitMq__UserName: ${RABBITMQ_USER}
       RabbitMq__Password: ${RABBITMQ_PASSWORD}
+      App__PublicUrl: ${PUBLIC_URL}
       NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
       NEW_RELIC_APP_NAME: AtelieLayetteBaby-Catalog
     volumes:

@@ -24,6 +24,11 @@ public sealed class WishlistItemRepository : IWishlistItemRepository
     public Task<WishlistItem?> GetAsync(Guid customerId, Guid productId, CancellationToken ct = default) =>
         _dbContext.WishlistItems.FirstOrDefaultAsync(w => w.CustomerId == customerId && w.ProductId == productId, ct);
 
+    public async Task<IReadOnlyList<WishlistItem>> ListStaleAsync(DateTime cutoff, CancellationToken ct = default) =>
+        await _dbContext.WishlistItems
+            .Where(w => w.CreatedAt <= cutoff && w.ReminderSentAt == null)
+            .ToListAsync(ct);
+
     public void Add(WishlistItem item) => _dbContext.WishlistItems.Add(item);
 
     public void Remove(WishlistItem item) => _dbContext.WishlistItems.Remove(item);

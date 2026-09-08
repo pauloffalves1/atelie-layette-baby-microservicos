@@ -92,17 +92,19 @@ export class SeoService {
       };
     }
 
-    let script = this.document.querySelector<HTMLScriptElement>('script[type="application/ld+json"]');
+    let script = this.document.querySelector<HTMLScriptElement>('script[data-seo="product"]');
     if (!script) {
       script = this.document.createElement('script');
       script.setAttribute('type', 'application/ld+json');
+      script.setAttribute('data-seo', 'product');
       this.document.head.appendChild(script);
     }
     script.textContent = JSON.stringify(data);
   }
 
+  /** Only clears the per-page Product markup — the sitewide Organization JSON-LD in index.html is untouched. */
   private clearStructuredData(): void {
-    this.document.querySelector('script[type="application/ld+json"]')?.remove();
+    this.document.querySelector('script[data-seo="product"]')?.remove();
   }
 
   private toAbsolute(url: string): string {

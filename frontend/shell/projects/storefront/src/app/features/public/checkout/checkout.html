@@ -165,6 +165,17 @@
               <span>-{{ couponDiscountAmount() | currency:'BRL' }}</span>
             </div>
           }
+          @if (freeShippingThreshold() !== null) {
+            @if (freeShippingRemaining() === 0) {
+              <div class="alert alert-success small rounded-4 py-2 mb-3">
+                <i class="bi bi-truck me-1"></i>Você ganhou frete grátis!
+              </div>
+            } @else {
+              <div class="alert alert-info small rounded-4 py-2 mb-3">
+                <i class="bi bi-truck me-1"></i>Faltam {{ freeShippingRemaining() | currency:'BRL' }} para frete grátis
+              </div>
+            }
+          }
           <div class="d-flex justify-content-between small mb-3">
             <span>Frete estimado</span>
             <span>{{ shippingCost() | currency:'BRL' }}</span>

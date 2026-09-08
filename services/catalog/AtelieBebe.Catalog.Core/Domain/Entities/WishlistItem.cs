@@ -1,3 +1,4 @@
+using AtelieBebe.Catalog.Core.Domain.Events;
 using AtelieBebe.SharedKernel.Common;
 using AtelieBebe.SharedKernel.Exceptions;
 
@@ -9,6 +10,7 @@ public sealed class WishlistItem : Entity, IAggregateRoot
     public Guid CustomerId { get; private set; }
     public Guid ProductId { get; private set; }
     public DateTime CreatedAt { get; private set; }
+    public DateTime? ReminderSentAt { get; private set; }
 
     private WishlistItem() { } // EF Core
 
@@ -27,5 +29,18 @@ public sealed class WishlistItem : Entity, IAggregateRoot
             throw new DomainException("Produto inválido.");
 
         return new WishlistItem(Guid.NewGuid(), customerId, productId);
+    }
+
+    /// <summary>
+    /// Raises the reminder event with fully-resolved names (not just ids) — the caller (the
+    /// wishlist-reminder background job) already had to call out to Identity for the anonymized
+    /// check and to Catalog's own Products for the active check, so it's passed in here rather
+    /// than re-fetched. One domain event per wishlist item, unlike the abandoned-cart reminder
+    /// which batches — each wishlisted product gets its own reminder e-mail.
+    /// </summary>
+    public void MarkReminderSent(string customerName, string customerEmail, string productName, string productUrl)
+    {
+        ReminderSentAt = DateTime.UtcNow;
+        AddDomainEvent(new WishlistReminderDomainEvent(customerName, customerEmail, productName, productUrl));
     }
 }

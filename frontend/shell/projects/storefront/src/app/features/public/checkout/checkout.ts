@@ -29,6 +29,7 @@ export class Checkout implements OnInit {
   readonly cepLoading = signal(false);
   readonly cepError = signal<string | null>(null);
   readonly destinationState = signal('');
+  readonly destinationCity = signal('');
 
   readonly couponCode = signal('');
   readonly couponApplying = signal(false);
@@ -37,8 +38,17 @@ export class Checkout implements OnInit {
   readonly appliedCouponCode = signal<string | null>(null);
 
   readonly shippingCost = computed(() =>
-    this.shippingService.estimate(this.destinationState(), this.cart.totalItems()),
+    this.shippingService.estimate(this.destinationState(), this.cart.totalItems(), this.cart.totalPrice()),
   );
+
+  readonly freeShippingThreshold = computed(() =>
+    this.destinationState() ? this.shippingService.freeShippingThreshold(this.destinationState()) : null,
+  );
+
+  readonly freeShippingRemaining = computed(() => {
+    const threshold = this.freeShippingThreshold();
+    return threshold === null ? null : Math.max(0, threshold - this.cart.totalPrice());
+  });
 
   readonly total = computed(() => Math.max(0, this.cart.totalPrice() + this.shippingCost() - this.couponDiscountAmount()));
 
@@ -101,6 +111,7 @@ export class Checkout implements OnInit {
     }
 
     this.form.controls.state.valueChanges.subscribe((state) => this.destinationState.set(state));
+    this.form.controls.city.valueChanges.subscribe((city) => this.destinationCity.set(city));
 
     this.form.controls.zipCode.valueChanges
       .pipe(

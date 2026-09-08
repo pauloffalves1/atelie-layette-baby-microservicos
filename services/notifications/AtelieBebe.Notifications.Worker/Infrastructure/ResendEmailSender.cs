@@ -142,6 +142,17 @@ public sealed class ResendEmailSender : IEmailSender
             ct);
     }
 
+    public Task SendWishlistReminderAsync(string customerName, string customerEmail, string productName, string productUrl, CancellationToken ct = default) =>
+        SendAsync(
+            customerEmail,
+            $"Ainda pensando em {productName}?",
+            Wrap($"""
+                <p>Olá, {customerName}!</p>
+                <p>Ainda pensando em <strong>{productName}</strong>? Ele está te esperando na sua lista de desejos!</p>
+                <p><a href="{productUrl}">Ver produto</a></p>
+                """),
+            ct);
+
     private async Task SendAsync(string toEmail, string subject, string html, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(_options.ApiKey))

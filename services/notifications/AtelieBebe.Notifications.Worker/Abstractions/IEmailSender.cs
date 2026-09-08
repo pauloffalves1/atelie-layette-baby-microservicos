@@ -29,4 +29,7 @@ public interface IEmailSender
 
     /// <summary>Sent once per abandoned cart — links to each product directly rather than assuming the customer's local cart is still intact.</summary>
     Task SendAbandonedCartReminderAsync(string customerName, string customerEmail, IReadOnlyList<AbandonedCartItem> items, string shopUrl, CancellationToken ct = default);
+
+    /// <summary>Sent once, a few days after a customer adds a product to their wishlist and hasn't purchased it yet.</summary>
+    Task SendWishlistReminderAsync(string customerName, string customerEmail, string productName, string productUrl, CancellationToken ct = default);
 }

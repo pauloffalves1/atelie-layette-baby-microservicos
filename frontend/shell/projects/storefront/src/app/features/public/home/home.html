@@ -3,7 +3,7 @@
     <div class="row align-items-center gy-5">
       <div class="col-lg-6">
         <span class="badge-soft mb-3 d-inline-block"><i class="bi bi-stars me-1"></i>Feito à mão, com amor</span>
-        <h1 class="display-4 fw-bold mb-3">Especialistas em fraldas de ombro e boca bordadas</h1>
+        <h1 class="display-4 fw-bold mb-3">Especialistas em fraldas de ombro e boca personalizados</h1>
         <p class="lead text-secondary-emphasis mb-4">
           Fraldas de ombro, fraldas de boca e kits combinando as duas, em algodão macio e bordado
           — pensadas nos mínimos detalhes para o dia a dia do seu bebê.
@@ -39,7 +39,7 @@
       <div class="col-md-4">
         <div class="avatar-icon bg-sage-light text-sage mx-auto mb-3"><i class="bi bi-scissors"></i></div>
         <h5>Costura artesanal</h5>
-        <p class="text-secondary small">Cada peça é costurada à mão, com acabamento cuidadoso e exclusivo.</p>
+        <p class="text-secondary small">Cada peça é costurada com acabamento cuidadoso e exclusivo.</p>
       </div>
       <div class="col-md-4">
         <div class="avatar-icon bg-blush text-blush mx-auto mb-3"><i class="bi bi-truck"></i></div>
@@ -89,6 +89,29 @@
     }
   </div>
 </section>
+
+@if (showcaseImages().length > 0) {
+  <section class="py-5 bg-white">
+    <div class="container">
+      <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-3">
+        <div>
+          <h2 class="section-title">Peças entregues com carinho</h2>
+          <p class="text-secondary small mb-0">Trabalhos reais, feitos sob encomenda para famílias de todo o Brasil.</p>
+        </div>
+        <a routerLink="/galeria" class="btn btn-sm btn-outline-secondary rounded-pill">Ver galeria completa <i class="bi bi-arrow-right ms-1"></i></a>
+      </div>
+      <div class="row g-3">
+        @for (image of showcaseImages(); track image) {
+          <div class="col-6 col-md-4 col-lg-2">
+            <div class="ratio ratio-1x1 rounded-4 overflow-hidden shadow-sm">
+              <img [src]="image" alt="Fralda bordada entregue pelo Ateliê Layette Baby" class="w-100 h-100 object-fit-cover" loading="lazy">
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+}
 
 <section class="py-5">
   <div class="container">
