@@ -41,6 +41,8 @@ services:
       AdminSeed__Email: ${ADMIN_SEED_EMAIL}
       AdminSeed__Password: ${ADMIN_SEED_PASSWORD}
       App__PublicUrl: ${PUBLIC_URL}
+      NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
+      NEW_RELIC_APP_NAME: AtelieLayetteBaby-Identity
     volumes:
       - identity-data:/data
       - ./keys:/keys:ro
@@ -56,6 +58,8 @@ services:
     environment:
       RabbitMq__UserName: ${RABBITMQ_USER}
       RabbitMq__Password: ${RABBITMQ_PASSWORD}
+      NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
+      NEW_RELIC_APP_NAME: AtelieLayetteBaby-Catalog
     volumes:
       - catalog-data:/data
       - ./keys:/keys:ro
@@ -75,6 +79,8 @@ services:
       RabbitMq__Password: ${RABBITMQ_PASSWORD}
       PagBank__Token: ${PAGBANK_TOKEN}
       PagBank__Sandbox: ${PAGBANK_SANDBOX:-false}
+      NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
+      NEW_RELIC_APP_NAME: AtelieLayetteBaby-Orders
     volumes:
       - orders-data:/data
       - ./keys:/keys:ro
@@ -90,6 +96,8 @@ services:
     environment:
       RabbitMq__UserName: ${RABBITMQ_USER}
       RabbitMq__Password: ${RABBITMQ_PASSWORD}
+      NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
+      NEW_RELIC_APP_NAME: AtelieLayetteBaby-Backoffice
     volumes:
       - backoffice-data:/data
       - ./keys:/keys:ro
@@ -118,6 +126,8 @@ services:
       Resend__ApiKey: ${RESEND_API_KEY}
       Resend__FromEmail: ${RESEND_FROM_EMAIL}
       App__PublicUrl: ${PUBLIC_URL}
+      NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
+      NEW_RELIC_APP_NAME: AtelieLayetteBaby-Notifications
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -133,6 +143,8 @@ services:
     restart: unless-stopped
     environment:
       Cors__AllowedOrigins__0: ${PUBLIC_URL}
+      NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
+      NEW_RELIC_APP_NAME: AtelieLayetteBaby-Gateway
     ports:
       - "127.0.0.1:5100:8080" # only Nginx (TLS) should reach this — never expose 0.0.0.0 in production
     depends_on:
