@@ -1,0 +1,116 @@
+<div class="p-4 p-lg-5">
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+      <h2 class="mb-1">Produtos</h2>
+      <p class="text-secondary mb-0">Gerencie o catálogo da loja.</p>
+    </div>
+    <a routerLink="/admin/produtos/novo" class="btn btn-primary rounded-pill px-4">
+      <i class="bi bi-plus-lg me-1"></i>Novo produto
+    </a>
+  </div>
+
+  @if (selectedIds().length > 0) {
+    <div class="stat-card mb-4">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+        <h6 class="mb-0">Aplicar promoção a {{ selectedIds().length }} produto(s) selecionado(s)</h6>
+        <button type="button" class="btn btn-sm btn-link text-secondary p-0" (click)="clearSelection()">Limpar seleção</button>
+      </div>
+
+      @if (bulkPromotionError()) {
+        <div class="alert alert-danger small rounded-4">{{ bulkPromotionError() }}</div>
+      }
+      @if (bulkPromotionApplied()) {
+        <div class="alert alert-success small rounded-4">Promoção aplicada!</div>
+      }
+
+      <div class="row g-2 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label small">Desconto (%)</label>
+          <input type="number" min="1" max="99" class="form-control form-control-sm"
+            [value]="bulkDiscount()" (input)="bulkDiscount.set(+$any($event.target).value)">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small">Início</label>
+          <input type="datetime-local" class="form-control form-control-sm"
+            [value]="bulkStartsAt()" (input)="bulkStartsAt.set($any($event.target).value)">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small">Fim</label>
+          <input type="datetime-local" class="form-control form-control-sm"
+            [value]="bulkEndsAt()" (input)="bulkEndsAt.set($any($event.target).value)">
+        </div>
+        <div class="col-md-4">
+          <button type="button" class="btn btn-primary btn-sm rounded-pill w-100" [disabled]="applyingBulkPromotion()" (click)="applyBulkPromotion()">
+            @if (applyingBulkPromotion()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+            }
+            Aplicar aos selecionados
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <div class="stat-card p-0 overflow-hidden">
+    @if (loading()) {
+      <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+    } @else {
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th style="width: 2.5rem"></th>
+              <th>Produto</th>
+              <th>Categoria</th>
+              <th>Preço</th>
+              <th>Status</th>
+              <th class="text-end">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (product of products(); track product.id) {
+              <tr>
+                <td>
+                  <input type="checkbox" class="form-check-input"
+                    [checked]="selectedIds().includes(product.id)"
+                    (change)="toggleSelected(product.id, $any($event.target).checked)">
+                </td>
+                <td class="d-flex align-items-center gap-3">
+                  <img [src]="product.imageUrl | assetUrl" [alt]="product.name" class="rounded-3" style="width: 48px; height: 48px; object-fit: cover;" loading="lazy">
+                  <span class="fw-semibold">{{ product.name }}</span>
+                </td>
+                <td>{{ product.category }}</td>
+                <td>
+                  @if (product.isOnPromotion) {
+                    <span class="text-decoration-line-through text-secondary small d-block">{{ product.price | currency:'BRL' }}</span>
+                    <span class="fw-semibold text-success">{{ product.effectivePrice | currency:'BRL' }}</span>
+                    <span class="badge bg-success ms-1">-{{ product.discountPercentage }}%</span>
+                  } @else {
+                    {{ product.price | currency:'BRL' }}
+                  }
+                </td>
+                <td>
+                  <span class="badge rounded-pill" [class.bg-success]="product.active" [class.bg-secondary]="!product.active">
+                    {{ product.active ? 'Ativo' : 'Inativo' }}
+                  </span>
+                </td>
+                <td class="text-end">
+                  <a [routerLink]="['/admin/produtos', product.id, 'editar']" class="btn btn-sm btn-outline-secondary rounded-pill me-1">
+                    <i class="bi bi-pencil"></i>
+                  </a>
+                  <button class="btn btn-sm btn-outline-secondary rounded-pill" (click)="toggleActive(product)">
+                    <i class="bi" [class.bi-eye-slash]="product.active" [class.bi-eye]="!product.active"></i>
+                  </button>
+                </td>
+              </tr>
+            }
+            @if (products().length === 0) {
+              <tr><td colspan="6" class="text-center text-secondary py-4">Nenhum produto cadastrado.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-pagination [page]="page()" [totalPages]="totalPages()" (pageChange)="goToPage($event)" />
+    }
+  </div>
+</div>

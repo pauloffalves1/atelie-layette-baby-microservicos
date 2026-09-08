@@ -1,0 +1,28 @@
+# Build results
+bin/
+obj/
+
+# Visual Studio / Rider / VS Code
+.vs/
+*.user
+.idea/
+.vscode/
+
+# SQLite runtime files
+*.db
+*.db-shm
+*.db-wal
+
+# RSA key pair used to sign/validate JWTs — generated once locally (see README), never committed
+keys/
+
+# Production secrets for docker-compose.yml — see .env.example for the documented keys
+.env
+
+# Angular
+node_modules/
+dist/
+.angular/
+
+# RabbitMQ / Docker volume data if ever bind-mounted locally
+.docker-data/

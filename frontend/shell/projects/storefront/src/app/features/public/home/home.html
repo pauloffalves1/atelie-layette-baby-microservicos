@@ -1,0 +1,110 @@
+<section class="hero-section py-5">
+  <div class="container py-5">
+    <div class="row align-items-center gy-5">
+      <div class="col-lg-6">
+        <span class="badge-soft mb-3 d-inline-block"><i class="bi bi-stars me-1"></i>Feito à mão, com amor</span>
+        <h1 class="display-4 fw-bold mb-3">Especialistas em fraldas de ombro e boca bordadas</h1>
+        <p class="lead text-secondary-emphasis mb-4">
+          Fraldas de ombro, fraldas de boca e kits combinando as duas, em algodão macio e bordado
+          — pensadas nos mínimos detalhes para o dia a dia do seu bebê.
+        </p>
+        <div class="d-flex flex-wrap gap-3">
+          <a routerLink="/loja" class="btn btn-primary btn-lg px-4">
+            <i class="bi bi-bag-heart me-2"></i>Ver a loja
+          </a>
+          <a routerLink="/contato" class="btn btn-outline-secondary btn-lg px-4">
+            Encomendar peça personalizada
+          </a>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="ratio ratio-1x1 rounded-5 overflow-hidden shadow-lg">
+          @if (heroImageUrl(); as url) {
+            <img [src]="url" alt="Fraldas de ombro e boca bordadas com monograma" class="w-100 h-100 object-fit-cover">
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="py-5">
+  <div class="container">
+    <div class="row text-center g-4">
+      <div class="col-md-4">
+        <div class="avatar-icon bg-blush text-blush mx-auto mb-3"><i class="bi bi-flower1"></i></div>
+        <h5>Tecidos selecionados</h5>
+        <p class="text-secondary small">Algodão pima, tricot e soft, seguros para a pele sensível do bebê.</p>
+      </div>
+      <div class="col-md-4">
+        <div class="avatar-icon bg-sage-light text-sage mx-auto mb-3"><i class="bi bi-scissors"></i></div>
+        <h5>Costura artesanal</h5>
+        <p class="text-secondary small">Cada peça é costurada à mão, com acabamento cuidadoso e exclusivo.</p>
+      </div>
+      <div class="col-md-4">
+        <div class="avatar-icon bg-blush text-blush mx-auto mb-3"><i class="bi bi-truck"></i></div>
+        <h5>Entrega para todo o Brasil</h5>
+        <p class="text-secondary small">Embalagem especial e acompanhamento do pedido do início ao fim.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="py-5 bg-white">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-3">
+      <h2 class="section-title">Destaques do ateliê</h2>
+      <a routerLink="/loja" class="btn btn-sm btn-outline-secondary rounded-pill">Ver tudo <i class="bi bi-arrow-right ms-1"></i></a>
+    </div>
+
+    @if (loading()) {
+      <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+    } @else {
+      <div class="row g-4">
+        @for (product of featured(); track product.id) {
+          <div class="col-6 col-md-4 col-lg-3">
+            <div class="card card-product h-100">
+              <a [routerLink]="['/produto', product.slug]">
+                <img [src]="product.imageUrl | assetUrl" class="card-img-top" [alt]="product.name" loading="lazy">
+              </a>
+              <div class="card-body d-flex flex-column">
+                <div class="d-flex flex-wrap gap-1 mb-2">
+                  <span class="badge-soft align-self-start small">{{ product.category }}</span>
+                  @if (product.isExclusive) {
+                    <span class="badge-soft align-self-start small"><i class="bi bi-stars me-1"></i>Exclusivo pra você</span>
+                  }
+                </div>
+                <h6 class="mb-1">
+                  <a [routerLink]="['/produto', product.slug]" class="text-dark stretched-link-none">{{ product.name }}</a>
+                </h6>
+                <p class="fw-bold text-blush mb-3 mt-auto">{{ product.price | currency:'BRL' }}</p>
+                <a [routerLink]="['/produto', product.slug]" class="btn btn-sm btn-primary rounded-pill">
+                  <i class="bi bi-scissors me-1"></i>Personalizar
+                </a>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</section>
+
+<section class="py-5">
+  <div class="container">
+    <div class="row align-items-center bg-sage-light rounded-5 p-5 gy-4">
+      <div class="col-lg-7">
+        <h2 class="section-title mb-3">Quer uma fralda exclusiva?</h2>
+        <p class="text-secondary mb-0">
+          Escolha o tecido, a cor e borde o nome do seu bebê. Criamos fraldas de ombro e boca
+          sob medida com todo o carinho do nosso ateliê, especialmente para a sua família.
+        </p>
+      </div>
+      <div class="col-lg-5 text-lg-end">
+        <a routerLink="/contato" class="btn btn-lg btn-primary px-4">
+          <i class="bi bi-magic me-2"></i>Criar encomenda personalizada
+        </a>
+      </div>
+    </div>
+  </div>
+</section>

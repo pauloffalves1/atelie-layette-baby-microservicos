@@ -1,0 +1,28 @@
+<section class="py-5">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-5">
+        <div class="stat-card text-center">
+          <div class="mb-4">
+            <span class="fw-script fs-2 text-blush brand-embroidered">Ateliê Layette Baby</span>
+            <h4 class="mt-2">Verificação de e-mail</h4>
+          </div>
+
+          @if (loading()) {
+            <div class="spinner-border text-blush" role="status"></div>
+          } @else if (success()) {
+            <div class="alert alert-success small rounded-4">E-mail verificado com sucesso!</div>
+            <p class="small mt-4 mb-0">
+              <a routerLink="/minha-conta" class="text-blush fw-semibold">Ir para minha conta</a>
+            </p>
+          } @else {
+            <div class="alert alert-danger small rounded-4">{{ errorMessage() }}</div>
+            <p class="small mt-4 mb-0">
+              <a routerLink="/minha-conta" class="text-blush fw-semibold">Ir para minha conta</a>
+            </p>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

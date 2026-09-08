@@ -1,0 +1,149 @@
+# Local learning/demo stack for the microservices decomposition described in the project's plan
+# (see the "Decompor..." plan). Runs in the default (Production) ASP.NET environment on purpose —
+# each service's appsettings.json already has container-shaped values (hostnames, /data, /keys)
+# baked in; "Development" would pull in appsettings.Development.json's localhost-based overrides,
+# which are for running services directly with `dotnet run` outside Docker instead.
+#
+# One-time setup before `docker compose up --build`:
+#   cp .env.example .env   # then fill in real values — never commit .env
+#   cd keys && openssl genrsa -out jwt-private.pem 2048 && openssl rsa -in jwt-private.pem -pubout -out jwt-public.pem
+#
+# In production, only Nginx (with TLS) should be reachable from the internet — it reverse-proxies
+# to the Gateway on 127.0.0.1. RabbitMQ and the Gateway's own port are bound to 127.0.0.1 only
+# (not 0.0.0.0) so they are never directly reachable from outside the host, even by IP.
+
+services:
+  rabbitmq:
+    image: rabbitmq:4-management
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672" # management UI — http://localhost:15672 (tunnel via SSH to reach it)
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  identity:
+    build:
+      context: .
+      dockerfile: services/identity/AtelieBebe.Identity.Api/Dockerfile
+    restart: unless-stopped
+    environment:
+      RabbitMq__UserName: ${RABBITMQ_USER}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD}
+      AdminSeed__Email: ${ADMIN_SEED_EMAIL}
+      AdminSeed__Password: ${ADMIN_SEED_PASSWORD}
+      App__PublicUrl: ${PUBLIC_URL}
+    volumes:
+      - identity-data:/data
+      - ./keys:/keys:ro
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  catalog:
+    build:
+      context: .
+      dockerfile: services/catalog/AtelieBebe.Catalog.Api/Dockerfile
+    restart: unless-stopped
+    environment:
+      RabbitMq__UserName: ${RABBITMQ_USER}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD}
+    volumes:
+      - catalog-data:/data
+      - ./keys:/keys:ro
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      orders:
+        condition: service_started
+
+  orders:
+    build:
+      context: .
+      dockerfile: services/orders/AtelieBebe.Orders.Api/Dockerfile
+    restart: unless-stopped
+    environment:
+      RabbitMq__UserName: ${RABBITMQ_USER}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD}
+      PagBank__Token: ${PAGBANK_TOKEN}
+      PagBank__Sandbox: ${PAGBANK_SANDBOX:-false}
+    volumes:
+      - orders-data:/data
+      - ./keys:/keys:ro
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  backoffice:
+    build:
+      context: .
+      dockerfile: services/backoffice/AtelieBebe.Backoffice.Api/Dockerfile
+    restart: unless-stopped
+    environment:
+      RabbitMq__UserName: ${RABBITMQ_USER}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD}
+    volumes:
+      - backoffice-data:/data
+      - ./keys:/keys:ro
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      orders:
+        condition: service_started
+      catalog:
+        condition: service_started
+      identity:
+        condition: service_started
+
+  notifications:
+    build:
+      context: .
+      dockerfile: services/notifications/AtelieBebe.Notifications.Worker/Dockerfile
+    restart: unless-stopped
+    environment:
+      RabbitMq__UserName: ${RABBITMQ_USER}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD}
+      WhatsApp__AccessToken: ${WHATSAPP_ACCESS_TOKEN}
+      WhatsApp__PhoneNumberId: ${WHATSAPP_PHONE_NUMBER_ID}
+      AdminNotification__Email: ${ADMIN_NOTIFICATION_EMAIL}
+      AdminNotification__Phone: ${ADMIN_NOTIFICATION_PHONE}
+      Resend__ApiKey: ${RESEND_API_KEY}
+      Resend__FromEmail: ${RESEND_FROM_EMAIL}
+      App__PublicUrl: ${PUBLIC_URL}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      catalog:
+        condition: service_started
+      identity:
+        condition: service_started
+
+  gateway:
+    build:
+      context: .
+      dockerfile: services/gateway/AtelieBebe.Gateway/Dockerfile
+    restart: unless-stopped
+    environment:
+      Cors__AllowedOrigins__0: ${PUBLIC_URL}
+    ports:
+      - "127.0.0.1:5100:8080" # only Nginx (TLS) should reach this — never expose 0.0.0.0 in production
+    depends_on:
+      - identity
+      - catalog
+      - orders
+      - backoffice
+
+volumes:
+  rabbitmq-data:
+  identity-data:
+  catalog-data:
+  orders-data:
+  backoffice-data:

@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: rabbitmq-data
+  namespace: atelie-bebe-dev
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+  namespace: atelie-bebe-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: rabbitmq }
+  template:
+    metadata:
+      labels: { app: rabbitmq }
+    spec:
+      containers:
+        - name: rabbitmq
+          image: rabbitmq:4-management
+          ports:
+            - containerPort: 5672
+            - containerPort: 15672
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/rabbitmq
+          readinessProbe:
+            # A plain TCP check on the AMQP port instead of `rabbitmq-diagnostics` — that CLI spins
+            # up a whole extra Erlang node just to ask the question, which kept timing out under
+            # this cluster's resource constraints even at 5s; a socket check is materially lighter
+            # and just as meaningful (Discord/Notifications only ever need the port to accept
+            # connections, not a full diagnostics handshake).
+            tcpSocket: { port: 5672 }
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 6
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: rabbitmq-data }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  namespace: atelie-bebe-dev
+spec:
+  selector: { app: rabbitmq }
+  ports:
+    - name: amqp
+      port: 5672
+    - name: management
+      port: 15672

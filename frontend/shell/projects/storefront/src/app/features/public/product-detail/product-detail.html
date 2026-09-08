@@ -1,0 +1,255 @@
+@if (loading()) {
+  <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+} @else if (notFound()) {
+  <div class="container py-5 text-center">
+    <i class="bi bi-emoji-frown fs-1 d-block mb-3 text-secondary"></i>
+    <h3>Produto não encontrado</h3>
+    <a routerLink="/loja" class="btn btn-primary rounded-pill mt-3">Voltar para a loja</a>
+  </div>
+} @else if (product(); as p) {
+  <section class="py-5">
+    <div class="container">
+      <nav class="small text-secondary mb-4">
+        <a routerLink="/loja" class="text-secondary">Loja</a> <i class="bi bi-chevron-right small mx-1"></i> {{ p.category }}
+      </nav>
+
+      <div class="row g-5 align-items-start">
+        <div class="col-lg-6">
+          <div class="ratio ratio-1x1 rounded-5 overflow-hidden shadow-sm">
+            <img [src]="galleryUrls()[activeImageIndex()] | assetUrl" [alt]="p.name" class="w-100 h-100 object-fit-cover">
+          </div>
+
+          @if (galleryUrls().length > 1) {
+            <div class="d-flex gap-2 mt-3">
+              @for (url of galleryUrls(); track url; let i = $index) {
+                <button type="button" class="btn p-0 border-0 bg-transparent" style="width: 4.5rem; height: 4.5rem;" (click)="selectImage(i)">
+                  <div class="ratio ratio-1x1 rounded-4 overflow-hidden" [class.border-thumb-active]="i === activeImageIndex()">
+                    <img [src]="url | assetUrl" alt="Miniatura" class="w-100 h-100 object-fit-cover">
+                  </div>
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="col-lg-6">
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            <span class="badge-soft d-inline-block">{{ p.category }}</span>
+            @if (p.isExclusive) {
+              <span class="badge-soft d-inline-block"><i class="bi bi-stars me-1"></i>Exclusivo pra você</span>
+            }
+          </div>
+          <div class="d-flex align-items-start justify-content-between gap-2 mb-3">
+            <h1 class="mb-0">{{ p.name }}</h1>
+            @if (auth.isAuthenticated()) {
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary rounded-circle flex-shrink-0"
+                style="width: 2.5rem; height: 2.5rem;"
+                [disabled]="favoriteBusy()"
+                [attr.aria-label]="isFavorited() ? 'Remover dos favoritos' : 'Adicionar aos favoritos'"
+                (click)="toggleFavorite()">
+                <i class="bi" [class.bi-heart-fill]="isFavorited()" [class.text-danger]="isFavorited()" [class.bi-heart]="!isFavorited()"></i>
+              </button>
+            }
+          </div>
+          @if (reviews().length > 0) {
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <span class="text-warning">
+                @for (star of [1, 2, 3, 4, 5]; track star) {
+                  <i class="bi" [class.bi-star-fill]="star <= averageRating()" [class.bi-star]="star > averageRating()"></i>
+                }
+              </span>
+              <span class="small text-secondary">{{ averageRating() | number:'1.1-1' }} ({{ reviews().length }} {{ reviews().length === 1 ? 'avaliação' : 'avaliações' }})</span>
+            </div>
+          }
+          @if (p.isOnPromotion) {
+            <div class="d-flex align-items-center gap-2 mb-4">
+              <span class="fs-5 text-decoration-line-through text-secondary">{{ p.price | currency:'BRL' }}</span>
+              <span class="fs-3 fw-bold text-blush">{{ p.effectivePrice | currency:'BRL' }}</span>
+              <span class="badge bg-success">-{{ p.discountPercentage }}%</span>
+            </div>
+          } @else {
+            <p class="fs-3 fw-bold text-blush mb-4">{{ p.price | currency:'BRL' }}</p>
+          }
+          <p class="text-secondary">{{ p.description }}</p>
+
+          <div class="my-4">
+            <label for="embroidery-text" class="fw-semibold small">Texto para bordar</label>
+            <div class="d-flex gap-2">
+              <input type="text" id="embroidery-text" class="form-control" placeholder="Ex: ANA" maxlength="30"
+                [class.is-invalid]="embroideryTouched() && !embroideryText().trim()"
+                [ngModel]="embroideryText()" (ngModelChange)="embroideryText.set($event)">
+              <button type="button" class="btn btn-outline-secondary flex-shrink-0" title="Apagar última letra" (click)="removeLastLetter()">
+                <i class="bi bi-backspace"></i>
+              </button>
+            </div>
+            @if (embroideryTouched() && !embroideryText().trim()) {
+              <div class="invalid-feedback d-block">Informe as letras que devem ser bordadas.</div>
+            }
+
+            <div class="mt-2 p-2 border rounded-4 bg-light">
+              <span class="small text-secondary d-block mb-2">Ou toque nas letras para montar o bordado:</span>
+              <div class="d-flex flex-wrap gap-1">
+                @for (letter of alphabet; track letter) {
+                  <button type="button" class="btn btn-sm btn-outline-secondary rounded-circle"
+                    style="width: 2.1rem; height: 2.1rem; padding: 0" (click)="appendLetter(letter)">{{ letter }}</button>
+                }
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" (click)="appendSpace()">espaço</button>
+                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3" (click)="clearEmbroideryText()">limpar</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="my-4">
+            <label class="fw-semibold small d-block">Cor da linha de bordado</label>
+            <div class="d-flex flex-wrap gap-2 mt-2">
+              @for (color of threadColors; track color) {
+                <button type="button" class="btn btn-sm rounded-pill"
+                  [class.btn-primary]="threadColor() === color"
+                  [class.btn-outline-secondary]="threadColor() !== color"
+                  (click)="selectThreadColor(color)">{{ color }}</button>
+              }
+            </div>
+            @if (threadColorTouched() && !threadColor()) {
+              <div class="text-danger small mt-1">Escolha a cor da linha de bordado.</div>
+            }
+          </div>
+
+          <div class="d-flex align-items-center gap-3 my-4">
+            <label class="fw-semibold small">Quantidade com esse bordado</label>
+            <input type="number" class="form-control" style="width: 90px" [min]="1" [ngModel]="quantity()" (ngModelChange)="quantity.set($event)">
+          </div>
+
+          <button class="btn btn-primary btn-lg rounded-pill px-5" (click)="addToCart()">
+            <i class="bi bi-bag-plus me-2"></i>Adicionar ao carrinho
+          </button>
+
+          @if (addedFeedback()) {
+            <div class="alert alert-success rounded-4 mt-3 py-2 small">
+              <i class="bi bi-check-circle me-2"></i>Adicionado ao carrinho!
+              <a routerLink="/carrinho" class="alert-link ms-1">Ver carrinho</a>
+            </div>
+          }
+
+          <ul class="list-unstyled small text-secondary mt-4 border-top pt-4">
+            <li class="mb-2"><i class="bi bi-shield-check me-2"></i>Tecidos testados e seguros para bebês</li>
+            <li class="mb-2"><i class="bi bi-truck me-2"></i>Envio para todo o Brasil</li>
+            <li><i class="bi bi-heart me-2"></i>Costurado à mão no nosso ateliê</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="row mt-5">
+        <div class="col-lg-8">
+          <h4 class="mb-4">Avaliações dos clientes</h4>
+
+          @if (eligibility(); as e) {
+            @if (e.hasPurchased && !e.alreadyReviewed) {
+              <div class="stat-card mb-4">
+                <h6 class="mb-3">Deixe sua avaliação</h6>
+
+                @if (reviewError()) {
+                  <div class="alert alert-danger small rounded-4">{{ reviewError() }}</div>
+                }
+
+                <div class="mb-3">
+                  <span class="fs-4 text-warning" style="cursor: pointer;">
+                    @for (star of [1, 2, 3, 4, 5]; track star) {
+                      <i class="bi" [class.bi-star-fill]="star <= reviewRating()" [class.bi-star]="star > reviewRating()" (click)="setReviewRating(star)"></i>
+                    }
+                  </span>
+                </div>
+
+                <textarea class="form-control mb-3" rows="3" placeholder="Conte como foi sua experiência (opcional)"
+                  [ngModel]="reviewComment()" (ngModelChange)="reviewComment.set($event)"></textarea>
+
+                <div class="mb-3">
+                  @if (reviewPhotoUrl()) {
+                    <div class="d-flex align-items-center gap-2">
+                      <img [src]="reviewPhotoUrl() | assetUrl" alt="Foto enviada" class="rounded-3" style="width: 64px; height: 64px; object-fit: cover;">
+                      <button type="button" class="btn btn-sm btn-outline-danger rounded-pill" (click)="removeReviewPhoto()">Remover foto</button>
+                    </div>
+                  } @else {
+                    <label class="btn btn-sm btn-outline-secondary rounded-pill mb-0">
+                      @if (uploadingReviewPhoto()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+                      <i class="bi bi-camera me-1"></i>Adicionar foto (opcional)
+                      <input type="file" accept="image/jpeg,image/png,image/webp" class="d-none" [disabled]="uploadingReviewPhoto()" (change)="onReviewPhotoSelected($event)">
+                    </label>
+                  }
+                </div>
+
+                <button class="btn btn-primary rounded-pill" [disabled]="submittingReview()" (click)="submitReview()">
+                  @if (submittingReview()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+                  Enviar avaliação
+                </button>
+              </div>
+            } @else if (e.alreadyReviewed) {
+              <div class="alert alert-light border rounded-4 small mb-4">
+                <i class="bi bi-check-circle text-success me-2"></i>Você já avaliou este produto. Obrigada pelo carinho!
+              </div>
+            }
+          } @else {
+            <p class="small text-secondary mb-4">
+              <a routerLink="/entrar">Entre na sua conta</a> para avaliar este produto, caso já tenha comprado.
+            </p>
+          }
+
+          @if (reviews().length === 0) {
+            <p class="text-secondary small">Ainda não há avaliações para este produto.</p>
+          } @else {
+            <ul class="list-unstyled">
+              @for (review of reviews(); track review.id) {
+                <li class="border-bottom pb-3 mb-3">
+                  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                    <div>
+                      <strong class="small d-block">{{ review.customerName }}</strong>
+                      <span class="text-warning small">
+                        @for (star of [1, 2, 3, 4, 5]; track star) {
+                          <i class="bi" [class.bi-star-fill]="star <= review.rating" [class.bi-star]="star > review.rating"></i>
+                        }
+                      </span>
+                    </div>
+                    <span class="small text-secondary">{{ review.createdAt | date:'dd/MM/yyyy' }}</span>
+                  </div>
+                  @if (review.comment) {
+                    <p class="small text-secondary mt-2 mb-0">{{ review.comment }}</p>
+                  }
+                  @if (review.photoUrl) {
+                    <img [src]="review.photoUrl | assetUrl" alt="Foto do cliente" class="rounded-3 mt-2" style="width: 96px; height: 96px; object-fit: cover;">
+                  }
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  @if (relatedProducts().length > 0) {
+    <section class="py-4">
+      <div class="container">
+        <h5 class="mb-4">Você também pode gostar</h5>
+        <div class="row g-4">
+          @for (related of relatedProducts(); track related.id) {
+            <div class="col-6 col-md-3">
+              <div class="card card-product h-100">
+                <a [routerLink]="['/produto', related.slug]">
+                  <img [src]="related.imageUrl | assetUrl" class="card-img-top" [alt]="related.name" loading="lazy">
+                </a>
+                <div class="card-body d-flex flex-column">
+                  <h6 class="mb-1">
+                    <a [routerLink]="['/produto', related.slug]" class="text-dark">{{ related.name }}</a>
+                  </h6>
+                  <p class="fw-bold text-blush mb-3 mt-auto">{{ related.effectivePrice | currency:'BRL' }}</p>
+                  <a [routerLink]="['/produto', related.slug]" class="btn btn-sm btn-outline-primary rounded-pill">Ver produto</a>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+  }
+}

@@ -1,0 +1,414 @@
+// ---- Ateliê Layette Baby design tokens (Bootstrap 5 Sass overrides) ----
+$primary:       #e8a2ad; // rosa bebê
+$secondary:     #9cb89a; // verde sálvia
+$success:       #8fb996;
+$info:          #a7c7e7;
+$warning:       #f3c98b;
+$danger:        #e2777a;
+$light:         #fffaf5;
+$dark:          #4a3f3a;
+
+$body-color:    #4a3f3a;
+$body-bg:       #fffaf5;
+
+$font-family-sans-serif: "Quicksand", "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+$headings-font-family: "Poppins", "Quicksand", system-ui, sans-serif;
+$headings-font-weight: 600;
+
+$border-radius:      1rem;
+$border-radius-sm:   0.6rem;
+$border-radius-lg:   1.5rem;
+$border-radius-xl:   2rem;
+
+$card-border-width: 0;
+$btn-border-radius: 50rem;
+$btn-border-radius-sm: 50rem;
+$btn-border-radius-lg: 50rem;
+$input-border-radius: 0.75rem;
+
+$box-shadow-sm: 0 .25rem .75rem rgba(74, 63, 58, .06);
+$box-shadow:    0 .5rem 1.5rem rgba(74, 63, 58, .09);
+$box-shadow-lg: 0 1rem 3rem rgba(74, 63, 58, .12);
+
+// Import only the Bootstrap 5 partials this app actually uses (instead of the full
+// ~230KB bundle) — grid/utilities/forms/buttons/navbar/card/badge/alert/progress/
+// list-group/spinners/placeholders/tables/dropdown, all confirmed against every
+// template. If a new page needs another component (e.g. modal, tooltip, accordion),
+// add its partial here rather than reverting to the full "bootstrap/scss/bootstrap".
+@import "bootstrap/scss/functions";
+@import "bootstrap/scss/variables";
+@import "bootstrap/scss/variables-dark";
+@import "bootstrap/scss/maps";
+@import "bootstrap/scss/mixins";
+@import "bootstrap/scss/utilities";
+
+@import "bootstrap/scss/root";
+@import "bootstrap/scss/reboot";
+@import "bootstrap/scss/type";
+@import "bootstrap/scss/images";
+@import "bootstrap/scss/containers";
+@import "bootstrap/scss/grid";
+@import "bootstrap/scss/tables";
+@import "bootstrap/scss/forms";
+@import "bootstrap/scss/buttons";
+@import "bootstrap/scss/transitions";
+@import "bootstrap/scss/dropdown";
+@import "bootstrap/scss/nav";
+@import "bootstrap/scss/navbar";
+@import "bootstrap/scss/card";
+@import "bootstrap/scss/badge";
+@import "bootstrap/scss/alert";
+@import "bootstrap/scss/progress";
+@import "bootstrap/scss/list-group";
+@import "bootstrap/scss/spinners";
+@import "bootstrap/scss/placeholders";
+@import "bootstrap/scss/helpers";
+
+@import "bootstrap/scss/utilities/api";
+
+@import "bootstrap-icons/font/bootstrap-icons.css";
+
+// ---- Global look & feel ----
+:root {
+  --atelie-cream: #fffaf5;
+  --atelie-blush: #f8e4e6;
+  --atelie-blush-strong: #e8a2ad;
+  --atelie-sage: #9cb89a;
+  --atelie-sage-light: #e4ede3;
+  --atelie-gold: #d9a441;
+  --atelie-text: #4a3f3a;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  background-color: var(--atelie-cream);
+  background-image:
+    radial-gradient(circle at 8% 8%, rgba(232, 162, 173, .12), transparent 40%),
+    radial-gradient(circle at 95% 15%, rgba(156, 184, 154, .12), transparent 35%);
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-main {
+  flex: 1 0 auto;
+}
+
+a {
+  text-decoration: none;
+}
+
+.text-blush { color: var(--atelie-blush-strong) !important; }
+.text-sage { color: var(--atelie-sage) !important; }
+.text-gold { color: var(--atelie-gold) !important; }
+.bg-blush { background-color: var(--atelie-blush) !important; }
+.bg-sage { background-color: var(--atelie-sage) !important; }
+.bg-sage-light { background-color: var(--atelie-sage-light) !important; }
+
+.fw-script {
+  font-family: "Playfair Display", "Poppins", serif;
+  font-style: italic;
+}
+
+// Embroidered-wreath frame around the atelier's name (navbar, footer, login screens):
+// a stitched dashed border flanked by two small florals, echoing the hand-embroidered products.
+.brand-embroidered {
+  display: inline-flex;
+  align-items: center;
+  gap: .4em;
+  padding: .2em 1em;
+  border: 1.5px dashed var(--atelie-blush-strong);
+  border-radius: 999px;
+  line-height: 1.2;
+}
+
+.brand-embroidered::before,
+.brand-embroidered::after {
+  content: "❀";
+  flex-shrink: 0;
+  font-size: .65em;
+  font-style: normal;
+  color: var(--atelie-sage);
+}
+
+.btn {
+  font-weight: 600;
+  letter-spacing: .01em;
+}
+
+.btn-primary {
+  color: #4a2530;
+}
+
+.section-title {
+  font-family: $headings-font-family;
+  position: relative;
+  display: inline-block;
+}
+
+.section-title::after {
+  content: "";
+  display: block;
+  width: 3.5rem;
+  height: .25rem;
+  border-radius: 50rem;
+  background: linear-gradient(90deg, var(--atelie-blush-strong), var(--atelie-gold));
+  margin-top: .6rem;
+}
+
+.section-title.text-center::after {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.card-product {
+  border-radius: $border-radius-lg;
+  overflow: hidden;
+  transition: transform .25s ease, box-shadow .25s ease;
+  background: #fff;
+  border: 2px solid var(--atelie-blush);
+}
+
+.card-product:hover {
+  transform: translateY(-6px);
+  box-shadow: $box-shadow-lg;
+}
+
+.card-product .card-img-top {
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+}
+
+// Soft framed-photo border, consistent across every photo on the public site: product cards
+// (above), the hero/about/product-detail feature image, the gallery grid, and cart thumbnails.
+.ratio.rounded-5,
+.ratio.rounded-4,
+.gallery-thumb,
+img.rounded-4 {
+  border: 2px solid var(--atelie-blush);
+}
+
+// Product-detail thumbnail strip: the active photo gets a stronger border so it's clear which
+// one is enlarged above, while the others keep the same soft border as every other photo.
+.border-thumb-active {
+  border: 2px solid var(--atelie-blush-strong);
+}
+
+.badge-soft {
+  background: var(--atelie-blush);
+  color: #8a4753;
+  font-weight: 600;
+  border-radius: 50rem;
+  padding: .35em .75em;
+}
+
+.hero-section {
+  background: linear-gradient(135deg, var(--atelie-blush) 0%, var(--atelie-cream) 55%, var(--atelie-sage-light) 100%);
+  border-radius: 0 0 3rem 3rem;
+}
+
+.status-pill {
+  border-radius: 50rem;
+  padding: .3em .9em;
+  font-weight: 600;
+  font-size: .8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: .35em;
+}
+
+.status-Recebido { background: #e9f1fb; color: #2f5fa1; }
+.status-EmProducao { background: #fdf1de; color: #9a6a15; }
+.status-Pronto { background: #e6f4e6; color: #2f7d40; }
+.status-Enviado { background: #eae6f9; color: #5b3fa0; }
+.status-Entregue { background: #dff4e8; color: #1f7a4a; }
+.status-Cancelado { background: #fbe6e6; color: #a53939; }
+
+.admin-shell {
+  min-height: 100vh;
+  display: flex;
+}
+
+.admin-sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #4a3f3a 0%, #3a3230 100%);
+  color: #f4ece7;
+}
+
+.admin-sidebar .nav-link {
+  color: #e6d9d2;
+  border-radius: .75rem;
+  padding: .65rem 1rem;
+  font-weight: 500;
+}
+
+.admin-sidebar .nav-link.active,
+.admin-sidebar .nav-link:hover {
+  background: rgba(255, 255, 255, .1);
+  color: #fff;
+}
+
+.admin-content {
+  flex: 1;
+  background: #f7f3ef;
+  min-height: 100vh;
+}
+
+.stat-card {
+  border-radius: $border-radius-lg;
+  background: #fff;
+  box-shadow: $box-shadow-sm;
+  padding: 1.25rem 1.5rem;
+}
+
+.avatar-icon {
+  width: 2.75rem;
+  height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 1.2rem;
+}
+
+.avatar-icon-lg {
+  width: 4.5rem;
+  height: 4.5rem;
+  font-size: 2rem;
+}
+
+.contact-link {
+  padding: .5rem;
+  margin: -.5rem;
+  border-radius: $border-radius;
+  transition: background-color .2s ease;
+}
+
+.contact-link:hover {
+  background-color: var(--atelie-cream);
+}
+
+.toggle-order {
+  background: var(--atelie-sage-light);
+  border-radius: $border-radius;
+  padding: .85rem 1.1rem;
+  cursor: pointer;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--atelie-blush);
+  border-radius: 50rem;
+}
+
+.gallery-thumb {
+  cursor: pointer;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.gallery-thumb:hover {
+  transform: scale(1.03);
+  box-shadow: 0 .5rem 1.25rem rgba(74, 63, 58, .18) !important;
+}
+
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(74, 63, 58, .92);
+  padding: 2rem;
+}
+
+.lightbox-image {
+  max-width: min(90vw, 900px);
+  max-height: 85vh;
+  object-fit: contain;
+  border-radius: $border-radius;
+  box-shadow: 0 1rem 3rem rgba(0, 0, 0, .4);
+}
+
+.lightbox-close,
+.lightbox-nav {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .15);
+  color: var(--atelie-cream);
+  font-size: 1.4rem;
+  transition: background-color .2s ease;
+}
+
+.lightbox-close:hover,
+.lightbox-nav:hover {
+  background: rgba(255, 255, 255, .3);
+}
+
+.lightbox-close {
+  top: 1.25rem;
+  right: 1.25rem;
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+.lightbox-nav {
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3.25rem;
+  height: 3.25rem;
+}
+
+.lightbox-prev {
+  left: 1rem;
+}
+
+.lightbox-next {
+  right: 1rem;
+}
+
+@media (max-width: 576px) {
+  .lightbox-nav {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.1rem;
+  }
+}
+
+// Etiqueta de embalagem (admin-order-detail): dimensionada para o formato mais comum de
+// impressora térmica de etiquetas de envio (10x15cm), não a página inteira.
+@media print {
+  @page {
+    size: 100mm 150mm;
+    margin: 4mm;
+  }
+
+  .packing-slip {
+    width: 92mm;
+    font-size: 10px;
+    line-height: 1.3;
+  }
+
+  .packing-slip h4 {
+    font-size: 13px;
+  }
+
+  .packing-slip h6 {
+    font-size: 10px;
+  }
+}

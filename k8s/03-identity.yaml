@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: identity-data
+  namespace: atelie-bebe-dev
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 500Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: identity
+  namespace: atelie-bebe-dev
+spec:
+  replicas: 1 # SQLite-per-service means >1 replica would corrupt the file — see plano de arquitetura
+  selector:
+    matchLabels: { app: identity }
+  template:
+    metadata:
+      labels: { app: identity }
+      annotations:
+        # No-op until the New Relic k8s-agents-operator (Helm chart) is installed in the cluster —
+        # once it is, this makes the operator inject the .NET APM agent automatically, no Dockerfile
+        # changes needed. Requires a NEW_RELIC_LICENSE_KEY in app-secrets to actually report data.
+        newrelic.com/inject-dotnet: "true"
+    spec:
+      containers:
+        - name: identity
+          image: microservices-identity:latest
+          imagePullPolicy: IfNotPresent # built locally via `docker compose build`, shared with Docker Desktop's Kubernetes image store — no registry needed
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - secretRef: { name: app-secrets }
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: jwt-keys
+              mountPath: /keys
+              readOnly: true
+          readinessProbe:
+            httpGet: { path: /health, port: 8080 }
+            initialDelaySeconds: 15
+            periodSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet: { path: /health, port: 8080 }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 6
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: identity-data }
+        - name: jwt-keys
+          secret: { secretName: jwt-keys }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: identity
+  namespace: atelie-bebe-dev
+spec:
+  selector: { app: identity }
+  ports:
+    - port: 8080

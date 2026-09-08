@@ -1,0 +1,60 @@
+<div class="min-vh-100 d-flex align-items-center justify-content-center bg-dark py-5">
+  <div class="stat-card" style="width: 100%; max-width: 420px;">
+    <div class="text-center mb-4">
+      <span class="fw-script fs-2 text-blush brand-embroidered">Ateliê Layette Baby</span>
+      <h5 class="mt-2 text-secondary">Painel administrativo</h5>
+    </div>
+
+    @if (!awaitingTwoFactor()) {
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <div class="mb-3">
+          <label for="admin-login-email" class="form-label small fw-semibold">E-mail</label>
+          <input type="email" id="admin-login-email" class="form-control" formControlName="email" autocomplete="username"
+            [class.is-invalid]="form.controls.email.invalid && form.controls.email.touched">
+          @if (form.controls.email.invalid && form.controls.email.touched) {
+            <div class="invalid-feedback">Informe um e-mail válido.</div>
+          }
+        </div>
+        <div class="mb-3">
+          <label for="admin-login-password" class="form-label small fw-semibold">Senha</label>
+          <input type="password" id="admin-login-password" class="form-control" formControlName="password" autocomplete="current-password"
+            [class.is-invalid]="form.controls.password.invalid && form.controls.password.touched">
+          @if (form.controls.password.invalid && form.controls.password.touched) {
+            <div class="invalid-feedback">Senha é obrigatória.</div>
+          }
+        </div>
+
+        @if (errorMessage()) {
+          <div class="alert alert-danger small rounded-4">{{ errorMessage() }}</div>
+        }
+
+        <button type="submit" class="btn btn-dark btn-lg w-100 rounded-pill mt-3" [disabled]="submitting()">
+          @if (submitting()) {
+            <span class="spinner-border spinner-border-sm me-2"></span>
+          }
+          Entrar
+        </button>
+      </form>
+    } @else {
+      <form (ngSubmit)="submitTwoFactor()">
+        <p class="small text-secondary">Digite o código de 6 dígitos do seu aplicativo autenticador.</p>
+        <div class="mb-3">
+          <label for="admin-login-2fa" class="form-label small fw-semibold">Código</label>
+          <input type="text" id="admin-login-2fa" class="form-control text-center fs-4" inputmode="numeric" maxlength="6"
+            [value]="twoFactorCode()" (input)="twoFactorCode.set($any($event.target).value)" autocomplete="one-time-code">
+        </div>
+
+        @if (errorMessage()) {
+          <div class="alert alert-danger small rounded-4">{{ errorMessage() }}</div>
+        }
+
+        <button type="submit" class="btn btn-dark btn-lg w-100 rounded-pill mt-3" [disabled]="submitting()">
+          @if (submitting()) {
+            <span class="spinner-border spinner-border-sm me-2"></span>
+          }
+          Confirmar
+        </button>
+      </form>
+    }
+  </div>
+</div>

@@ -1,0 +1,24 @@
+{
+  "name": "Ateliê Layette Baby",
+  "short_name": "Layette Baby",
+  "description": "Fraldas de ombro e boca bordadas com muito carinho para o seu bebê.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fdf6f3",
+  "theme_color": "#e8a2ad",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

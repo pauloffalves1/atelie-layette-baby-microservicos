@@ -1,0 +1,46 @@
+<section class="py-5">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-5">
+        <div class="stat-card">
+          <div class="text-center mb-4">
+            <span class="fw-script fs-2 text-blush brand-embroidered">Ateliê Layette Baby</span>
+            <h4 class="mt-2">Rastrear pedido</h4>
+            <p class="small text-secondary mb-0">Informe o e-mail usado na compra e o número do pedido.</p>
+          </div>
+
+          <form [formGroup]="form" (ngSubmit)="submit()">
+            <div class="mb-3">
+              <label for="track-order-number" class="form-label small fw-semibold">Número do pedido</label>
+              <input type="text" id="track-order-number" class="form-control" formControlName="orderNumber" placeholder="Ex: 722ee49d"
+                [class.is-invalid]="form.controls.orderNumber.invalid && form.controls.orderNumber.touched">
+              @if (form.controls.orderNumber.invalid && form.controls.orderNumber.touched) {
+                <div class="invalid-feedback">Número do pedido é obrigatório.</div>
+              }
+              <span class="form-text">Os primeiros caracteres do código mostrado no e-mail de confirmação.</span>
+            </div>
+            <div class="mb-3">
+              <label for="track-order-email" class="form-label small fw-semibold">E-mail</label>
+              <input type="email" id="track-order-email" class="form-control" formControlName="email"
+                [class.is-invalid]="form.controls.email.invalid && form.controls.email.touched">
+              @if (form.controls.email.invalid && form.controls.email.touched) {
+                <div class="invalid-feedback">Informe um e-mail válido.</div>
+              }
+            </div>
+
+            @if (errorMessage()) {
+              <div class="alert alert-danger small rounded-4">{{ errorMessage() }}</div>
+            }
+
+            <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill mt-3" [disabled]="submitting()">
+              @if (submitting()) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+              }
+              Consultar pedido
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: catalog-data
+  namespace: atelie-bebe-dev
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi # includes uploaded product/site/gallery/review photos under /data/uploads
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog
+  namespace: atelie-bebe-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: catalog }
+  template:
+    metadata:
+      labels: { app: catalog }
+      annotations:
+        newrelic.com/inject-dotnet: "true"
+    spec:
+      containers:
+        - name: catalog
+          image: microservices-catalog:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - secretRef: { name: app-secrets }
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: jwt-keys
+              mountPath: /keys
+              readOnly: true
+          readinessProbe:
+            httpGet: { path: /health, port: 8080 }
+            initialDelaySeconds: 15
+            periodSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet: { path: /health, port: 8080 }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 6
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: catalog-data }
+        - name: jwt-keys
+          secret: { secretName: jwt-keys }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalog
+  namespace: atelie-bebe-dev
+spec:
+  selector: { app: catalog }
+  ports:
+    - port: 8080

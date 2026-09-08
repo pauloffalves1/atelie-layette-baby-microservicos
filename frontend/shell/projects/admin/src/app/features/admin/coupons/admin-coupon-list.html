@@ -1,0 +1,85 @@
+<div class="p-4 p-lg-5">
+  <h2 class="mb-1">Cupons de desconto</h2>
+  <p class="text-secondary mb-4">Códigos que o cliente digita no checkout, além das promoções automáticas por produto.</p>
+
+  <div class="stat-card mb-4">
+    <h6 class="mb-3">Novo cupom</h6>
+
+    @if (createError()) {
+      <div class="alert alert-danger small rounded-4">{{ createError() }}</div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="create()" class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold">Código</label>
+        <input type="text" class="form-control text-uppercase" formControlName="code" placeholder="Ex: BEMVINDA10"
+          [class.is-invalid]="form.controls.code.invalid && form.controls.code.touched">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small fw-semibold">Desconto (%)</label>
+        <input type="number" min="1" max="99" class="form-control" formControlName="discountPercentage"
+          [class.is-invalid]="form.controls.discountPercentage.invalid && form.controls.discountPercentage.touched">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold">Expira em (opcional)</label>
+        <input type="datetime-local" class="form-control" formControlName="expiresAt">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small fw-semibold">Limite de usos (opcional)</label>
+        <input type="number" min="1" class="form-control" formControlName="maxUses">
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary rounded-pill w-100" [disabled]="creating()">
+          @if (creating()) {
+            <span class="spinner-border spinner-border-sm me-2"></span>
+          }
+          Criar cupom
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="stat-card p-0 overflow-hidden">
+    @if (loading()) {
+      <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+    } @else {
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Código</th>
+              <th>Desconto</th>
+              <th>Expira em</th>
+              <th>Usos</th>
+              <th>Status</th>
+              <th class="text-end">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (coupon of coupons(); track coupon.id) {
+              <tr>
+                <td class="fw-semibold">{{ coupon.code }}</td>
+                <td>{{ coupon.discountPercentage }}%</td>
+                <td>{{ coupon.expiresAt ? (coupon.expiresAt | date:'dd/MM/yyyy HH:mm') : 'Sem validade' }}</td>
+                <td>{{ coupon.usesCount }}{{ coupon.maxUses ? ' / ' + coupon.maxUses : '' }}</td>
+                <td>
+                  <span class="badge rounded-pill" [class.bg-success]="coupon.isValid" [class.bg-secondary]="!coupon.isValid">
+                    {{ coupon.isValid ? 'Válido' : 'Inválido' }}
+                  </span>
+                </td>
+                <td class="text-end">
+                  <button class="btn btn-sm btn-outline-secondary rounded-pill" (click)="toggleActive(coupon)">
+                    {{ coupon.active ? 'Desativar' : 'Ativar' }}
+                  </button>
+                </td>
+              </tr>
+            }
+            @if (coupons().length === 0) {
+              <tr><td colspan="6" class="text-center text-secondary py-4">Nenhum cupom cadastrado.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

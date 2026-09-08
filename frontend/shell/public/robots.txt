@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /checkout
+Disallow: /minha-conta
+Disallow: /entrar
+Disallow: /cadastro
+Disallow: /pedido/
+Disallow: /pagamento-simulado/
+
+Sitemap: https://layettebaby.com.br/api/sitemap.xml

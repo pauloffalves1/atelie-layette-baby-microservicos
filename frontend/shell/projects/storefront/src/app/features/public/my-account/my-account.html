@@ -1,0 +1,96 @@
+<section class="py-5">
+  <div class="container">
+    <div class="mb-5">
+      <h1 class="section-title">Minha conta</h1>
+      <p class="text-secondary mt-3">Olá, {{ auth.currentUser()?.name }}! Aqui estão suas encomendas.</p>
+    </div>
+
+    @if (!emailVerified()) {
+      <div class="alert alert-warning small rounded-4 d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
+        @if (verificationSent()) {
+          <span>E-mail de verificação reenviado! Confira sua caixa de entrada.</span>
+        } @else {
+          <span>Seu e-mail ainda não foi confirmado.</span>
+          <button type="button" class="btn btn-sm btn-outline-dark rounded-pill" [disabled]="resendingVerification()" (click)="resendVerification()">
+            @if (resendingVerification()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+            }
+            Reenviar e-mail de confirmação
+          </button>
+        }
+      </div>
+    }
+
+    @if (loading()) {
+      <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+    } @else if (orders().length === 0) {
+      <div class="text-center py-5 text-secondary">
+        <i class="bi bi-bag fs-1 d-block mb-3"></i>
+        <p>Você ainda não fez nenhuma encomenda.</p>
+        <a routerLink="/loja" class="btn btn-primary rounded-pill mt-2">Ir para a loja</a>
+      </div>
+    } @else {
+      <div class="row g-4">
+        @for (order of orders(); track order.id) {
+          <div class="col-12">
+            <div class="stat-card d-flex flex-wrap justify-content-between align-items-center gap-3">
+              <div>
+                <span class="status-pill" [class]="'status-' + order.status">{{ statusLabels[order.status] }}</span>
+                <h6 class="mt-2 mb-1">Pedido #{{ order.id.slice(0, 8) }} · {{ order.type === 'Loja' ? 'Compra na loja' : 'Encomenda personalizada' }}</h6>
+                <span class="small text-secondary">{{ order.createdAt | date:'dd/MM/yyyy HH:mm' }} · {{ order.items.length }} item(ns)</span>
+              </div>
+              <div class="text-end">
+                <p class="fw-bold text-blush fs-5 mb-1">{{ order.total | currency:'BRL' }}</p>
+                <a [routerLink]="['/pedido', order.id]" class="btn btn-sm btn-outline-secondary rounded-pill">Ver detalhes</a>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <div class="mt-5 pt-4 border-top">
+      <h6 class="text-danger">Excluir conta</h6>
+
+      @if (loading()) {
+        <!-- avoid showing an order-count-dependent message before we know the count -->
+      } @else if (!confirmingDelete()) {
+        <p class="small text-secondary mb-2">
+          Você pode solicitar a exclusão da sua conta a qualquer momento.
+          @if (orders().length > 0) {
+            Como você já tem encomendas registradas, seus dados pessoais (nome, e-mail, telefone, CPF) serão removidos e o login deixará de funcionar — o histórico de compras é mantido pelo ateliê apenas para fins fiscais/garantia.
+          } @else {
+            Como você ainda não tem encomendas, sua conta é apagada por completo.
+          }
+        </p>
+        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill" (click)="startDeleteAccount()">
+          Excluir minha conta
+        </button>
+      } @else {
+        <div class="alert alert-danger small rounded-4">
+          <p class="mb-2">Tem certeza? Essa ação não pode ser desfeita. Digite sua senha para confirmar.</p>
+          <input
+            type="password"
+            class="form-control form-control-sm mb-2"
+            placeholder="Sua senha"
+            [value]="deletePassword()"
+            (input)="deletePassword.set($any($event.target).value)">
+          @if (deleteError()) {
+            <p class="text-danger mb-2">{{ deleteError() }}</p>
+          }
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-danger rounded-pill" [disabled]="deleting()" (click)="confirmDeleteAccount()">
+              @if (deleting()) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+              }
+              Confirmar exclusão
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" [disabled]="deleting()" (click)="cancelDeleteAccount()">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>

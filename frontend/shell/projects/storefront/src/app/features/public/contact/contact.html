@@ -1,0 +1,140 @@
+<section class="py-5">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h1 class="section-title text-center">Contato e encomendas</h1>
+      <p class="text-secondary mt-3 mx-auto" style="max-width: 640px;">
+        Tem alguma dúvida sobre prazos e tecidos, ou quer combinar uma peça personalizada?
+        Preencha os campos abaixo e enviamos tudo pronto pelo WhatsApp.
+      </p>
+    </div>
+
+    <div class="row g-4 g-lg-5">
+      <div class="col-lg-5">
+        <div class="stat-card h-100">
+          <span class="badge-soft mb-3 d-inline-block"><i class="bi bi-whatsapp me-1"></i>Fale com a gente</span>
+          <h5 class="mb-4"><i class="bi bi-headset me-2 text-blush"></i>Outros canais</h5>
+
+          <ul class="list-unstyled mb-4">
+            <li class="mb-2">
+              <a href="https://wa.me/5511913130481" target="_blank" rel="noopener"
+                class="d-flex align-items-center gap-3 text-decoration-none text-reset contact-link">
+                <span class="avatar-icon bg-blush text-blush"><i class="bi bi-whatsapp"></i></span>
+                <div>
+                  <div class="fw-semibold">WhatsApp</div>
+                  <div class="small text-secondary">(11) 91313-0481</div>
+                </div>
+              </a>
+            </li>
+            <li>
+              <div class="d-flex align-items-center gap-3">
+                <span class="avatar-icon bg-blush text-blush"><i class="bi bi-geo-alt"></i></span>
+                <div>
+                  <div class="fw-semibold">Localização</div>
+                  <div class="small text-secondary">São Bernardo do Campo · SP</div>
+                </div>
+              </div>
+            </li>
+          </ul>
+
+          <hr>
+
+          <ul class="list-unstyled small text-secondary mb-0">
+            <li class="mb-2"><i class="bi bi-lightning-charge-fill me-2 text-blush"></i>Resposta rápida pelo WhatsApp</li>
+            <li class="mb-2"><i class="bi bi-palette-fill me-2 text-blush"></i>Encomendas 100% personalizadas</li>
+            <li><i class="bi bi-heart-fill me-2 text-blush"></i>Atendimento feito com carinho</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col-lg-7">
+        <form [formGroup]="form" (ngSubmit)="submit()" class="stat-card">
+          <h5 class="mb-3"><i class="bi bi-person me-2"></i>Seus dados</h5>
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label for="contact-customerName" class="form-label small fw-semibold">Nome completo</label>
+              <input type="text" id="contact-customerName" class="form-control" formControlName="customerName"
+                [class.is-invalid]="form.controls.customerName.invalid && form.controls.customerName.touched">
+              @if (form.controls.customerName.invalid && form.controls.customerName.touched) {
+                <div class="invalid-feedback">Nome é obrigatório.</div>
+              }
+            </div>
+            <div class="col-md-6">
+              <label for="contact-customerEmail" class="form-label small fw-semibold">E-mail (opcional)</label>
+              <input type="email" id="contact-customerEmail" class="form-control" formControlName="customerEmail"
+                [class.is-invalid]="form.controls.customerEmail.invalid && form.controls.customerEmail.touched">
+              @if (form.controls.customerEmail.invalid && form.controls.customerEmail.touched) {
+                <div class="invalid-feedback">Informe um e-mail válido.</div>
+              }
+            </div>
+            <div class="col-md-6">
+              <label for="contact-customerPhone" class="form-label small fw-semibold">Telefone</label>
+              <input type="text" id="contact-customerPhone" class="form-control" formControlName="customerPhone" appPhoneMask
+                placeholder="(11) 91234-5678"
+                [class.is-invalid]="form.controls.customerPhone.invalid && form.controls.customerPhone.touched">
+              @if (form.controls.customerPhone.invalid && form.controls.customerPhone.touched) {
+                <div class="invalid-feedback">Telefone é obrigatório.</div>
+              }
+            </div>
+          </div>
+
+          <div class="toggle-order form-check form-switch d-flex align-items-center gap-3 mb-4">
+            <input class="form-check-input flex-shrink-0 m-0" type="checkbox" role="switch" id="isCustomOrder" formControlName="isCustomOrder">
+            <label class="form-check-label fw-semibold mb-0" for="isCustomOrder">
+              <i class="bi bi-magic me-1 text-blush"></i>É uma encomenda personalizada?
+            </label>
+          </div>
+
+          @if (form.value.isCustomOrder) {
+            <div class="border-top pt-4 mb-4">
+              <h5 class="mb-3"><i class="bi bi-palette me-2"></i>Detalhes da peça</h5>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="contact-tipoPeca" class="form-label small fw-semibold">Tipo de peça</label>
+                  <select id="contact-tipoPeca" class="form-select" formControlName="tipoPeca">
+                    @for (type of pieceTypes; track type) {
+                      <option [value]="type">{{ type }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label for="contact-tamanho" class="form-label small fw-semibold">Tamanho</label>
+                  <select id="contact-tamanho" class="form-select" formControlName="tamanho">
+                    @for (size of sizes; track size) {
+                      <option [value]="size">{{ size }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label for="contact-tecido" class="form-label small fw-semibold">Tecido desejado</label>
+                  <input type="text" id="contact-tecido" class="form-control" formControlName="tecido" placeholder="Ex: algodão pima, tricot, soft...">
+                </div>
+                <div class="col-md-6">
+                  <label for="contact-cor" class="form-label small fw-semibold">Cor</label>
+                  <input type="text" id="contact-cor" class="form-control" formControlName="cor" placeholder="Ex: rosa claro, verde sálvia...">
+                </div>
+                <div class="col-12">
+                  <label for="contact-nomeBordado" class="form-label small fw-semibold">Nome para bordar (opcional)</label>
+                  <input type="text" id="contact-nomeBordado" class="form-control" formControlName="nomeBordado">
+                </div>
+              </div>
+            </div>
+          }
+
+          <label for="contact-message" class="form-label small fw-semibold">
+            {{ form.value.isCustomOrder ? 'Observações' : 'Mensagem' }}
+          </label>
+          <textarea id="contact-message" class="form-control" rows="4" formControlName="message"
+            placeholder="Conte mais detalhes, referências ou inspirações..."
+            [class.is-invalid]="form.controls.message.invalid && form.controls.message.touched"></textarea>
+          @if (form.controls.message.invalid && form.controls.message.touched) {
+            <div class="invalid-feedback">{{ form.value.isCustomOrder ? 'Observações são' : 'Mensagem é' }} obrigatória.</div>
+          }
+
+          <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill mt-4">
+            <i class="bi bi-whatsapp me-2"></i>Enviar pelo WhatsApp
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>

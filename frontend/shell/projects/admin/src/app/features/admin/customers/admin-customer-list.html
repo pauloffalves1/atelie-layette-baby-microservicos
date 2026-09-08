@@ -1,0 +1,49 @@
+<div class="p-4 p-lg-5">
+  <h2 class="mb-1">Clientes</h2>
+  <p class="text-secondary mb-4">Todas as contas de cliente cadastradas na loja.</p>
+
+  <div class="stat-card p-0 overflow-hidden">
+    @if (loading()) {
+      <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+    } @else {
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Nome</th>
+              <th>E-mail</th>
+              <th>Telefone</th>
+              <th>CPF</th>
+              <th>Cadastro</th>
+              <th class="text-end">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (customer of customers(); track customer.id) {
+              <tr>
+                <td class="fw-semibold">
+                  {{ customer.name }}
+                  @if (customer.isAnonymized) {
+                    <span class="badge bg-secondary ms-2">Conta excluída</span>
+                  }
+                </td>
+                <td>{{ customer.email }}</td>
+                <td>{{ customer.phone || '—' }}</td>
+                <td>{{ customer.cpf | cpfMask }}</td>
+                <td>{{ customer.createdAt | date:'dd/MM/yyyy' }}</td>
+                <td class="text-end">
+                  @if (!customer.isAnonymized) {
+                    <a [routerLink]="['/admin/clientes', customer.id, 'editar']" class="btn btn-sm btn-outline-secondary rounded-pill">Editar</a>
+                  }
+                </td>
+              </tr>
+            }
+            @if (customers().length === 0) {
+              <tr><td colspan="6" class="text-center text-secondary py-4">Nenhum cliente cadastrado.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

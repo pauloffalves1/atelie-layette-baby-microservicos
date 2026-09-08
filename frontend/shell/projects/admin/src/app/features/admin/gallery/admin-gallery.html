@@ -1,0 +1,46 @@
+<div class="p-4 p-lg-5">
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+    <div>
+      <h2 class="mb-1">Galeria</h2>
+      <p class="text-secondary mb-0">Fotos exibidas na página pública /galeria.</p>
+    </div>
+
+    <label class="btn btn-primary rounded-pill" [class.disabled]="uploading()">
+      @if (uploading()) {
+        <span class="spinner-border spinner-border-sm me-2"></span>Enviando...
+      } @else {
+        <i class="bi bi-plus-lg me-1"></i>Adicionar foto
+      }
+      <input type="file" accept="image/jpeg,image/png,image/webp" class="d-none"
+        [disabled]="uploading()" (change)="onFileSelected($event)">
+    </label>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger small rounded-4">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+  } @else if (images().length === 0) {
+    <p class="text-secondary">Nenhuma foto enviada ainda. Clique em "Adicionar foto" para começar.</p>
+  } @else {
+    <div class="row g-3">
+      @for (image of images(); track image.id) {
+        <div class="col-6 col-md-4 col-lg-3">
+          <div class="position-relative rounded-4 overflow-hidden shadow-sm" style="aspect-ratio: 4/5;">
+            <img [src]="image.displayUrl" alt="Foto da galeria" class="w-100 h-100 object-fit-cover">
+            <button type="button" class="btn btn-sm btn-danger rounded-circle position-absolute top-0 end-0 m-2"
+              [disabled]="image.deleting" (click)="deleteImage(image.id)" aria-label="Remover foto">
+              @if (image.deleting) {
+                <span class="spinner-border spinner-border-sm"></span>
+              } @else {
+                <i class="bi bi-trash"></i>
+              }
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

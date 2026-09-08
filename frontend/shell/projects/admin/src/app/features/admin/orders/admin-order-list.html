@@ -1,0 +1,83 @@
+<div class="p-4 p-lg-5">
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-1">
+    <h2 class="mb-1">Encomendas</h2>
+    <button class="btn btn-sm btn-outline-secondary rounded-pill" [disabled]="exporting()" (click)="exportCsv()">
+      @if (exporting()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+      <i class="bi bi-download me-1"></i>Exportar CSV
+    </button>
+  </div>
+  <p class="text-secondary mb-4">Acompanhe e atualize o status das encomendas.</p>
+
+  <div class="d-flex flex-wrap gap-2 mb-2">
+    <button class="btn btn-sm rounded-pill" [class.btn-dark]="activeStatus() === null" [class.btn-outline-secondary]="activeStatus() !== null" (click)="filterByStatus(null)">
+      Todas
+    </button>
+    @for (status of statuses; track status) {
+      <button class="btn btn-sm rounded-pill" [class.btn-dark]="activeStatus() === status" [class.btn-outline-secondary]="activeStatus() !== status" (click)="filterByStatus(status)">
+        {{ statusLabels[status] }}
+      </button>
+    }
+  </div>
+
+  <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+    <span class="small text-secondary">Pagamento:</span>
+    <button class="btn btn-sm rounded-pill" [class.btn-dark]="activePaymentStatus() === null" [class.btn-outline-secondary]="activePaymentStatus() !== null" (click)="filterByPaymentStatus(null)">
+      Todos
+    </button>
+    @for (paymentStatus of paymentStatuses; track paymentStatus) {
+      <button class="btn btn-sm rounded-pill" [class.btn-dark]="activePaymentStatus() === paymentStatus" [class.btn-outline-secondary]="activePaymentStatus() !== paymentStatus" (click)="filterByPaymentStatus(paymentStatus)">
+        {{ paymentStatusLabels[paymentStatus] }}
+      </button>
+    }
+  </div>
+
+  <div class="stat-card p-0 overflow-hidden">
+    @if (loading()) {
+      <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+    } @else {
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Cliente</th>
+              <th>Tipo</th>
+              <th>Status</th>
+              <th>Pagamento</th>
+              <th>Data</th>
+              <th class="text-end">Total</th>
+              <th class="text-end">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (order of orders(); track order.id) {
+              <tr>
+                <td>
+                  <span class="fw-semibold d-block">{{ order.customerName }}</span>
+                  <span class="small text-secondary">{{ order.customerEmail }}</span>
+                </td>
+                <td>{{ order.type === 'Loja' ? 'Loja' : 'Personalizada' }}</td>
+                <td><span class="status-pill" [class]="'status-' + order.status">{{ statusLabels[order.status] }}</span></td>
+                <td>
+                  <span class="small" [class.text-success]="order.paymentStatus === 'Pago'"
+                        [class.text-danger]="order.paymentStatus === 'Recusado'"
+                        [class.text-secondary]="order.paymentStatus === 'Pendente'">
+                    {{ paymentStatusLabels[order.paymentStatus] }}
+                  </span>
+                </td>
+                <td>{{ order.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td class="text-end fw-bold text-blush">{{ order.total | currency:'BRL' }}</td>
+                <td class="text-end">
+                  <a [routerLink]="['/admin/encomendas', order.id]" class="btn btn-sm btn-outline-secondary rounded-pill">Detalhes</a>
+                </td>
+              </tr>
+            }
+            @if (orders().length === 0) {
+              <tr><td colspan="7" class="text-center text-secondary py-4">Nenhuma encomenda encontrada.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-pagination [page]="page()" [totalPages]="totalPages()" (pageChange)="goToPage($event)" />
+    }
+  </div>
+</div>

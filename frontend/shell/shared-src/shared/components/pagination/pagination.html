@@ -1,0 +1,11 @@
+@if (totalPages() > 1) {
+  <nav class="d-flex justify-content-center align-items-center gap-3 mt-4" aria-label="Paginação">
+    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" [disabled]="!hasPreviousPage()" (click)="goTo(page() - 1)">
+      <i class="bi bi-chevron-left me-1"></i>Anterior
+    </button>
+    <span class="small text-secondary">Página {{ page() }} de {{ totalPages() }}</span>
+    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" [disabled]="!hasNextPage()" (click)="goTo(page() + 1)">
+      Próxima<i class="bi bi-chevron-right ms-1"></i>
+    </button>
+  </nav>
+}

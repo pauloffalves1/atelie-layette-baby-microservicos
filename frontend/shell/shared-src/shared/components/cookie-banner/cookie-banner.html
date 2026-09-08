@@ -1,0 +1,14 @@
+@if (!consent.isDecided) {
+  <div class="position-fixed bottom-0 start-0 end-0 p-3" style="z-index: 1080;">
+    <div class="stat-card shadow-lg mx-auto d-flex flex-wrap align-items-center justify-content-between gap-3" style="max-width: 720px;">
+      <p class="small text-secondary mb-0">
+        Usamos cookies para melhorar sua experiência e, quando configurado, medir o desempenho do site.
+        Veja nossa <a routerLink="/politica-de-privacidade">Política de Privacidade</a>.
+      </p>
+      <div class="d-flex gap-2 flex-shrink-0">
+        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" (click)="decline()">Recusar</button>
+        <button type="button" class="btn btn-sm btn-primary rounded-pill" (click)="accept()">Aceitar</button>
+      </div>
+    </div>
+  </div>
+}

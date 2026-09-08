@@ -1,0 +1,146 @@
+<section class="py-5">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-7">
+        <div class="stat-card">
+          <div class="text-center mb-4">
+            <span class="fw-script fs-2 text-blush brand-embroidered">Ateliê Layette Baby</span>
+            <h4 class="mt-2">Criar minha conta</h4>
+          </div>
+
+          @if (returnUrl() === '/checkout') {
+            <div class="alert alert-info small rounded-4">Crie sua conta para finalizar o pedido.</div>
+          }
+
+          <form [formGroup]="form" (ngSubmit)="submit()">
+            <div class="mb-3">
+              <label for="register-name" class="form-label small fw-semibold">Nome completo</label>
+              <input type="text" id="register-name" class="form-control" formControlName="name"
+                [class.is-invalid]="form.controls.name.invalid && form.controls.name.touched">
+              @if (form.controls.name.invalid && form.controls.name.touched) {
+                <div class="invalid-feedback">Nome é obrigatório.</div>
+              }
+            </div>
+            <div class="mb-3">
+              <label for="register-email" class="form-label small fw-semibold">E-mail</label>
+              <input type="email" id="register-email" class="form-control" formControlName="email"
+                [class.is-invalid]="form.controls.email.invalid && form.controls.email.touched">
+              @if (form.controls.email.invalid && form.controls.email.touched) {
+                <div class="invalid-feedback">Informe um e-mail válido.</div>
+              }
+            </div>
+            <div class="mb-3">
+              <label for="register-cpf" class="form-label small fw-semibold">CPF</label>
+              <input type="text" id="register-cpf" class="form-control" formControlName="cpf"
+                placeholder="000.000.000-00"
+                [class.is-invalid]="form.controls.cpf.invalid && form.controls.cpf.touched">
+              @if (form.controls.cpf.invalid && form.controls.cpf.touched) {
+                <div class="invalid-feedback">Informe um CPF válido.</div>
+              }
+            </div>
+            <div class="mb-3">
+              <label for="register-phone" class="form-label small fw-semibold">Telefone / WhatsApp</label>
+              <input type="text" id="register-phone" class="form-control" formControlName="phone" appPhoneMask
+                placeholder="(11) 91234-5678"
+                [class.is-invalid]="form.controls.phone.invalid && form.controls.phone.touched">
+              @if (form.controls.phone.invalid && form.controls.phone.touched) {
+                <div class="invalid-feedback">Telefone/WhatsApp é obrigatório — usamos para te avisar sobre pedidos.</div>
+              }
+            </div>
+            <hr class="my-4">
+            <h6 class="small fw-semibold text-secondary mb-3"><i class="bi bi-geo-alt me-1"></i>Endereço</h6>
+            <div class="row g-3 mb-3">
+              <div class="col-md-4">
+                <label for="register-zipCode" class="form-label small fw-semibold">CEP</label>
+                <div class="position-relative">
+                  <input type="text" id="register-zipCode" class="form-control" formControlName="zipCode"
+                    placeholder="00000-000" maxlength="9"
+                    [class.is-invalid]="(form.controls.zipCode.invalid && form.controls.zipCode.touched) || cepError()">
+                  @if (cepLoading()) {
+                    <span class="spinner-border spinner-border-sm position-absolute top-50 end-0 translate-middle-y me-3 text-secondary"></span>
+                  }
+                </div>
+                @if (form.controls.zipCode.invalid && form.controls.zipCode.touched) {
+                  <div class="invalid-feedback d-block">CEP é obrigatório.</div>
+                } @else if (cepError()) {
+                  <div class="invalid-feedback d-block">{{ cepError() }}</div>
+                }
+              </div>
+              <div class="col-md-8">
+                <label for="register-street" class="form-label small fw-semibold">Rua</label>
+                <input type="text" id="register-street" class="form-control" formControlName="street"
+                  [class.is-invalid]="form.controls.street.invalid && form.controls.street.touched">
+                @if (form.controls.street.invalid && form.controls.street.touched) {
+                  <div class="invalid-feedback">Rua é obrigatória.</div>
+                }
+              </div>
+              <div class="col-md-4">
+                <label for="register-number" class="form-label small fw-semibold">Número</label>
+                <input type="text" id="register-number" class="form-control" formControlName="number"
+                  [class.is-invalid]="form.controls.number.invalid && form.controls.number.touched">
+                @if (form.controls.number.invalid && form.controls.number.touched) {
+                  <div class="invalid-feedback">Número é obrigatório.</div>
+                }
+              </div>
+              <div class="col-md-8">
+                <label for="register-complement" class="form-label small fw-semibold">Complemento</label>
+                <input type="text" id="register-complement" class="form-control" formControlName="complement">
+              </div>
+              <div class="col-md-6">
+                <label for="register-neighborhood" class="form-label small fw-semibold">Bairro</label>
+                <input type="text" id="register-neighborhood" class="form-control" formControlName="neighborhood"
+                  [class.is-invalid]="form.controls.neighborhood.invalid && form.controls.neighborhood.touched">
+                @if (form.controls.neighborhood.invalid && form.controls.neighborhood.touched) {
+                  <div class="invalid-feedback">Bairro é obrigatório.</div>
+                }
+              </div>
+              <div class="col-md-4">
+                <label for="register-city" class="form-label small fw-semibold">Cidade</label>
+                <input type="text" id="register-city" class="form-control" formControlName="city"
+                  [class.is-invalid]="form.controls.city.invalid && form.controls.city.touched">
+                @if (form.controls.city.invalid && form.controls.city.touched) {
+                  <div class="invalid-feedback">Cidade é obrigatória.</div>
+                }
+              </div>
+              <div class="col-md-2">
+                <label for="register-state" class="form-label small fw-semibold">Estado</label>
+                <input type="text" id="register-state" class="form-control" formControlName="state" maxlength="2" placeholder="UF"
+                  [class.is-invalid]="form.controls.state.invalid && form.controls.state.touched">
+                @if (form.controls.state.invalid && form.controls.state.touched) {
+                  <div class="invalid-feedback">Obrigatório.</div>
+                }
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="register-password" class="form-label small fw-semibold">Senha</label>
+              <input type="password" id="register-password" class="form-control" formControlName="password"
+                [class.is-invalid]="form.controls.password.invalid && form.controls.password.touched"
+                aria-describedby="register-password-help">
+              @if (form.controls.password.invalid && form.controls.password.touched) {
+                <div class="invalid-feedback">A senha deve ter pelo menos 6 caracteres.</div>
+              }
+              <span id="register-password-help" class="form-text">Mínimo de 6 caracteres.</span>
+            </div>
+
+            @if (errorMessage()) {
+              <div class="alert alert-danger small rounded-4">{{ errorMessage() }}</div>
+            }
+
+            <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill mt-3" [disabled]="submitting()">
+              @if (submitting()) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+              }
+              Criar conta
+            </button>
+          </form>
+
+          <p class="text-center small text-secondary mt-4 mb-0">
+            Já tem conta?
+            <a routerLink="/entrar" [queryParams]="{ returnUrl: returnUrl() }" class="text-blush fw-semibold">Entrar</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

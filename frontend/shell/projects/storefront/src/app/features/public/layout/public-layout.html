@@ -1,0 +1,122 @@
+<div class="app-shell">
+  <nav class="navbar navbar-expand-lg sticky-top bg-white shadow-sm py-3">
+    <div class="container">
+      <a class="navbar-brand fw-script fs-3 text-blush brand-embroidered" routerLink="/">Ateliê Layette Baby</a>
+
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-label="Alternar navegação">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="mainNav">
+        <ul class="navbar-nav mx-auto gap-lg-2">
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/" routerLinkActive="active fw-bold text-blush" [routerLinkActiveOptions]="{ exact: true }">Início</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/sobre" routerLinkActive="active fw-bold text-blush">Sobre</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/loja" routerLinkActive="active fw-bold text-blush">Loja</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/galeria" routerLinkActive="active fw-bold text-blush">Galeria</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/contato" routerLinkActive="active fw-bold text-blush">Contato e Encomendas</a>
+          </li>
+        </ul>
+
+        <div class="d-flex align-items-center gap-2 mt-3 mt-lg-0">
+          @if (auth.isAuthenticated()) {
+            <div class="dropdown">
+              <button class="btn btn-sm btn-outline-secondary dropdown-toggle rounded-pill" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-person-circle me-1"></i>{{ auth.currentUser()?.name?.split(' ')?.[0] }}
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                <li><a class="dropdown-item" routerLink="/minha-conta"><i class="bi bi-box-seam me-2"></i>Minhas encomendas</a></li>
+                <li><a class="dropdown-item" routerLink="/favoritos"><i class="bi bi-heart me-2"></i>Meus favoritos</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><button class="dropdown-item text-danger" (click)="logout()"><i class="bi bi-box-arrow-right me-2"></i>Sair</button></li>
+              </ul>
+            </div>
+          } @else {
+            <a routerLink="/entrar" class="btn btn-sm btn-outline-secondary rounded-pill">Entrar</a>
+          }
+
+          <a routerLink="/carrinho" class="btn btn-sm btn-primary rounded-pill position-relative">
+            <i class="bi bi-bag-heart"></i>
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-sage">
+              {{ cart.totalItems() }}
+            </span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="app-main">
+    <router-outlet />
+  </main>
+
+  <footer class="bg-dark text-light pt-5 pb-4 mt-5">
+    <div class="container">
+      <div class="row gy-4">
+        <div class="col-md-3">
+          <h5 class="fw-script text-blush fs-3 mb-3 brand-embroidered">Ateliê Layette Baby</h5>
+          <p class="text-white-50 small">
+            Fraldas de ombro e boca bordadas com muito carinho para os primeiros dias do seu bebê.
+          </p>
+        </div>
+        <div class="col-md-3">
+          <h6 class="text-uppercase small fw-bold mb-3">Navegação</h6>
+          <ul class="list-unstyled small">
+            <li class="mb-2"><a routerLink="/loja" class="text-white-50">Loja</a></li>
+            <li class="mb-2"><a routerLink="/contato" class="text-white-50">Contato e encomendas</a></li>
+            <li class="mb-2"><a routerLink="/sobre" class="text-white-50">Sobre o ateliê</a></li>
+            <li class="mb-2"><a routerLink="/galeria" class="text-white-50">Galeria</a></li>
+            <li class="mb-2"><a routerLink="/rastrear-pedido" class="text-white-50">Rastrear pedido</a></li>
+          </ul>
+        </div>
+        <div class="col-md-3">
+          <h6 class="text-uppercase small fw-bold mb-3">Fale conosco</h6>
+          <ul class="list-unstyled small text-white-50">
+            <li class="mb-2"><i class="bi bi-whatsapp me-2"></i>(11) 91313-0481</li>
+            <li class="mb-2"><i class="bi bi-geo-alt me-2"></i>São Bernardo do Campo · SP</li>
+          </ul>
+        </div>
+        <div class="col-md-3">
+          <h6 class="text-uppercase small fw-bold mb-3">Novidades por e-mail</h6>
+          @if (newsletterSubscribed()) {
+            <p class="small text-white-50 mb-0"><i class="bi bi-check-circle me-1"></i>Inscrição confirmada!</p>
+          } @else {
+            <p class="small text-white-50">Receba avisos de novidades e promoções.</p>
+            <div class="input-group input-group-sm">
+              <input
+                type="email"
+                class="form-control"
+                placeholder="Seu e-mail"
+                [ngModel]="newsletterEmail()"
+                (ngModelChange)="newsletterEmail.set($event)">
+              <button type="button" class="btn btn-primary" [disabled]="newsletterSubmitting()" (click)="subscribeNewsletter()">
+                @if (newsletterSubmitting()) {
+                  <span class="spinner-border spinner-border-sm"></span>
+                } @else {
+                  <i class="bi bi-send"></i>
+                }
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+      <hr class="border-secondary my-4">
+      <p class="text-center small text-white-50 mb-2">
+        <a routerLink="/termos-de-uso" class="text-white-50">Termos de Uso</a>
+        <span class="mx-2">·</span>
+        <a routerLink="/politica-de-privacidade" class="text-white-50">Política de Privacidade</a>
+      </p>
+      <p class="text-center small text-white-50 mb-0">&copy; {{ currentYear }} Ateliê Layette Baby. Feito à mão, com amor.</p>
+    </div>
+  </footer>
+
+  <app-whatsapp-button />
+</div>

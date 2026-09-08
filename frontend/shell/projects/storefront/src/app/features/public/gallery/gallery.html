@@ -1,0 +1,36 @@
+<section class="py-5">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h1 class="section-title text-center">Galeria do Ateliê</h1>
+      <p class="text-secondary mt-3">Um pouquinho dos trabalhos feitos com carinho para as famílias que confiam no Ateliê Layette Baby.</p>
+    </div>
+
+    <div class="row g-3">
+      @for (image of images(); track image; let i = $index) {
+        <div class="col-6 col-md-4 col-lg-3">
+          <div class="rounded-4 overflow-hidden shadow-sm gallery-thumb" style="aspect-ratio: 4/5;" (click)="open(i)">
+            <img [src]="image" alt="Trabalho do ateliê" class="w-100 h-100 object-fit-cover" loading="lazy">
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+@if (selectedIndex() !== null) {
+  <div class="lightbox-overlay" (click)="close()">
+    <button type="button" class="lightbox-close" (click)="close(); $event.stopPropagation()" aria-label="Fechar">
+      <i class="bi bi-x-lg"></i>
+    </button>
+
+    <button type="button" class="lightbox-nav lightbox-prev" (click)="previous(); $event.stopPropagation()" aria-label="Imagem anterior">
+      <i class="bi bi-chevron-left"></i>
+    </button>
+
+    <img [src]="images()[selectedIndex()!]" alt="Trabalho do ateliê" class="lightbox-image" (click)="$event.stopPropagation()">
+
+    <button type="button" class="lightbox-nav lightbox-next" (click)="next(); $event.stopPropagation()" aria-label="Próxima imagem">
+      <i class="bi bi-chevron-right"></i>
+    </button>
+  </div>
+}

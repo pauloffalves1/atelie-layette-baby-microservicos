@@ -1,0 +1,56 @@
+<section class="py-5">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-5">
+        <div class="stat-card">
+          <div class="text-center mb-4">
+            <span class="fw-script fs-2 text-blush brand-embroidered">Ateliê Layette Baby</span>
+            <h4 class="mt-2">Entrar na sua conta</h4>
+          </div>
+
+          @if (returnUrl() === '/checkout') {
+            <div class="alert alert-info small rounded-4">Entre na sua conta para finalizar o pedido.</div>
+          }
+
+          <form [formGroup]="form" (ngSubmit)="submit()">
+            <div class="mb-3">
+              <label for="login-email" class="form-label small fw-semibold">E-mail</label>
+              <input type="email" id="login-email" class="form-control" formControlName="email"
+                [class.is-invalid]="form.controls.email.invalid && form.controls.email.touched">
+              @if (form.controls.email.invalid && form.controls.email.touched) {
+                <div class="invalid-feedback">Informe um e-mail válido.</div>
+              }
+            </div>
+            <div class="mb-3">
+              <div class="d-flex justify-content-between align-items-center">
+                <label for="login-password" class="form-label small fw-semibold mb-0">Senha</label>
+                <a routerLink="/esqueci-senha" class="small text-blush">Esqueci minha senha</a>
+              </div>
+              <input type="password" id="login-password" class="form-control" formControlName="password"
+                [class.is-invalid]="form.controls.password.invalid && form.controls.password.touched">
+              @if (form.controls.password.invalid && form.controls.password.touched) {
+                <div class="invalid-feedback">Senha é obrigatória.</div>
+              }
+            </div>
+
+            @if (errorMessage()) {
+              <div class="alert alert-danger small rounded-4">{{ errorMessage() }}</div>
+            }
+
+            <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill mt-3" [disabled]="submitting()">
+              @if (submitting()) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+              }
+              Entrar
+            </button>
+          </form>
+
+          <p class="text-center small text-secondary mt-4 mb-0">
+            Ainda não tem conta?
+            <a routerLink="/cadastro" [queryParams]="{ returnUrl: returnUrl() }" class="text-blush fw-semibold">Cadastre-se</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

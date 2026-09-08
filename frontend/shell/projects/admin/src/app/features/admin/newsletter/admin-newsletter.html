@@ -1,0 +1,35 @@
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h4 mb-0">Newsletter</h1>
+    <button type="button" class="btn btn-sm btn-outline-primary" [disabled]="exporting() || subscribers().length === 0" (click)="exportCsv()">
+      @if (exporting()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+      <i class="bi bi-download me-1"></i>Exportar CSV
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+  } @else if (subscribers().length === 0) {
+    <p class="text-secondary small">Nenhum e-mail inscrito ainda.</p>
+  } @else {
+    <p class="small text-secondary">{{ subscribers().length }} inscrito(s) — exporte o CSV para usar numa ferramenta de campanhas (Mailchimp, Resend Broadcast, etc.).</p>
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th>E-mail</th>
+            <th>Inscrito em</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (subscriber of subscribers(); track subscriber.id) {
+            <tr>
+              <td class="small">{{ subscriber.email }}</td>
+              <td class="small text-secondary">{{ subscriber.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

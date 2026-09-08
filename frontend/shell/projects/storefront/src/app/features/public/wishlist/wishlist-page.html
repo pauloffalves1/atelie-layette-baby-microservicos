@@ -1,0 +1,52 @@
+<section class="py-5">
+  <div class="container">
+    <div class="mb-5">
+      <h1 class="section-title">Meus favoritos</h1>
+      <p class="text-secondary mt-3">Produtos que você marcou para não esquecer.</p>
+    </div>
+
+    @if (loading()) {
+      <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+    } @else if (items().length === 0) {
+      <div class="text-center py-5 text-secondary">
+        <i class="bi bi-heart fs-1 d-block mb-3"></i>
+        <p>Você ainda não favoritou nenhum produto.</p>
+        <a routerLink="/loja" class="btn btn-primary rounded-pill mt-2">Ir para a loja</a>
+      </div>
+    } @else {
+      <div class="row g-4">
+        @for (item of items(); track item.id) {
+          <div class="col-6 col-md-4 col-lg-3">
+            <div class="card card-product h-100">
+              <a [routerLink]="['/produto', item.product.slug]">
+                <img [src]="item.product.imageUrl | assetUrl" class="card-img-top" [alt]="item.product.name" loading="lazy">
+              </a>
+              <div class="card-body d-flex flex-column">
+                <div class="d-flex flex-wrap gap-1 mb-2">
+                  <span class="badge-soft align-self-start small">{{ item.product.category }}</span>
+                  @if (!item.product.active) {
+                    <span class="badge bg-secondary align-self-start small">Indisponível</span>
+                  }
+                </div>
+                <h6 class="mb-1">
+                  <a [routerLink]="['/produto', item.product.slug]" class="text-dark">{{ item.product.name }}</a>
+                </h6>
+                <p class="fw-bold text-blush mb-3 mt-auto">{{ item.product.effectivePrice | currency:'BRL' }}</p>
+                <div class="d-flex gap-2">
+                  <a [routerLink]="['/produto', item.product.slug]" class="btn btn-sm btn-primary rounded-pill flex-grow-1">Ver produto</a>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-danger rounded-pill"
+                    [disabled]="removingId() === item.id"
+                    (click)="remove(item)">
+                    <i class="bi bi-heartbreak"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</section>

@@ -1,0 +1,48 @@
+<section class="py-5">
+  <div class="container">
+    <div class="row align-items-center gy-5">
+      <div class="col-lg-6">
+        <span class="badge-soft mb-3 d-inline-block">Nossa história</span>
+        <h1 class="section-title mb-4">Um ateliê feito de carinho e algodão macio</h1>
+        <p class="text-secondary">
+          O Ateliê Layette Baby nasceu do desejo de criar fraldas de ombro e boca que abraçam os primeiros
+          dias de vida com o máximo de conforto e afeto. Somos especialistas nesse item do enxoval:
+          cada fralda é pensada e costurada à mão, com tecidos selecionados a dedo — pensando
+          sempre na pele sensível do bebê e no carinho de quem escolhe cada bordado.
+        </p>
+        <p class="text-secondary">
+          Hoje, atendemos famílias em todo o Brasil, unindo tradição da costura artesanal com um
+          toque moderno e delicado em cada estampa, bordado e acabamento das nossas fraldas.
+        </p>
+        <a routerLink="/loja" class="btn btn-primary rounded-pill px-4 mt-3">Conhecer a loja</a>
+      </div>
+      <div class="col-lg-6">
+        <div class="ratio ratio-1x1 rounded-5 overflow-hidden shadow-lg">
+          @if (imageUrl(); as url) {
+            <img [src]="url" alt="Fraldas de ombro bordadas com monograma" class="w-100 h-100 object-fit-cover" loading="lazy">
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="py-5 bg-white">
+  <div class="container">
+    <h2 class="section-title text-center d-block mb-5">Nossos valores</h2>
+    <div class="row g-4 text-center justify-content-center">
+      <div class="col-md-4 col-6">
+        <div class="avatar-icon avatar-icon-lg bg-sage-light text-sage mx-auto mb-3"><i class="bi bi-recycle"></i></div>
+        <h6>Tecidos sustentáveis</h6>
+      </div>
+      <div class="col-md-4 col-6">
+        <div class="avatar-icon avatar-icon-lg bg-blush text-blush mx-auto mb-3"><i class="bi bi-heart"></i></div>
+        <h6>Feito com afeto</h6>
+      </div>
+      <div class="col-md-4 col-6">
+        <div class="avatar-icon avatar-icon-lg bg-sage-light text-sage mx-auto mb-3"><i class="bi bi-award"></i></div>
+        <h6>Qualidade artesanal</h6>
+      </div>
+    </div>
+  </div>
+</section>

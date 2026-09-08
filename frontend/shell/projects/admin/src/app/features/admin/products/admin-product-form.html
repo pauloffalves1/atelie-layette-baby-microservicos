@@ -1,0 +1,233 @@
+<div class="p-4 p-lg-5">
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a routerLink="/admin/produtos" class="btn btn-sm btn-outline-secondary rounded-circle"><i class="bi bi-arrow-left"></i></a>
+    <h2 class="mb-0">{{ isEditMode() ? 'Editar produto' : 'Novo produto' }}</h2>
+  </div>
+
+  @if (loading()) {
+    <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" class="row g-4">
+      <div class="col-lg-8">
+        <div class="stat-card">
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label for="product-name" class="form-label small fw-semibold">Nome</label>
+              <input type="text" id="product-name" class="form-control" formControlName="name"
+                [class.is-invalid]="form.controls.name.invalid && form.controls.name.touched">
+              @if (form.controls.name.invalid && form.controls.name.touched) {
+                <div class="invalid-feedback">Nome é obrigatório.</div>
+              }
+            </div>
+            <div class="col-md-4">
+              <label for="product-category" class="form-label small fw-semibold">Categoria</label>
+              <input type="text" id="product-category" class="form-control" formControlName="category" placeholder="Ex: Bodies"
+                [class.is-invalid]="form.controls.category.invalid && form.controls.category.touched">
+              @if (form.controls.category.invalid && form.controls.category.touched) {
+                <div class="invalid-feedback">Categoria é obrigatória.</div>
+              }
+            </div>
+            <div class="col-md-6">
+              <label for="product-price" class="form-label small fw-semibold">Preço (R$)</label>
+              <input type="number" step="0.01" id="product-price" class="form-control" formControlName="price"
+                [class.is-invalid]="form.controls.price.invalid && form.controls.price.touched">
+              @if (form.controls.price.invalid && form.controls.price.touched) {
+                <div class="invalid-feedback">Informe um preço maior que zero.</div>
+              }
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="featured" formControlName="featured">
+                <label class="form-check-label small fw-semibold" for="featured">Produto em destaque</label>
+              </div>
+            </div>
+            <div class="col-12">
+              <label for="product-imageUrl" class="form-label small fw-semibold">URL da imagem</label>
+              <div class="d-flex gap-2">
+                <input type="text" id="product-imageUrl" class="form-control" formControlName="imageUrl" placeholder="https://...">
+                <label class="btn btn-outline-secondary text-nowrap mb-0" [class.disabled]="uploadingImage()">
+                  @if (uploadingImage()) {
+                    <span class="spinner-border spinner-border-sm"></span>
+                  } @else {
+                    <i class="bi bi-upload"></i>
+                  }
+                  <input type="file" accept="image/jpeg,image/png,image/webp" class="d-none"
+                    [disabled]="uploadingImage()" (change)="onImageSelected($event)">
+                </label>
+              </div>
+              @if (imageUploadError()) {
+                <div class="small text-danger mt-1">{{ imageUploadError() }}</div>
+              }
+            </div>
+            <div class="col-12">
+              <label for="product-description" class="form-label small fw-semibold">Descrição</label>
+              <textarea id="product-description" class="form-control" rows="4" formControlName="description"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="stat-card mb-4">
+          <h6 class="mb-3">Pré-visualização</h6>
+          <div class="ratio ratio-1x1 rounded-4 overflow-hidden bg-light mb-3">
+            @if (form.value.imageUrl) {
+              <img [src]="previewUrl()" alt="Prévia" class="w-100 h-100 object-fit-cover" loading="lazy">
+            }
+          </div>
+
+          @if (errorMessage()) {
+            <div class="alert alert-danger small rounded-4">{{ errorMessage() }}</div>
+          }
+
+          <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill" [disabled]="submitting()">
+            @if (submitting()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+            }
+            Salvar produto
+          </button>
+        </div>
+
+        @if (isEditMode()) {
+          <div class="stat-card mb-4">
+            <h6 class="mb-1">Promoção</h6>
+            <p class="small text-secondary mb-3">
+              Desconto por tempo limitado — ativa e expira sozinha, conforme o período abaixo.
+              @if (isOnPromotion()) {
+                <span class="badge bg-success ms-1">Ativa agora</span>
+              }
+            </p>
+
+            @if (promotionError()) {
+              <div class="alert alert-danger small rounded-4">{{ promotionError() }}</div>
+            }
+
+            <div class="row g-2 mb-3">
+              <div class="col-5">
+                <label class="form-label small">Desconto (%)</label>
+                <input type="number" min="1" max="99" class="form-control form-control-sm"
+                  [value]="promotionDiscount()" (input)="promotionDiscount.set(+$any($event.target).value)">
+              </div>
+              <div class="col-7"></div>
+              <div class="col-6">
+                <label class="form-label small">Início</label>
+                <input type="datetime-local" class="form-control form-control-sm"
+                  [value]="promotionStartsAt()" (input)="promotionStartsAt.set($any($event.target).value)">
+              </div>
+              <div class="col-6">
+                <label class="form-label small">Fim</label>
+                <input type="datetime-local" class="form-control form-control-sm"
+                  [value]="promotionEndsAt()" (input)="promotionEndsAt.set($any($event.target).value)">
+              </div>
+            </div>
+
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-outline-primary btn-sm rounded-pill flex-fill" [disabled]="savingPromotion()" (click)="savePromotion()">
+                @if (savingPromotion()) {
+                  <span class="spinner-border spinner-border-sm me-2"></span>
+                }
+                Salvar promoção
+              </button>
+              @if (promotionDiscount()) {
+                <button type="button" class="btn btn-outline-danger btn-sm rounded-pill" [disabled]="savingPromotion()" (click)="clearPromotion()">
+                  Remover
+                </button>
+              }
+            </div>
+
+            @if (promotionSaved()) {
+              <div class="small text-success mt-2"><i class="bi bi-check-circle me-1"></i>Promoção salva!</div>
+            }
+          </div>
+
+          <div class="stat-card mb-4">
+            <h6 class="mb-1">Galeria de fotos</h6>
+            <p class="small text-secondary mb-3">
+              Fotos adicionais mostradas na página do produto, além da foto principal acima.
+            </p>
+
+            @if (galleryError()) {
+              <div class="alert alert-danger small rounded-4">{{ galleryError() }}</div>
+            }
+
+            @if (galleryImages().length > 0) {
+              <div class="row g-2 mb-3">
+                @for (url of galleryImages(); track url; let i = $index) {
+                  <div class="col-4">
+                    <div class="ratio ratio-1x1 rounded-4 overflow-hidden position-relative bg-light">
+                      <img [src]="resolveGalleryUrl(url)" alt="Foto da galeria" class="w-100 h-100 object-fit-cover">
+                      <button type="button" class="btn btn-sm btn-danger rounded-circle position-absolute top-0 end-0 m-1" style="width: 1.75rem; height: 1.75rem; padding: 0"
+                        (click)="removeGalleryImage(i)" title="Remover">
+                        <i class="bi bi-x"></i>
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+
+            <label class="btn btn-outline-secondary btn-sm w-100 mb-3" [class.disabled]="uploadingGalleryImage()">
+              @if (uploadingGalleryImage()) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+              } @else {
+                <i class="bi bi-upload me-1"></i>
+              }
+              Adicionar foto
+              <input type="file" accept="image/jpeg,image/png,image/webp" class="d-none"
+                [disabled]="uploadingGalleryImage()" (change)="onGalleryImageSelected($event)">
+            </label>
+
+            <button type="button" class="btn btn-outline-primary btn-sm w-100 rounded-pill" [disabled]="savingGallery()" (click)="saveGallery()">
+              @if (savingGallery()) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+              }
+              Salvar galeria
+            </button>
+
+            @if (gallerySaved()) {
+              <div class="small text-success mt-2"><i class="bi bi-check-circle me-1"></i>Galeria atualizada!</div>
+            }
+          </div>
+
+          <div class="stat-card">
+            <h6 class="mb-1">Acesso exclusivo</h6>
+            <p class="small text-secondary mb-3">
+              Marque os clientes que podem ver e encomendar este produto. Sem nenhum marcado, o produto é público.
+            </p>
+
+            @if (customers().length === 0) {
+              <p class="small text-secondary mb-0">Nenhum cliente cadastrado ainda.</p>
+            } @else {
+              <div class="d-flex flex-column gap-2 mb-3" style="max-height: 260px; overflow-y: auto">
+                @for (customer of customers(); track customer.id) {
+                  <div class="form-check">
+                    <input
+                      type="checkbox"
+                      class="form-check-input"
+                      [id]="'customer-' + customer.id"
+                      [checked]="selectedCustomerIds().includes(customer.id)"
+                      (change)="toggleCustomer(customer.id, $any($event.target).checked)">
+                    <label class="form-check-label small" [for]="'customer-' + customer.id">
+                      {{ customer.name }} <span class="text-secondary">({{ customer.email }})</span>
+                    </label>
+                  </div>
+                }
+              </div>
+            }
+
+            <button type="button" class="btn btn-outline-primary btn-sm w-100 rounded-pill" [disabled]="savingCustomers()" (click)="saveCustomerAccess()">
+              @if (savingCustomers()) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+              }
+              Salvar acesso exclusivo
+            </button>
+
+            @if (customersSaved()) {
+              <div class="small text-success mt-2"><i class="bi bi-check-circle me-1"></i>Acesso atualizado!</div>
+            }
+          </div>
+        }
+      </div>
+    </form>
+  }
+</div>
