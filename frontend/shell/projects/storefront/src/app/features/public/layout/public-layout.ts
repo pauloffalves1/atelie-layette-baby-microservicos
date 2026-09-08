@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, HostListener, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '@shared/core/services/auth.service';
@@ -19,13 +19,31 @@ export class PublicLayout {
   readonly newsletterSubmitting = signal(false);
   readonly newsletterSubscribed = signal(false);
 
+  // Native toggle for the account dropdown — this app never loads Bootstrap's JS bundle (only its
+  // SCSS partials, per client architecture), so the markup's old `data-bs-toggle="dropdown"` never
+  // did anything; nothing here actually wired it up to open on click.
+  readonly accountMenuOpen = signal(false);
+
   constructor(
     readonly cart: CartService,
     readonly auth: AuthService,
     private readonly newsletterService: NewsletterService,
   ) {}
 
+  toggleAccountMenu(): void {
+    this.accountMenuOpen.update((open) => !open);
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (this.accountMenuOpen() && !target.closest('.account-dropdown')) {
+      this.accountMenuOpen.set(false);
+    }
+  }
+
   logout(): void {
+    this.accountMenuOpen.set(false);
     this.auth.logout();
   }
 
