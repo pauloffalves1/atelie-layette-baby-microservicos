@@ -13,10 +13,8 @@ WORKDIR /app
 # New Relic .NET agent — license key and app name are supplied at runtime via docker-compose.yml
 # (NEW_RELIC_LICENSE_KEY comes from .env, never baked in here).
 RUN apt-get update && apt-get install -y wget ca-certificates gnupg \
-    && echo 'deb http://apt.newrelic.com/debian/ newrelic non-free' > /etc/apt/sources.list.d/newrelic.list \
-    && wget -q https://download.newrelic.com/548C16BF.gpg \
-    && apt-key add 548C16BF.gpg \
-    && rm 548C16BF.gpg \
+    && wget -q -O- https://download.newrelic.com/548C16BF.gpg | gpg --dearmor -o /usr/share/keyrings/newrelic-archive-keyring.gpg \
+    && echo 'deb [signed-by=/usr/share/keyrings/newrelic-archive-keyring.gpg] http://apt.newrelic.com/debian/ newrelic non-free' > /etc/apt/sources.list.d/newrelic.list \
     && apt-get update \
     && apt-get install -y newrelic-dotnet-agent \
     && rm -rf /var/lib/apt/lists/*
