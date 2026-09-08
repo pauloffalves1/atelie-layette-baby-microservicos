@@ -1,4 +1,5 @@
 using AtelieBebe.Backoffice.Core.Application.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace AtelieBebe.Backoffice.Core.Application.Dashboard;
 
@@ -12,35 +13,49 @@ public sealed class DashboardService : IDashboardService
     private readonly IOrdersServiceClient _ordersServiceClient;
     private readonly ICatalogServiceClient _catalogServiceClient;
     private readonly IIdentityServiceClient _identityServiceClient;
+    private readonly ILogger<DashboardService> _logger;
 
-    public DashboardService(IOrdersServiceClient ordersServiceClient, ICatalogServiceClient catalogServiceClient, IIdentityServiceClient identityServiceClient)
+    public DashboardService(IOrdersServiceClient ordersServiceClient, ICatalogServiceClient catalogServiceClient, IIdentityServiceClient identityServiceClient, ILogger<DashboardService> logger)
     {
         _ordersServiceClient = ordersServiceClient;
         _catalogServiceClient = catalogServiceClient;
         _identityServiceClient = identityServiceClient;
+        _logger = logger;
     }
 
     public async Task<DashboardDto> GetSummaryAsync(CancellationToken ct = default)
     {
-        var ordersStatsTask = _ordersServiceClient.GetDashboardStatsAsync(ct);
-        var productCountTask = _catalogServiceClient.GetProductCountAsync(ct);
-        var customerCountTask = _identityServiceClient.GetCustomerCountAsync(ct);
+        _logger.LogInformation("Entrando em {Method}", nameof(GetSummaryAsync));
+        try
+        {
+            var ordersStatsTask = _ordersServiceClient.GetDashboardStatsAsync(ct);
+            var productCountTask = _catalogServiceClient.GetProductCountAsync(ct);
+            var customerCountTask = _identityServiceClient.GetCustomerCountAsync(ct);
 
-        await Task.WhenAll(ordersStatsTask, productCountTask, customerCountTask);
+            await Task.WhenAll(ordersStatsTask, productCountTask, customerCountTask);
 
-        var stats = ordersStatsTask.Result;
+            var stats = ordersStatsTask.Result;
 
-        return new DashboardDto(
-            TotalOrders: stats.TotalOrders,
-            OpenOrders: stats.OpenOrders,
-            RevenueTotal: stats.RevenueTotal,
-            RevenueThisMonth: stats.RevenueThisMonth,
-            AverageOrderValue: stats.AverageOrderValue,
-            TotalProducts: productCountTask.Result,
-            TotalCustomers: customerCountTask.Result,
-            OrdersByStatus: stats.OrdersByStatus,
-            RecentOrders: stats.RecentOrders,
-            TopProducts: stats.TopProducts,
-            SalesLast30Days: stats.SalesLast30Days);
+            var result = new DashboardDto(
+                TotalOrders: stats.TotalOrders,
+                OpenOrders: stats.OpenOrders,
+                RevenueTotal: stats.RevenueTotal,
+                RevenueThisMonth: stats.RevenueThisMonth,
+                AverageOrderValue: stats.AverageOrderValue,
+                TotalProducts: productCountTask.Result,
+                TotalCustomers: customerCountTask.Result,
+                OrdersByStatus: stats.OrdersByStatus,
+                RecentOrders: stats.RecentOrders,
+                TopProducts: stats.TopProducts,
+                SalesLast30Days: stats.SalesLast30Days);
+
+            _logger.LogInformation("Saindo de {Method}", nameof(GetSummaryAsync));
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro em {Method}", nameof(GetSummaryAsync));
+            throw;
+        }
     }
 }
