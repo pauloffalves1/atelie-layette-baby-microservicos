@@ -79,6 +79,8 @@ services:
       RabbitMq__Password: ${RABBITMQ_PASSWORD}
       PagBank__Token: ${PAGBANK_TOKEN}
       PagBank__Sandbox: ${PAGBANK_SANDBOX:-false}
+      App__PublicUrl: ${PUBLIC_URL}
+      App__ApiPublicUrl: ${PUBLIC_URL}
       NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
       NEW_RELIC_APP_NAME: AtelieLayetteBaby-Orders
     volumes:
