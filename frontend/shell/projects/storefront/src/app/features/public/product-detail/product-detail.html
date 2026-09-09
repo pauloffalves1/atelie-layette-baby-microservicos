@@ -15,8 +15,10 @@
 
       <div class="row g-5 align-items-start">
         <div class="col-lg-6">
-          <div class="ratio ratio-1x1 rounded-5 overflow-hidden shadow-sm position-relative" style="cursor: zoom-in;" (click)="openZoom()">
-            <img [src]="galleryUrls()[activeImageIndex()] | assetUrl" [alt]="p.name" class="w-100 h-100 object-fit-cover">
+          <div class="position-relative" style="cursor: zoom-in;" (click)="openZoom()">
+            <div class="ratio ratio-1x1 rounded-5 overflow-hidden shadow-sm">
+              <img [src]="galleryUrls()[activeImageIndex()] | assetUrl" [alt]="p.name" class="w-100 h-100 object-fit-cover">
+            </div>
             <span class="position-absolute bottom-0 end-0 m-3 badge bg-dark bg-opacity-50 rounded-pill">
               <i class="bi bi-zoom-in me-1"></i>Ampliar
             </span>
