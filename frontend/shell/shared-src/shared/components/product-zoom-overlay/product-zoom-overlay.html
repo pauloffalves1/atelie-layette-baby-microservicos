@@ -1,9 +1,0 @@
-@if (zoom.imageUrl(); as url) {
-  <div class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-4"
-    style="background: rgba(0,0,0,.85); z-index: 1080; cursor: zoom-out;" (click)="zoom.close()">
-    <button type="button" class="btn btn-light rounded-circle position-fixed top-0 end-0 m-3" style="width: 2.5rem; height: 2.5rem;" (click)="zoom.close()">
-      <i class="bi bi-x-lg"></i>
-    </button>
-    <img [src]="url" [alt]="zoom.alt()" class="rounded-4" style="max-width: 90vw; max-height: 90vh; object-fit: contain;">
-  </div>
-}

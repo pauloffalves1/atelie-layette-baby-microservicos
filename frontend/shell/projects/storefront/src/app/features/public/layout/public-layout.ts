@@ -9,13 +9,12 @@ import { CheckoutModalService } from '@shared/core/services/checkout-modal.servi
 import { NewsletterService } from '@shared/core/services/newsletter.service';
 import { CheckoutModal } from '@shared/shared/components/checkout-modal/checkout-modal';
 import { CookieBanner } from '@shared/shared/components/cookie-banner/cookie-banner';
-import { ProductZoomOverlay } from '@shared/shared/components/product-zoom-overlay/product-zoom-overlay';
 import { WhatsappButton } from '@shared/shared/components/whatsapp-button/whatsapp-button';
 
 @Component({
   selector: 'app-public-layout',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, FormsModule, WhatsappButton, CookieBanner, CheckoutModal, ProductZoomOverlay],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, FormsModule, WhatsappButton, CookieBanner, CheckoutModal],
   templateUrl: './public-layout.html',
 })
 export class PublicLayout {

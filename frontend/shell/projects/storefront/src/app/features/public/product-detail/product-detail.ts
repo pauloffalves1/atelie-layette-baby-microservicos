@@ -8,7 +8,6 @@ import { AuthService } from '@shared/core/services/auth.service';
 import { CartService } from '@shared/core/services/cart.service';
 import { CheckoutModalService } from '@shared/core/services/checkout-modal.service';
 import { ProductService } from '@shared/core/services/product.service';
-import { ProductZoomService } from '@shared/core/services/product-zoom.service';
 import { ReviewService } from '@shared/core/services/review.service';
 import { SeoService } from '@shared/core/services/seo.service';
 import { WishlistService } from '@shared/core/services/wishlist.service';
@@ -110,7 +109,6 @@ export class ProductDetail implements OnInit {
     private readonly productService: ProductService,
     readonly cart: CartService,
     readonly checkoutModal: CheckoutModalService,
-    private readonly productZoom: ProductZoomService,
   ) {}
 
   ngOnInit(): void {
@@ -178,13 +176,6 @@ export class ProductDetail implements OnInit {
 
   selectImage(index: number): void {
     this.activeImageIndex.set(index);
-  }
-
-  openZoom(): void {
-    const p = this.product();
-    const url = this.galleryUrls()[this.activeImageIndex()];
-    if (!p || !url) return;
-    this.productZoom.open(resolveAssetUrl(url), p.name);
   }
 
   toggleFavorite(): void {

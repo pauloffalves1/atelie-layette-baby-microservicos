@@ -15,14 +15,9 @@
 
       <div class="row g-5 align-items-start">
         <div class="col-lg-6">
-          <button type="button" class="position-relative p-0 border-0 bg-transparent d-block w-100" style="cursor: zoom-in;" (click)="openZoom()">
-            <div class="ratio ratio-1x1 rounded-5 overflow-hidden shadow-sm">
-              <img [src]="galleryUrls()[activeImageIndex()] | assetUrl" [alt]="p.name" class="w-100 h-100 object-fit-cover">
-            </div>
-            <span class="position-absolute bottom-0 end-0 m-3 badge bg-dark bg-opacity-50 rounded-pill">
-              <i class="bi bi-zoom-in me-1"></i>Ampliar
-            </span>
-          </button>
+          <div class="ratio ratio-1x1 rounded-5 overflow-hidden shadow-sm">
+            <img [src]="galleryUrls()[activeImageIndex()] | assetUrl" [alt]="p.name" class="w-100 h-100 object-fit-cover">
+          </div>
 
           @if (galleryUrls().length > 1) {
             <div class="d-flex gap-2 mt-3">
