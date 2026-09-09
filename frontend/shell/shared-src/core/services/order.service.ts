@@ -32,6 +32,10 @@ export class OrderService {
     return this.http.get<Order[]>(`${this.baseUrl}/mine`);
   }
 
+  cancel(id: string): Observable<Order> {
+    return this.http.post<Order>(`${this.baseUrl}/${id}/cancel`, {});
+  }
+
   // ---- admin ----
 
   listAllForAdmin(status?: string, paymentStatus?: string, page = 1, pageSize = 20): Observable<PagedResult<Order>> {

@@ -24,6 +24,8 @@ export class MyAccount implements OnInit {
   readonly orders = signal<Order[]>([]);
   readonly loading = signal(true);
   readonly statusLabels = ORDER_STATUS_LABELS;
+  readonly cancelingId = signal<string | null>(null);
+  readonly cancelError = signal<string | null>(null);
 
   readonly emailVerified = signal(true);
   readonly resendingVerification = signal(false);
@@ -102,6 +104,25 @@ export class MyAccount implements OnInit {
           state: address.uf,
         });
       });
+  }
+
+  cancelOrder(order: Order): void {
+    if (this.cancelingId()) return;
+    const confirmed = confirm(`Cancelar o pedido #${order.id.slice(0, 8)}? Essa ação não pode ser desfeita.`);
+    if (!confirmed) return;
+
+    this.cancelingId.set(order.id);
+    this.cancelError.set(null);
+    this.orderService.cancel(order.id).subscribe({
+      next: (updated) => {
+        this.cancelingId.set(null);
+        this.orders.update((list) => list.map((o) => (o.id === updated.id ? updated : o)));
+      },
+      error: (err) => {
+        this.cancelingId.set(null);
+        this.cancelError.set(err?.error?.detail ?? 'Não foi possível cancelar o pedido.');
+      },
+    });
   }
 
   private loadAddresses(): void {

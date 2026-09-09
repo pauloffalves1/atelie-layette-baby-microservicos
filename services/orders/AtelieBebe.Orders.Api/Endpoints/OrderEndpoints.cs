@@ -35,6 +35,10 @@ public static class OrderEndpoints
         group.MapGet("/{id:guid}", async (Guid id, IOrderService service, CancellationToken ct) =>
             Results.Ok(await service.GetByIdAsync(id, ct)));
 
+        group.MapPost("/{id:guid}/cancel", async (Guid id, HttpContext http, IOrderService service, CancellationToken ct) =>
+            Results.Ok(await service.CancelMyOrderAsync(id, http.User.GetUserId(), ct)))
+            .RequireAuthorization("CustomerOnly");
+
         // Guest order tracking: the short id alone is guessable (8 hex chars), so this is
         // rate-limited like other secret-guessing endpoints (login, coupon validation).
         group.MapGet("/lookup", async (string orderNumber, string email, IOrderService service, CancellationToken ct) =>

@@ -130,10 +130,16 @@
     </div>
   </div>
 
+  @if (cancelError()) {
+    <div class="alert alert-danger small rounded-4 text-center">{{ cancelError() }}</div>
+  }
   <div class="text-center d-flex flex-wrap justify-content-center gap-2">
     <button type="button" class="btn btn-outline-primary rounded-pill" (click)="downloadReceipt()">
       <i class="bi bi-file-earmark-pdf me-1"></i>Baixar comprovante em PDF
     </button>
+    @if (o.status === 'Recebido') {
+      <button type="button" class="btn btn-outline-danger rounded-pill" [disabled]="canceling()" (click)="cancelOrder()">Cancelar pedido</button>
+    }
     <button type="button" class="btn btn-outline-secondary rounded-pill" (click)="continueShopping.emit()">Continuar comprando</button>
   </div>
 }

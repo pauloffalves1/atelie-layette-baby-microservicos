@@ -292,6 +292,33 @@ public sealed class OrderService : IOrderService
         }
     }
 
+    public async Task<OrderDto> CancelMyOrderAsync(Guid id, Guid customerId, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Entrando em {Method}", nameof(CancelMyOrderAsync));
+        try
+        {
+            var order = await _unitOfWork.Orders.GetByIdAsync(id, ct)
+                ?? throw new NotFoundException("Pedido", id);
+
+            if (order.CustomerId != customerId)
+                throw new NotFoundException("Pedido", id);
+
+            if (order.Status != OrderStatus.Recebido)
+                throw new ConflictException("Só é possível cancelar o pedido enquanto ele estiver como 'Recebido' — fale conosco pelo WhatsApp se a produção já começou.");
+
+            order.ChangeStatus(OrderStatus.Cancelado);
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            _logger.LogInformation("Saindo de {Method}", nameof(CancelMyOrderAsync));
+            return ToDto(order);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro em {Method}", nameof(CancelMyOrderAsync));
+            throw;
+        }
+    }
+
     public async Task HandlePaymentWebhookAsync(string paymentId, CancellationToken ct = default)
     {
         _logger.LogInformation("Entrando em {Method}", nameof(HandlePaymentWebhookAsync));

@@ -30,6 +30,9 @@
         <a routerLink="/loja" class="btn btn-primary rounded-pill mt-2">Ir para a loja</a>
       </div>
     } @else {
+      @if (cancelError()) {
+        <div class="alert alert-danger small rounded-4">{{ cancelError() }}</div>
+      }
       <div class="row g-4">
         @for (order of orders(); track order.id) {
           <div class="col-12">
@@ -41,7 +44,14 @@
               </div>
               <div class="text-end">
                 <p class="fw-bold text-blush fs-5 mb-1">{{ order.total | currency:'BRL' }}</p>
-                <a [routerLink]="['/pedido', order.id]" class="btn btn-sm btn-outline-secondary rounded-pill">Ver detalhes</a>
+                <div class="d-flex gap-2 justify-content-end">
+                  @if (order.status === 'Recebido') {
+                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill" [disabled]="cancelingId() === order.id" (click)="cancelOrder(order)">
+                      Cancelar
+                    </button>
+                  }
+                  <a [routerLink]="['/pedido', order.id]" class="btn btn-sm btn-outline-secondary rounded-pill">Ver detalhes</a>
+                </div>
               </div>
             </div>
           </div>

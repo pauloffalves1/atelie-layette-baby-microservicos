@@ -17,6 +17,9 @@ public interface IOrderService
     Task<OrderDto> LookupAsync(string shortId, string email, CancellationToken ct = default);
     Task<OrderDto> ChangeStatusAsync(Guid id, UpdateOrderStatusRequest request, CancellationToken ct = default);
 
+    /// <summary>Customer self-service cancellation — only while the order is still "Recebido" (production hasn't started).</summary>
+    Task<OrderDto> CancelMyOrderAsync(Guid id, Guid customerId, CancellationToken ct = default);
+
     /// <summary>Re-queries the payment gateway for the given payment id and updates the matching order's PaymentStatus. Never throws on a malformed/unknown id — webhooks must always get a 200.</summary>
     Task HandlePaymentWebhookAsync(string paymentId, CancellationToken ct = default);
 

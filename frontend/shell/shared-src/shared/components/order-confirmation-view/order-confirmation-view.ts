@@ -26,6 +26,8 @@ export class OrderConfirmationView implements OnInit, OnDestroy {
   readonly loading = signal(true);
   readonly notFound = signal(false);
   readonly pixCodeCopied = signal(false);
+  readonly canceling = signal(false);
+  readonly cancelError = signal<string | null>(null);
   readonly statusLabels = ORDER_STATUS_LABELS;
   readonly statusFlow = ORDER_STATUS_FLOW;
   readonly paymentStatusLabels = PAYMENT_STATUS_LABELS;
@@ -73,6 +75,27 @@ export class OrderConfirmationView implements OnInit, OnDestroy {
     navigator.clipboard.writeText(code).then(() => {
       this.pixCodeCopied.set(true);
       setTimeout(() => this.pixCodeCopied.set(false), 2000);
+    });
+  }
+
+  cancelOrder(): void {
+    const order = this.order();
+    if (!order || this.canceling()) return;
+
+    const confirmed = confirm(`Cancelar o pedido #${order.id.slice(0, 8)}? Essa ação não pode ser desfeita.`);
+    if (!confirmed) return;
+
+    this.canceling.set(true);
+    this.cancelError.set(null);
+    this.orderService.cancel(order.id).subscribe({
+      next: (updated) => {
+        this.canceling.set(false);
+        this.order.set(updated);
+      },
+      error: (err) => {
+        this.canceling.set(false);
+        this.cancelError.set(err?.error?.detail ?? 'Não foi possível cancelar o pedido.');
+      },
     });
   }
 
