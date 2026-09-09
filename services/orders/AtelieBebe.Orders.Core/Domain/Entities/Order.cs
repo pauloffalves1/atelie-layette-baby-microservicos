@@ -30,6 +30,8 @@ public sealed class Order : Entity, IAggregateRoot
     public string? CustomDetailsJson { get; private set; }
     public string? ShippingAddressJson { get; private set; }
     public Money ShippingCost { get; private set; } = Money.Zero();
+    /// <summary>"Entrega" (delivered, has a ShippingAddressJson + possibly a ShippingCost) or "Retirada" (picked up at the ateliê — ShippingAddressJson stays null, ShippingCost is always zero).</summary>
+    public string DeliveryMethod { get; private set; } = "Entrega";
     public PaymentStatus PaymentStatus { get; private set; } = PaymentStatus.Pendente;
     public string? ExternalPaymentId { get; private set; }
     /// <summary>PIX copy-paste code, persisted so it can still be shown if the customer reloads the confirmation page before scanning it.</summary>
@@ -50,7 +52,7 @@ public sealed class Order : Entity, IAggregateRoot
 
     private Order(Guid id, Guid? customerId, string customerName, Email customerEmail, string? customerPhone,
         Cpf? customerCpf, OrderType type, string? notes, string? customDetailsJson, string? shippingAddressJson,
-        Money shippingCost, string? giftMessage) : base(id)
+        Money shippingCost, string? giftMessage, string deliveryMethod) : base(id)
     {
         CustomerId = customerId;
         CustomerName = customerName;
@@ -61,8 +63,11 @@ public sealed class Order : Entity, IAggregateRoot
         Status = OrderStatus.Recebido;
         Notes = notes;
         CustomDetailsJson = customDetailsJson;
-        ShippingAddressJson = shippingAddressJson;
-        ShippingCost = shippingCost;
+        DeliveryMethod = deliveryMethod == "Retirada" ? "Retirada" : "Entrega";
+        // Pickup never has a shipping address or cost, regardless of what was passed in — the same
+        // "don't trust the client for money-affecting fields" reasoning as ShippingCost below.
+        ShippingAddressJson = DeliveryMethod == "Retirada" ? null : shippingAddressJson;
+        ShippingCost = DeliveryMethod == "Retirada" ? Money.Zero() : shippingCost;
         GiftMessage = string.IsNullOrWhiteSpace(giftMessage) ? null : giftMessage.Trim();
         CreatedAt = DateTime.UtcNow;
         UpdatedAt = CreatedAt;
@@ -70,7 +75,7 @@ public sealed class Order : Entity, IAggregateRoot
 
     public static Order Create(Guid? customerId, string customerName, Email customerEmail, string? customerPhone,
         Cpf? customerCpf, OrderType type, string? notes = null, string? customDetailsJson = null, string? shippingAddressJson = null,
-        Money? shippingCost = null, string? giftMessage = null)
+        Money? shippingCost = null, string? giftMessage = null, string deliveryMethod = "Entrega")
     {
         if (string.IsNullOrWhiteSpace(customerName))
             throw new DomainException("O nome do cliente é obrigatório.");
@@ -80,7 +85,7 @@ public sealed class Order : Entity, IAggregateRoot
             throw new DomainException("O CPF é obrigatório.");
 
         return new Order(Guid.NewGuid(), customerId, customerName.Trim(), customerEmail, customerPhone.Trim(),
-            customerCpf, type, notes, customDetailsJson, shippingAddressJson, shippingCost ?? Money.Zero(), giftMessage);
+            customerCpf, type, notes, customDetailsJson, shippingAddressJson, shippingCost ?? Money.Zero(), giftMessage, deliveryMethod);
     }
 
     public void AddItem(Guid? productId, string productName, Money unitPrice, int quantity, string? optionsJson = null)

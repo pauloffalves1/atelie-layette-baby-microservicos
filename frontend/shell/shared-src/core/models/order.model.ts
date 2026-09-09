@@ -28,6 +28,7 @@ export interface Order {
   giftMessage: string | null;
   customDetailsJson: string | null;
   shippingAddressJson: string | null;
+  deliveryMethod: DeliveryMethod;
   createdAt: string;
   updatedAt: string;
   items: OrderItem[];
@@ -50,6 +51,7 @@ export interface CreateOrderItemRequest {
 }
 
 export type PaymentMethod = 'CREDIT_CARD' | 'PIX';
+export type DeliveryMethod = 'Entrega' | 'Retirada';
 
 export interface CreateStoreOrderRequest {
   customerName: string;
@@ -66,6 +68,7 @@ export interface CreateStoreOrderRequest {
   installments?: number;
   giftMessage?: string | null;
   threeDsAuthenticationId?: string | null;
+  deliveryMethod?: DeliveryMethod;
 }
 
 export interface CustomOrderDetails {

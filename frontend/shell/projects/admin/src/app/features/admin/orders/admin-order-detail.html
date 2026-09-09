@@ -102,7 +102,12 @@
           </div>
         }
 
-        @if (parsedShippingAddress(); as address) {
+        @if (o.deliveryMethod === 'Retirada') {
+          <div class="stat-card">
+            <h6 class="mb-3"><i class="bi bi-shop me-2"></i>Retirada no ateliê</h6>
+            <p class="small text-secondary mb-0">Não é para postar — cliente vai buscar. Combine o horário pelo WhatsApp.</p>
+          </div>
+        } @else if (parsedShippingAddress(); as address) {
           <div class="stat-card">
             <h6 class="mb-3"><i class="bi bi-geo-alt me-2"></i>Endereço de entrega</h6>
             <p class="small mb-0">

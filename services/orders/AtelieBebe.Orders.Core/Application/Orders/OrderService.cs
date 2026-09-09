@@ -31,6 +31,9 @@ public sealed class OrderService : IOrderService
             if (request.Items.Count == 0)
                 throw new ConflictException("O pedido precisa ter pelo menos um item.");
 
+            if (request.DeliveryMethod == "Entrega" && string.IsNullOrWhiteSpace(request.ShippingAddressJson))
+                throw new ConflictException("O endereço de entrega é obrigatório.");
+
             var order = Order.Create(
                 customerId,
                 request.CustomerName,
@@ -42,7 +45,8 @@ public sealed class OrderService : IOrderService
                 customDetailsJson: null,
                 request.ShippingAddressJson,
                 Money.FromReais(request.ShippingCost),
-                request.GiftMessage);
+                request.GiftMessage,
+                request.DeliveryMethod);
 
             foreach (var itemRequest in request.Items)
             {
@@ -454,6 +458,7 @@ public sealed class OrderService : IOrderService
         o.GiftMessage,
         o.CustomDetailsJson,
         o.ShippingAddressJson,
+        o.DeliveryMethod,
         o.CreatedAt,
         o.UpdatedAt,
         o.Items.Select(i => new OrderItemDto(i.Id, i.ProductId, i.ProductName, i.UnitPrice.Amount, i.Quantity, i.Subtotal.Amount, i.OptionsJson)).ToList(),

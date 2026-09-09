@@ -25,6 +25,7 @@ public sealed record OrderDto(
     string? GiftMessage,
     string? CustomDetailsJson,
     string? ShippingAddressJson,
+    string DeliveryMethod,
     DateTime CreatedAt,
     DateTime UpdatedAt,
     IReadOnlyList<OrderItemDto> Items,
@@ -54,7 +55,8 @@ public sealed record CreateStoreOrderRequest(
     string? EncryptedCard = null,
     int Installments = 1,
     string? GiftMessage = null,
-    string? ThreeDsAuthenticationId = null);
+    string? ThreeDsAuthenticationId = null,
+    string DeliveryMethod = "Entrega");
 
 public sealed record CreateCustomOrderRequest(
     string CustomerName,

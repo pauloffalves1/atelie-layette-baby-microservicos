@@ -45,8 +45,28 @@
         </div>
 
         <div class="stat-card mb-4">
-          <h5 class="mb-3"><i class="bi bi-geo-alt me-2"></i>Endereço de entrega</h5>
-          <div class="row g-3">
+          <h5 class="mb-3"><i class="bi bi-geo-alt me-2"></i>Como você quer receber?</h5>
+          <div class="d-flex gap-3 mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="deliveryMethod" id="checkout-delivery-entrega"
+                [checked]="deliveryMethod() === 'Entrega'" (change)="deliveryMethod.set('Entrega')">
+              <label class="form-check-label" for="checkout-delivery-entrega"><i class="bi bi-truck me-1"></i>Entregar no meu endereço</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="deliveryMethod" id="checkout-delivery-retirada"
+                [checked]="deliveryMethod() === 'Retirada'" (change)="deliveryMethod.set('Retirada')">
+              <label class="form-check-label" for="checkout-delivery-retirada"><i class="bi bi-shop me-1"></i>Retirar no ateliê</label>
+            </div>
+          </div>
+
+          @if (deliveryMethod() === 'Retirada') {
+            <div class="alert alert-info small rounded-4 mb-0">
+              <i class="bi bi-geo-alt-fill me-1"></i>
+              Retirada em São Bernardo do Campo/SP — combinamos o endereço exato e o horário pelo WhatsApp assim que o pedido ficar pronto. Sem custo de frete.
+            </div>
+          }
+
+          <div class="row g-3" [class.d-none]="deliveryMethod() === 'Retirada'">
             <div class="col-md-4">
               <label for="checkout-zipCode" class="form-label small fw-semibold">CEP</label>
               <div class="position-relative">

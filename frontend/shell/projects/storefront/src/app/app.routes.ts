@@ -66,6 +66,11 @@ export const routes: Routes = [
           import('./features/public/legal/shipping-policy-page').then((m) => m.ShippingPolicyPage),
       },
       {
+        path: 'perguntas-frequentes',
+        title: `Perguntas Frequentes — ${SITE_NAME}`,
+        loadComponent: () => import('./features/public/faq/faq-page').then((m) => m.FaqPage),
+      },
+      {
         path: 'entrar',
         title: `Entrar — ${SITE_NAME}`,
         loadComponent: () => import('./features/public/auth/login-page').then((m) => m.LoginPage),

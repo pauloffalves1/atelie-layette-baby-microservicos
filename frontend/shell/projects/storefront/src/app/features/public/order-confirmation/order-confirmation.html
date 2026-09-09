@@ -78,6 +78,18 @@
             </div>
           }
 
+          <div class="stat-card mb-4">
+            @if (o.deliveryMethod === 'Retirada') {
+              <h6 class="mb-2"><i class="bi bi-shop me-2"></i>Retirada no ateliê</h6>
+              <p class="small text-secondary mb-0">
+                Combinamos o endereço exato e o horário pelo WhatsApp assim que sua peça ficar pronta.
+              </p>
+            } @else {
+              <h6 class="mb-2"><i class="bi bi-truck me-2"></i>Entrega</h6>
+              <p class="small text-secondary mb-0">Enviaremos para o endereço informado no pedido.</p>
+            }
+          </div>
+
           @if (o.giftMessage) {
             <div class="stat-card mb-4">
               <h6 class="mb-2"><i class="bi bi-gift me-2"></i>Recado do presente</h6>

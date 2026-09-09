@@ -1,5 +1,5 @@
 import { CurrencyPipe } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { catchError, debounceTime, distinctUntilChanged, filter, firstValueFrom, map, of, switchMap, tap } from 'rxjs';
@@ -78,6 +78,8 @@ export class Checkout implements OnInit {
   readonly cardPublicKey = signal<string | null>(null);
   readonly cardSdkReady = signal(false);
 
+  readonly deliveryMethod = signal<'Entrega' | 'Retirada'>('Entrega');
+
   readonly couponCode = signal('');
   readonly couponApplying = signal(false);
   readonly couponError = signal<string | null>(null);
@@ -85,16 +87,13 @@ export class Checkout implements OnInit {
   readonly appliedCouponCode = signal<string | null>(null);
 
   readonly shippingCost = computed(() =>
-    this.shippingService.estimate(
-      this.destinationState(),
-      this.cart.totalItems(),
-      this.cart.totalPrice(),
-      this.destinationCity(),
-    ),
+    this.deliveryMethod() === 'Retirada'
+      ? 0
+      : this.shippingService.estimate(this.destinationState(), this.cart.totalItems(), this.cart.totalPrice(), this.destinationCity()),
   );
 
   readonly freeShippingThreshold = computed(() =>
-    this.destinationState()
+    this.deliveryMethod() === 'Entrega' && this.destinationState()
       ? this.shippingService.freeShippingThreshold(this.destinationState(), this.destinationCity())
       : null,
   );
@@ -133,7 +132,25 @@ export class Checkout implements OnInit {
     private readonly orderService: OrderService,
     private readonly auth: AuthService,
     private readonly router: Router,
-  ) {}
+  ) {
+    // Address fields only matter (and only need to validate) when the order is actually shipped —
+    // "Retirada" skips them entirely so the form doesn't stay stuck invalid over a blank address.
+    effect(() => {
+      const addressControls = [
+        this.form.controls.zipCode,
+        this.form.controls.street,
+        this.form.controls.number,
+        this.form.controls.neighborhood,
+        this.form.controls.city,
+        this.form.controls.state,
+      ];
+      const validators = this.deliveryMethod() === 'Entrega' ? [Validators.required] : [];
+      addressControls.forEach((control) => {
+        control.setValidators(validators);
+        control.updateValueAndValidity({ emitEvent: false });
+      });
+    });
+  }
 
   ngOnInit(): void {
     if (this.cart.items().length === 0) {
@@ -359,8 +376,9 @@ export class Checkout implements OnInit {
         customerPhone: value.customerPhone || null,
         customerCpf: value.customerCpf,
         notes: value.notes || null,
-        shippingAddressJson: JSON.stringify(shippingAddress),
+        shippingAddressJson: this.deliveryMethod() === 'Retirada' ? null : JSON.stringify(shippingAddress),
         shippingCost: this.shippingCost(),
+        deliveryMethod: this.deliveryMethod(),
         couponCode: this.appliedCouponCode(),
         paymentMethod,
         encryptedCard,
