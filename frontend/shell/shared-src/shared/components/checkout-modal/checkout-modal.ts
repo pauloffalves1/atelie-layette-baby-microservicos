@@ -123,7 +123,12 @@ export class CheckoutModal {
   readonly shippingCost = computed(() =>
     this.deliveryMethod() === 'Retirada'
       ? 0
-      : this.shippingService.estimate(this.destinationState(), this.cart.totalItems(), this.cart.totalPrice(), this.destinationCity()),
+      : this.shippingService.estimate(
+          this.destinationState(),
+          this.cart.items().map((i) => ({ category: i.product.category, quantity: i.quantity })),
+          this.cart.totalPrice(),
+          this.destinationCity(),
+        ),
   );
 
   readonly freeShippingThreshold = computed(() =>

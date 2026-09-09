@@ -36,7 +36,32 @@ const BASE_RATE_BY_REGION: Record<string, number> = {
 };
 
 const DEFAULT_RATE = 24.9;
-const EXTRA_ITEM_SURCHARGE = 2.5;
+
+/**
+ * Approximate weight per product category (grams) — a burp cloth ships very differently from a
+ * towel or a 3-piece kit, so a flat per-item surcharge understated heavier carts and overstated
+ * light ones. These are rough real-world weights for this catalog's pieces, not a scale reading.
+ */
+const CATEGORY_WEIGHT_GRAMS: Record<string, number> = {
+  'Fralda de Boca': 90,
+  'Fralda de Ombro': 160,
+  'Almofadinha': 300,
+  Toalha: 350,
+  'Kit Ombro e Boca': 240,
+  'Kit Ombro, Boca e Toalha': 480,
+};
+const DEFAULT_ITEM_WEIGHT_GRAMS = 200;
+
+/** The base regional rate below already covers a single light piece up to this weight. */
+const BASE_WEIGHT_GRAMS = 150;
+/** Correios' real PAC pricing climbs in steps roughly every 300g past the base weight. */
+const WEIGHT_STEP_GRAMS = 300;
+/**
+ * Surcharge per weight step, as a fraction of the destination's base rate — farther destinations
+ * also pay more per extra 300g, not just a flat national add-on, so this scales with baseRate
+ * rather than being its own by-state table.
+ */
+const WEIGHT_STEP_FACTOR = 0.22;
 
 /**
  * São Bernardo do Campo (the ateliê's own city) gets the lowest free-shipping threshold (R$399),
@@ -109,14 +134,24 @@ export class ShippingService {
   }
 
   /**
-   * Estimated freight for a destination state/city and total item count in the cart — the raw
-   * Correios-style rate, no markup — or 0 once the cart subtotal reaches this destination's free-shipping threshold.
+   * Estimated freight for a destination state/city and the cart's actual items — the raw
+   * Correios-style rate, no markup — or 0 once the cart subtotal reaches this destination's
+   * free-shipping threshold. Weight is derived from each item's category (see
+   * CATEGORY_WEIGHT_GRAMS) rather than a flat per-item surcharge, so a cart of towels costs more
+   * to ship than the same number of burp cloths, matching how Correios actually prices.
    */
-  estimate(state: string, totalItems: number, subtotal: number, city?: string): number {
+  estimate(state: string, items: { category: string; quantity: number }[], subtotal: number, city?: string): number {
     if (subtotal >= this.freeShippingThreshold(state, city)) return 0;
 
     const baseRate = BASE_RATE_BY_REGION[state.toUpperCase()] ?? DEFAULT_RATE;
-    const extraItems = Math.max(totalItems - 1, 0);
-    return Math.round((baseRate + extraItems * EXTRA_ITEM_SURCHARGE) * 100) / 100;
+
+    const totalWeightGrams = items.reduce(
+      (sum, item) => sum + (CATEGORY_WEIGHT_GRAMS[item.category] ?? DEFAULT_ITEM_WEIGHT_GRAMS) * item.quantity,
+      0,
+    );
+    const extraWeightGrams = Math.max(totalWeightGrams - BASE_WEIGHT_GRAMS, 0);
+    const weightSteps = Math.ceil(extraWeightGrams / WEIGHT_STEP_GRAMS);
+
+    return Math.round((baseRate + weightSteps * baseRate * WEIGHT_STEP_FACTOR) * 100) / 100;
   }
 }
