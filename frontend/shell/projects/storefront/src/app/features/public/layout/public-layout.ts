@@ -5,14 +5,16 @@ import { filter } from 'rxjs';
 import { AnalyticsService } from '@shared/core/services/analytics.service';
 import { AuthService } from '@shared/core/services/auth.service';
 import { CartService } from '@shared/core/services/cart.service';
+import { CheckoutModalService } from '@shared/core/services/checkout-modal.service';
 import { NewsletterService } from '@shared/core/services/newsletter.service';
+import { CheckoutModal } from '@shared/shared/components/checkout-modal/checkout-modal';
 import { CookieBanner } from '@shared/shared/components/cookie-banner/cookie-banner';
 import { WhatsappButton } from '@shared/shared/components/whatsapp-button/whatsapp-button';
 
 @Component({
   selector: 'app-public-layout',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, FormsModule, WhatsappButton, CookieBanner],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, FormsModule, WhatsappButton, CookieBanner, CheckoutModal],
   templateUrl: './public-layout.html',
 })
 export class PublicLayout {
@@ -32,6 +34,7 @@ export class PublicLayout {
   constructor(
     readonly cart: CartService,
     readonly auth: AuthService,
+    readonly checkoutModal: CheckoutModalService,
     private readonly newsletterService: NewsletterService,
     private readonly analytics: AnalyticsService,
     router: Router,

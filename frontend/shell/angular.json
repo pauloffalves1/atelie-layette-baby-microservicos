@@ -37,14 +37,23 @@
         "serve": {
           "builder": "@angular-architects/native-federation:build",
           "options": {
-            "target": "shell:serve-original:development",
             "tsConfig": "tsconfig.federation.json",
             "rebuildDelay": 500,
             "cacheExternalArtifacts": true,
-            "dev": true,
             "devServer": true,
             "port": 0
-          }
+          },
+          "configurations": {
+            "development": {
+              "target": "shell:serve-original:development",
+              "dev": true
+            },
+            "production": {
+              "target": "shell:serve-original:production",
+              "dev": false
+            }
+          },
+          "defaultConfiguration": "development"
         },
         "test": {
           "builder": "@angular/build:unit-test"
@@ -142,14 +151,23 @@
         "serve": {
           "builder": "@angular-architects/native-federation:build",
           "options": {
-            "target": "storefront:serve-original:development",
             "tsConfig": "projects/storefront/tsconfig.federation.json",
             "rebuildDelay": 500,
             "cacheExternalArtifacts": true,
-            "dev": true,
             "devServer": true,
             "port": 0
-          }
+          },
+          "configurations": {
+            "development": {
+              "target": "storefront:serve-original:development",
+              "dev": true
+            },
+            "production": {
+              "target": "storefront:serve-original:production",
+              "dev": false
+            }
+          },
+          "defaultConfiguration": "development"
         },
         "test": {
           "builder": "@angular/build:unit-test"
@@ -247,14 +265,23 @@
         "serve": {
           "builder": "@angular-architects/native-federation:build",
           "options": {
-            "target": "admin:serve-original:development",
             "tsConfig": "projects/admin/tsconfig.federation.json",
             "rebuildDelay": 500,
             "cacheExternalArtifacts": true,
-            "dev": true,
             "devServer": true,
             "port": 0
-          }
+          },
+          "configurations": {
+            "development": {
+              "target": "admin:serve-original:development",
+              "dev": true
+            },
+            "production": {
+              "target": "admin:serve-original:production",
+              "dev": false
+            }
+          },
+          "defaultConfiguration": "development"
         },
         "test": {
           "builder": "@angular/build:unit-test"

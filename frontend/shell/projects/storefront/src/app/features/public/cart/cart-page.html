@@ -60,17 +60,22 @@
           @if (kitSuggestions().length > 0) {
             <div class="stat-card mt-4">
               <h6 class="mb-3"><i class="bi bi-gift me-2"></i>Complete o kit e economize</h6>
-              <p class="small text-secondary mb-3">Que tal levar o conjunto completo, ombro e boca combinando?</p>
+              <p class="small text-secondary mb-3">Toque em um kit para adicionar direto ao carrinho.</p>
               <div class="row g-3">
                 @for (kit of kitSuggestions(); track kit.id) {
                   <div class="col-md-4">
-                    <a [routerLink]="['/produto', kit.slug]" class="text-decoration-none text-dark">
-                      <div class="ratio ratio-1x1 rounded-4 overflow-hidden mb-2">
+                    <button type="button" class="btn p-0 border-0 bg-transparent text-start w-100" (click)="addKitToCart(kit)">
+                      <div class="ratio ratio-1x1 rounded-4 overflow-hidden mb-2 position-relative">
                         <img [src]="kit.imageUrl | assetUrl" [alt]="kit.name" class="w-100 h-100 object-fit-cover">
+                        @if (addedKitId() === kit.id) {
+                          <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background: rgba(255,255,255,.85);">
+                            <i class="bi bi-check-circle-fill text-success fs-2"></i>
+                          </div>
+                        }
                       </div>
                       <span class="small d-block">{{ kit.name }}</span>
                       <span class="small fw-bold text-blush">{{ kit.effectivePrice | currency:'BRL' }}</span>
-                    </a>
+                    </button>
                   </div>
                 }
               </div>

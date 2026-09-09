@@ -48,12 +48,12 @@
             <a routerLink="/entrar" class="btn btn-sm btn-outline-secondary rounded-pill">Entrar</a>
           }
 
-          <a routerLink="/carrinho" class="btn btn-sm btn-primary rounded-pill position-relative">
+          <button type="button" class="btn btn-sm btn-primary rounded-pill position-relative" (click)="checkoutModal.open('cart')">
             <i class="bi bi-bag-heart"></i>
             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-sage">
               {{ cart.totalItems() }}
             </span>
-          </a>
+          </button>
         </div>
       </div>
     </div>
@@ -129,4 +129,5 @@
 
   <app-whatsapp-button />
   <app-cookie-banner />
+  <app-checkout-modal />
 </div>

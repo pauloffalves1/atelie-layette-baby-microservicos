@@ -16,6 +16,7 @@ const KIT_CATEGORY = 'Kit Ombro e Boca';
 })
 export class CartPage {
   readonly kitSuggestions = signal<Product[]>([]);
+  readonly addedKitId = signal<string | null>(null);
 
   /** Cart has a loose "Fralda de Ombro"/"Fralda de Boca" item but no Kit yet — worth suggesting one. */
   readonly showKitSuggestion = computed(() => {
@@ -39,5 +40,13 @@ export class CartPage {
 
   decrement(productId: string, current: number, embroideryText?: string | null, threadColor?: string | null): void {
     this.cart.updateQuantity(productId, current - 1, embroideryText, threadColor);
+  }
+
+  /** Kits come with a fixed, pre-designed embroidery (or none) — unlike a single fralda, there's
+   * nothing for the customer to customize, so this adds it straight to the cart. */
+  addKitToCart(kit: Product): void {
+    this.cart.add(kit, 1);
+    this.addedKitId.set(kit.id);
+    setTimeout(() => this.addedKitId.set(null), 1500);
   }
 }

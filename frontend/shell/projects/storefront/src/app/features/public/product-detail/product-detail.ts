@@ -6,6 +6,7 @@ import { Product } from '@shared/core/models/product.model';
 import { ProductReview, ReviewEligibility } from '@shared/core/models/review.model';
 import { AuthService } from '@shared/core/services/auth.service';
 import { CartService } from '@shared/core/services/cart.service';
+import { CheckoutModalService } from '@shared/core/services/checkout-modal.service';
 import { ProductService } from '@shared/core/services/product.service';
 import { ReviewService } from '@shared/core/services/review.service';
 import { SeoService } from '@shared/core/services/seo.service';
@@ -108,6 +109,7 @@ export class ProductDetail implements OnInit {
     private readonly route: ActivatedRoute,
     private readonly productService: ProductService,
     readonly cart: CartService,
+    readonly checkoutModal: CheckoutModalService,
   ) {}
 
   ngOnInit(): void {

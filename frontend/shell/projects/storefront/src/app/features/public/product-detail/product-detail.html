@@ -136,7 +136,7 @@
           @if (addedFeedback()) {
             <div class="alert alert-success rounded-4 mt-3 py-2 small">
               <i class="bi bi-check-circle me-2"></i>Adicionado ao carrinho!
-              <a routerLink="/carrinho" class="alert-link ms-1">Ver carrinho</a>
+              <button type="button" class="btn btn-link alert-link ms-1 p-0 align-baseline" (click)="checkoutModal.open('cart')">Ver carrinho</button>
             </div>
           }
 
