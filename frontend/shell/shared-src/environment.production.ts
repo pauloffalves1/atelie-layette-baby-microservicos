@@ -7,6 +7,6 @@ export const environment = {
   siteUrl: 'https://layettebaby.com.br',
   analytics: {
     googleAnalyticsId: 'G-TVZHV35TDT',
-    metaPixelId: '',
+    metaPixelId: '990994334028481',
   },
 };
