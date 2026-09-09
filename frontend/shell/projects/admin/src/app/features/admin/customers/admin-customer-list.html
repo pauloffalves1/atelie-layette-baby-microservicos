@@ -12,6 +12,7 @@
             <tr>
               <th>Nome</th>
               <th>E-mail</th>
+              <th>E-mail verificado</th>
               <th>Telefone</th>
               <th>CPF</th>
               <th>Cadastro</th>
@@ -28,18 +29,47 @@
                   }
                 </td>
                 <td>{{ customer.email }}</td>
+                <td>
+                  @if (customer.emailVerified) {
+                    <span class="badge bg-success-subtle text-success-emphasis">Verificado</span>
+                  } @else if (!customer.isAnonymized) {
+                    <span class="badge bg-warning-subtle text-warning-emphasis">Pendente</span>
+                  } @else {
+                    —
+                  }
+                </td>
                 <td>{{ customer.phone || '—' }}</td>
                 <td>{{ customer.cpf | cpfMask }}</td>
                 <td>{{ customer.createdAt | date:'dd/MM/yyyy' }}</td>
                 <td class="text-end">
                   @if (!customer.isAnonymized) {
-                    <a [routerLink]="['/admin/clientes', customer.id, 'editar']" class="btn btn-sm btn-outline-secondary rounded-pill">Editar</a>
+                    @if (!customer.emailVerified) {
+                      <button type="button" class="btn btn-sm btn-outline-success rounded-pill me-2"
+                        [disabled]="verifyingId() === customer.id"
+                        (click)="verifyEmail(customer)">
+                        @if (verifyingId() === customer.id) {
+                          <span class="spinner-border spinner-border-sm"></span>
+                        } @else {
+                          Validar e-mail
+                        }
+                      </button>
+                    }
+                    <a [routerLink]="['/admin/clientes', customer.id, 'editar']" class="btn btn-sm btn-outline-secondary rounded-pill me-2">Editar</a>
+                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill"
+                      [disabled]="removingId() === customer.id"
+                      (click)="removeCustomer(customer)">
+                      @if (removingId() === customer.id) {
+                        <span class="spinner-border spinner-border-sm"></span>
+                      } @else {
+                        Remover
+                      }
+                    </button>
                   }
                 </td>
               </tr>
             }
             @if (customers().length === 0) {
-              <tr><td colspan="6" class="text-center text-secondary py-4">Nenhum cliente cadastrado.</td></tr>
+              <tr><td colspan="7" class="text-center text-secondary py-4">Nenhum cliente cadastrado.</td></tr>
             }
           </tbody>
         </table>

@@ -21,4 +21,12 @@ export class CustomerAdminService {
   update(id: string, request: UpdateCustomerRequest): Observable<CustomerSummary> {
     return this.http.put<CustomerSummary>(`${this.baseUrl}/${id}`, request);
   }
+
+  verifyEmail(id: string): Observable<CustomerSummary> {
+    return this.http.post<CustomerSummary>(`${this.baseUrl}/${id}/verify-email`, {});
+  }
+
+  remove(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
 }

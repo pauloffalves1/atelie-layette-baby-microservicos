@@ -6,6 +6,7 @@ export interface CustomerSummary {
   cpf: string | null;
   createdAt: string;
   isAnonymized: boolean;
+  emailVerified: boolean;
   addressStreet: string | null;
   addressNumber: string | null;
   addressComplement: string | null;

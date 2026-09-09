@@ -28,5 +28,20 @@ public static class CustomerEndpoints
             await auditPublisher.PublishAsync(http.User.GetUserId(), http.User.GetName(), "CustomerUpdated", $"Cliente '{updated.Name}' — {diff}", ct);
             return Results.Ok(updated);
         });
+
+        adminGroup.MapPost("/{id:guid}/verify-email", async (Guid id, HttpContext http, ICustomerAdminService service, AdminAuditPublisher auditPublisher, CancellationToken ct) =>
+        {
+            var updated = await service.VerifyEmailAsync(id, ct);
+            await auditPublisher.PublishAsync(http.User.GetUserId(), http.User.GetName(), "CustomerEmailVerified", $"E-mail de '{updated.Name}' verificado manualmente pelo admin", ct);
+            return Results.Ok(updated);
+        });
+
+        adminGroup.MapDelete("/{id:guid}", async (Guid id, HttpContext http, ICustomerAdminService service, AdminAuditPublisher auditPublisher, CancellationToken ct) =>
+        {
+            var before = await service.GetByIdAsync(id, ct);
+            await service.RemoveAsync(id, ct);
+            await auditPublisher.PublishAsync(http.User.GetUserId(), http.User.GetName(), "CustomerRemoved", $"Cliente '{before.Name}' removido pelo admin", ct);
+            return Results.NoContent();
+        });
     }
 }

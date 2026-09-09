@@ -1,7 +1,7 @@
 namespace AtelieBebe.Identity.Core.Application.Customers;
 
 public sealed record CustomerSummaryDto(
-    Guid Id, string Name, string Email, string? Phone, string? Cpf, DateTime CreatedAt, bool IsAnonymized,
+    Guid Id, string Name, string Email, string? Phone, string? Cpf, DateTime CreatedAt, bool IsAnonymized, bool EmailVerified,
     string? AddressStreet, string? AddressNumber, string? AddressComplement,
     string? AddressNeighborhood, string? AddressCity, string? AddressState, string? AddressZipCode);
 
