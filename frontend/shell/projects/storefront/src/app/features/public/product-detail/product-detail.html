@@ -105,10 +105,15 @@
             <label class="fw-semibold small d-block">Cor da linha de bordado</label>
             <div class="d-flex flex-wrap gap-2 mt-2">
               @for (color of threadColors; track color) {
-                <button type="button" class="btn btn-sm rounded-pill"
+                <button type="button" class="btn btn-sm rounded-pill d-inline-flex align-items-center gap-2"
                   [class.btn-primary]="threadColor() === color"
                   [class.btn-outline-secondary]="threadColor() !== color"
-                  (click)="selectThreadColor(color)">{{ color }}</button>
+                  (click)="selectThreadColor(color)">
+                  <span class="d-inline-block rounded-circle flex-shrink-0"
+                    style="width: 14px; height: 14px; border: 1px solid rgba(0,0,0,.25)"
+                    [style.background-color]="threadColorSwatches[color]"></span>
+                  {{ color }}
+                </button>
               }
             </div>
             @if (threadColorTouched() && !threadColor()) {
