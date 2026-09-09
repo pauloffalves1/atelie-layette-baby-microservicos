@@ -38,11 +38,18 @@ export class Checkout implements OnInit {
   readonly appliedCouponCode = signal<string | null>(null);
 
   readonly shippingCost = computed(() =>
-    this.shippingService.estimate(this.destinationState(), this.cart.totalItems(), this.cart.totalPrice()),
+    this.shippingService.estimate(
+      this.destinationState(),
+      this.cart.totalItems(),
+      this.cart.totalPrice(),
+      this.destinationCity(),
+    ),
   );
 
   readonly freeShippingThreshold = computed(() =>
-    this.destinationState() ? this.shippingService.freeShippingThreshold(this.destinationState()) : null,
+    this.destinationState()
+      ? this.shippingService.freeShippingThreshold(this.destinationState(), this.destinationCity())
+      : null,
   );
 
   readonly freeShippingRemaining = computed(() => {

@@ -39,10 +39,30 @@ const DEFAULT_RATE = 24.9;
 const EXTRA_ITEM_SURCHARGE = 2.5;
 
 /**
- * Free-shipping subtotal threshold by destination — ateliê policy:
- * São Paulo (state) acima de R$599; Sul/Sudeste/Centro-Oeste acima de R$699; Norte/Nordeste
- * acima de R$799. Falls back to the Norte/Nordeste (highest) threshold for an unrecognized state.
+ * São Bernardo do Campo (the ateliê's own city) gets the lowest free-shipping threshold (R$399),
+ * below the rest of the state (R$599). Matched against the ViaCEP `localidade` field, normalized
+ * (uppercase, no accents) for robust comparison.
  */
+const SAO_BERNARDO_DO_CAMPO = 'SAO BERNARDO DO CAMPO';
+
+const DIACRITICS_PATTERN = /[̀-ͯ]/g;
+
+function normalizeCity(city: string): string {
+  return city
+    .normalize('NFD')
+    .replace(DIACRITICS_PATTERN, '')
+    .trim()
+    .toUpperCase();
+}
+
+/**
+ * Free-shipping subtotal threshold by destination — ateliê policy:
+ * São Bernardo do Campo acima de R$399; resto do estado de São Paulo acima de R$599; Sul/Sudeste/Centro-Oeste
+ * acima de R$699; Norte/Nordeste acima de R$799. Falls back to the Norte/Nordeste (highest) threshold
+ * for an unrecognized state.
+ */
+const SAO_BERNARDO_DO_CAMPO_THRESHOLD = 399;
+
 const FREE_SHIPPING_THRESHOLD_BY_REGION: Record<string, number> = {
   SP: 599,
   PR: 699,
@@ -77,17 +97,23 @@ const DEFAULT_FREE_SHIPPING_THRESHOLD = 799;
 
 @Injectable({ providedIn: 'root' })
 export class ShippingService {
-  /** Free-shipping subtotal threshold for a destination state — used to drive the cart's progress bar too. */
-  freeShippingThreshold(state: string): number {
+  /**
+   * Free-shipping subtotal threshold for a destination — São Bernardo do Campo overrides the
+   * state-level threshold; used to drive the cart's progress bar too.
+   */
+  freeShippingThreshold(state: string, city?: string): number {
+    if (city && normalizeCity(city) === SAO_BERNARDO_DO_CAMPO) {
+      return SAO_BERNARDO_DO_CAMPO_THRESHOLD;
+    }
     return FREE_SHIPPING_THRESHOLD_BY_REGION[state.toUpperCase()] ?? DEFAULT_FREE_SHIPPING_THRESHOLD;
   }
 
   /**
-   * Estimated freight for a destination state and total item count in the cart — the raw
-   * Correios-style rate, no markup — or 0 once the cart subtotal reaches this state's free-shipping threshold.
+   * Estimated freight for a destination state/city and total item count in the cart — the raw
+   * Correios-style rate, no markup — or 0 once the cart subtotal reaches this destination's free-shipping threshold.
    */
-  estimate(state: string, totalItems: number, subtotal: number): number {
-    if (subtotal >= this.freeShippingThreshold(state)) return 0;
+  estimate(state: string, totalItems: number, subtotal: number, city?: string): number {
+    if (subtotal >= this.freeShippingThreshold(state, city)) return 0;
 
     const baseRate = BASE_RATE_BY_REGION[state.toUpperCase()] ?? DEFAULT_RATE;
     const extraItems = Math.max(totalItems - 1, 0);

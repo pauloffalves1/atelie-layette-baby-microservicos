@@ -60,6 +60,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/public/legal/privacy-page').then((m) => m.PrivacyPage),
       },
       {
+        path: 'politica-de-envio',
+        title: `Política de Produção e Envio — ${SITE_NAME}`,
+        loadComponent: () =>
+          import('./features/public/legal/shipping-policy-page').then((m) => m.ShippingPolicyPage),
+      },
+      {
         path: 'entrar',
         title: `Entrar — ${SITE_NAME}`,
         loadComponent: () => import('./features/public/auth/login-page').then((m) => m.LoginPage),
