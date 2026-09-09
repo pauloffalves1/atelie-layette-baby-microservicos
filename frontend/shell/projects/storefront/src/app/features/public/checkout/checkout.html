@@ -165,9 +165,22 @@
           }
         </div>
 
-        <div class="stat-card">
+        <div class="stat-card mb-4">
           <label for="checkout-notes" class="form-label small fw-semibold">Observações (opcional)</label>
           <textarea id="checkout-notes" class="form-control" rows="3" formControlName="notes" placeholder="Alguma instrução especial para a entrega?"></textarea>
+        </div>
+
+        <div class="stat-card">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="checkout-isGift" formControlName="isGift">
+            <label class="form-check-label fw-semibold" for="checkout-isGift">
+              <i class="bi bi-gift me-1"></i>É um presente? Adicione um recado
+            </label>
+          </div>
+          @if (form.controls.isGift.value) {
+            <textarea class="form-control mt-2" rows="3" formControlName="giftMessage" maxlength="300"
+              placeholder="Escreva o recado que vai junto com a peça — a gente inclui um cartãozinho na embalagem."></textarea>
+          }
         </div>
       </div>
 

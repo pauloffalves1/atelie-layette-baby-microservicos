@@ -41,7 +41,8 @@ public sealed class OrderService : IOrderService
                 request.Notes,
                 customDetailsJson: null,
                 request.ShippingAddressJson,
-                Money.FromReais(request.ShippingCost));
+                Money.FromReais(request.ShippingCost),
+                request.GiftMessage);
 
             foreach (var itemRequest in request.Items)
             {
@@ -450,6 +451,7 @@ public sealed class OrderService : IOrderService
         o.ShippingCost.Amount,
         o.Total.Amount,
         o.Notes,
+        o.GiftMessage,
         o.CustomDetailsJson,
         o.ShippingAddressJson,
         o.CreatedAt,

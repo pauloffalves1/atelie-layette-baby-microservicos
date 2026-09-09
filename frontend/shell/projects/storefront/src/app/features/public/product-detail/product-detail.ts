@@ -72,6 +72,7 @@ export class ProductDetail implements OnInit {
   readonly threadColorTouched = signal(false);
   readonly addedFeedback = signal(false);
   readonly activeImageIndex = signal(0);
+  readonly zoomOpen = signal(false);
 
   readonly galleryUrls = computed(() => {
     const p = this.product();
@@ -174,6 +175,14 @@ export class ProductDetail implements OnInit {
 
   selectImage(index: number): void {
     this.activeImageIndex.set(index);
+  }
+
+  openZoom(): void {
+    this.zoomOpen.set(true);
+  }
+
+  closeZoom(): void {
+    this.zoomOpen.set(false);
   }
 
   toggleFavorite(): void {

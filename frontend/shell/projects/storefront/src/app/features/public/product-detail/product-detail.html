@@ -15,8 +15,11 @@
 
       <div class="row g-5 align-items-start">
         <div class="col-lg-6">
-          <div class="ratio ratio-1x1 rounded-5 overflow-hidden shadow-sm">
+          <div class="ratio ratio-1x1 rounded-5 overflow-hidden shadow-sm position-relative" style="cursor: zoom-in;" (click)="openZoom()">
             <img [src]="galleryUrls()[activeImageIndex()] | assetUrl" [alt]="p.name" class="w-100 h-100 object-fit-cover">
+            <span class="position-absolute bottom-0 end-0 m-3 badge bg-dark bg-opacity-50 rounded-pill">
+              <i class="bi bi-zoom-in me-1"></i>Ampliar
+            </span>
           </div>
 
           @if (galleryUrls().length > 1) {
@@ -120,6 +123,16 @@
               <div class="text-danger small mt-1">Escolha a cor da linha de bordado.</div>
             }
           </div>
+
+          @if (embroideryText().trim()) {
+            <div class="my-4 p-4 rounded-4 text-center bg-light border">
+              <span class="small text-secondary d-block mb-2"><i class="bi bi-eye me-1"></i>Prévia do bordado (ilustrativa)</span>
+              <span class="fw-script fs-2" [style.color]="threadColor() ? threadColorSwatches[threadColor()] : '#4a3f3a'"
+                style="text-shadow: 0.5px 0.5px 0 rgba(0,0,0,.12); word-break: break-word;">
+                {{ embroideryText() }}
+              </span>
+            </div>
+          }
 
           <div class="d-flex align-items-center gap-3 my-4">
             <label class="fw-semibold small">Quantidade com esse bordado</label>
@@ -257,5 +270,15 @@
         </div>
       </div>
     </section>
+
+    @if (zoomOpen()) {
+      <div class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-4"
+        style="background: rgba(0,0,0,.85); z-index: 1080; cursor: zoom-out;" (click)="closeZoom()">
+        <button type="button" class="btn btn-light rounded-circle position-fixed top-0 end-0 m-3" style="width: 2.5rem; height: 2.5rem;" (click)="closeZoom()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+        <img [src]="galleryUrls()[activeImageIndex()] | assetUrl" [alt]="p.name" class="rounded-4" style="max-width: 90vw; max-height: 90vh; object-fit: contain;">
+      </div>
+    }
   }
 }

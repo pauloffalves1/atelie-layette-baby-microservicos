@@ -22,6 +22,7 @@ public sealed record OrderDto(
     decimal ShippingCost,
     decimal Total,
     string? Notes,
+    string? GiftMessage,
     string? CustomDetailsJson,
     string? ShippingAddressJson,
     DateTime CreatedAt,
@@ -51,7 +52,8 @@ public sealed record CreateStoreOrderRequest(
     string? CouponCode = null,
     string PaymentMethod = "PIX",
     string? EncryptedCard = null,
-    int Installments = 1);
+    int Installments = 1,
+    string? GiftMessage = null);
 
 public sealed record CreateCustomOrderRequest(
     string CustomerName,

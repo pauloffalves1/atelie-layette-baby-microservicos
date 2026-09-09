@@ -78,6 +78,13 @@
             </div>
           }
 
+          @if (o.giftMessage) {
+            <div class="stat-card mb-4">
+              <h6 class="mb-2"><i class="bi bi-gift me-2"></i>Recado do presente</h6>
+              <p class="small text-secondary mb-0 fst-italic">"{{ o.giftMessage }}"</p>
+            </div>
+          }
+
           <div class="stat-card mb-4">
             <h5 class="mb-3">Itens</h5>
             <ul class="list-unstyled">

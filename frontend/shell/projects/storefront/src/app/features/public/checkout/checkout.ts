@@ -89,6 +89,8 @@ export class Checkout implements OnInit {
     city: ['', Validators.required],
     state: ['', Validators.required],
     notes: [''],
+    isGift: [false],
+    giftMessage: [''],
     cardNumber: [''],
     cardHolder: [''],
     cardExpiry: [''],
@@ -288,6 +290,7 @@ export class Checkout implements OnInit {
         paymentMethod,
         encryptedCard,
         installments,
+        giftMessage: value.isGift && value.giftMessage ? value.giftMessage : null,
         items: this.cart.items().map((item) => ({
           productId: item.product.id,
           productName: item.product.name,

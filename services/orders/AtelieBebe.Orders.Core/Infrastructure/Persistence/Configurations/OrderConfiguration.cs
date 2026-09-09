@@ -16,6 +16,7 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(o => o.CustomerName).IsRequired().HasMaxLength(200);
         builder.Property(o => o.CustomerPhone).HasMaxLength(30);
         builder.Property(o => o.Notes).HasMaxLength(2000);
+        builder.Property(o => o.GiftMessage).HasMaxLength(500);
         builder.Property(o => o.CustomDetailsJson).HasColumnType("TEXT");
         builder.Property(o => o.ShippingAddressJson).HasColumnType("TEXT");
 

@@ -26,6 +26,7 @@ public sealed class Order : Entity, IAggregateRoot
     public OrderType Type { get; private set; }
     public OrderStatus Status { get; private set; }
     public string? Notes { get; private set; }
+    public string? GiftMessage { get; private set; }
     public string? CustomDetailsJson { get; private set; }
     public string? ShippingAddressJson { get; private set; }
     public Money ShippingCost { get; private set; } = Money.Zero();
@@ -49,7 +50,7 @@ public sealed class Order : Entity, IAggregateRoot
 
     private Order(Guid id, Guid? customerId, string customerName, Email customerEmail, string? customerPhone,
         Cpf? customerCpf, OrderType type, string? notes, string? customDetailsJson, string? shippingAddressJson,
-        Money shippingCost) : base(id)
+        Money shippingCost, string? giftMessage) : base(id)
     {
         CustomerId = customerId;
         CustomerName = customerName;
@@ -62,13 +63,14 @@ public sealed class Order : Entity, IAggregateRoot
         CustomDetailsJson = customDetailsJson;
         ShippingAddressJson = shippingAddressJson;
         ShippingCost = shippingCost;
+        GiftMessage = string.IsNullOrWhiteSpace(giftMessage) ? null : giftMessage.Trim();
         CreatedAt = DateTime.UtcNow;
         UpdatedAt = CreatedAt;
     }
 
     public static Order Create(Guid? customerId, string customerName, Email customerEmail, string? customerPhone,
         Cpf? customerCpf, OrderType type, string? notes = null, string? customDetailsJson = null, string? shippingAddressJson = null,
-        Money? shippingCost = null)
+        Money? shippingCost = null, string? giftMessage = null)
     {
         if (string.IsNullOrWhiteSpace(customerName))
             throw new DomainException("O nome do cliente é obrigatório.");
@@ -78,7 +80,7 @@ public sealed class Order : Entity, IAggregateRoot
             throw new DomainException("O CPF é obrigatório.");
 
         return new Order(Guid.NewGuid(), customerId, customerName.Trim(), customerEmail, customerPhone.Trim(),
-            customerCpf, type, notes, customDetailsJson, shippingAddressJson, shippingCost ?? Money.Zero());
+            customerCpf, type, notes, customDetailsJson, shippingAddressJson, shippingCost ?? Money.Zero(), giftMessage);
     }
 
     public void AddItem(Guid? productId, string productName, Money unitPrice, int quantity, string? optionsJson = null)

@@ -25,6 +25,7 @@ export interface Order {
   shippingCost: number;
   total: number;
   notes: string | null;
+  giftMessage: string | null;
   customDetailsJson: string | null;
   shippingAddressJson: string | null;
   createdAt: string;
@@ -63,6 +64,7 @@ export interface CreateStoreOrderRequest {
   paymentMethod: PaymentMethod;
   encryptedCard?: string | null;
   installments?: number;
+  giftMessage?: string | null;
 }
 
 export interface CustomOrderDetails {
