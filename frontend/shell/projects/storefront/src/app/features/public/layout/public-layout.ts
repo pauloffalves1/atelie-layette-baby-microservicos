@@ -2,15 +2,17 @@ import { Component, HostListener, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
+import { AnalyticsService } from '@shared/core/services/analytics.service';
 import { AuthService } from '@shared/core/services/auth.service';
 import { CartService } from '@shared/core/services/cart.service';
 import { NewsletterService } from '@shared/core/services/newsletter.service';
+import { CookieBanner } from '@shared/shared/components/cookie-banner/cookie-banner';
 import { WhatsappButton } from '@shared/shared/components/whatsapp-button/whatsapp-button';
 
 @Component({
   selector: 'app-public-layout',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, FormsModule, WhatsappButton],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, FormsModule, WhatsappButton, CookieBanner],
   templateUrl: './public-layout.html',
 })
 export class PublicLayout {
@@ -31,11 +33,16 @@ export class PublicLayout {
     readonly cart: CartService,
     readonly auth: AuthService,
     private readonly newsletterService: NewsletterService,
+    private readonly analytics: AnalyticsService,
     router: Router,
   ) {
     router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
       this.mobileMenuOpen.set(false);
     });
+
+    // No-op unless the visitor already accepted cookies on a previous visit — a fresh "accept"
+    // click also calls this itself (see CookieBanner), this only covers returning visitors.
+    this.analytics.initIfAccepted();
   }
 
   toggleAccountMenu(): void {

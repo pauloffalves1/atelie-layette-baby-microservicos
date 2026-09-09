@@ -6,7 +6,7 @@ export const environment = {
   apiUrl: '/api',
   siteUrl: 'https://layettebaby.com.br',
   analytics: {
-    googleAnalyticsId: '',
+    googleAnalyticsId: 'G-TVZHV35TDT',
     metaPixelId: '',
   },
 };
