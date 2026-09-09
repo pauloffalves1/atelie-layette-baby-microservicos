@@ -23,6 +23,7 @@ public sealed record OrderDto(
     decimal Total,
     string? Notes,
     string? GiftMessage,
+    string? RecipientName,
     string? CustomDetailsJson,
     string? ShippingAddressJson,
     string DeliveryMethod,
@@ -56,7 +57,8 @@ public sealed record CreateStoreOrderRequest(
     int Installments = 1,
     string? GiftMessage = null,
     string? ThreeDsAuthenticationId = null,
-    string DeliveryMethod = "Entrega");
+    string DeliveryMethod = "Entrega",
+    string? RecipientName = null);
 
 public sealed record CreateCustomOrderRequest(
     string CustomerName,

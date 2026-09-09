@@ -66,6 +66,28 @@
             </div>
           }
 
+          @if (deliveryMethod() === 'Entrega' && savedAddresses().length > 0) {
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Endereço salvo</label>
+              <div class="d-flex flex-wrap gap-2">
+                @for (address of savedAddresses(); track address.id) {
+                  <button type="button" class="btn btn-sm rounded-pill"
+                    [class.btn-primary]="selectedAddressId() === address.id"
+                    [class.btn-outline-secondary]="selectedAddressId() !== address.id"
+                    (click)="selectAddress(address)">
+                    {{ address.label }}
+                  </button>
+                }
+                <button type="button" class="btn btn-sm rounded-pill"
+                  [class.btn-primary]="selectedAddressId() === 'new'"
+                  [class.btn-outline-secondary]="selectedAddressId() !== 'new'"
+                  (click)="selectAddress('new')">
+                  <i class="bi bi-plus-lg me-1"></i>Novo endereço
+                </button>
+              </div>
+            </div>
+          }
+
           <div class="row g-3" [class.d-none]="deliveryMethod() === 'Retirada'">
             <div class="col-md-4">
               <label for="checkout-zipCode" class="form-label small fw-semibold">CEP</label>
@@ -198,7 +220,10 @@
             </label>
           </div>
           @if (form.controls.isGift.value) {
-            <textarea class="form-control mt-2" rows="3" formControlName="giftMessage" maxlength="300"
+            <label for="checkout-recipientName" class="form-label small fw-semibold mt-2">Nome de quem vai receber (opcional)</label>
+            <input type="text" id="checkout-recipientName" class="form-control mb-2" formControlName="recipientName"
+              placeholder="Se for diferente do seu nome">
+            <textarea class="form-control" rows="3" formControlName="giftMessage" maxlength="300"
               placeholder="Escreva o recado que vai junto com a peça — a gente inclui um cartãozinho na embalagem."></textarea>
           }
         </div>

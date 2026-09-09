@@ -12,19 +12,22 @@ public sealed class IdentityUnitOfWork : IIdentityUnitOfWork
         IAdminRepository admins,
         ICustomerRepository customers,
         IPasswordResetTokenRepository passwordResetTokens,
-        IEmailVerificationTokenRepository emailVerificationTokens)
+        IEmailVerificationTokenRepository emailVerificationTokens,
+        ICustomerAddressRepository customerAddresses)
     {
         _dbContext = dbContext;
         Admins = admins;
         Customers = customers;
         PasswordResetTokens = passwordResetTokens;
         EmailVerificationTokens = emailVerificationTokens;
+        CustomerAddresses = customerAddresses;
     }
 
     public IAdminRepository Admins { get; }
     public ICustomerRepository Customers { get; }
     public IPasswordResetTokenRepository PasswordResetTokens { get; }
     public IEmailVerificationTokenRepository EmailVerificationTokens { get; }
+    public ICustomerAddressRepository CustomerAddresses { get; }
 
     public Task<int> SaveChangesAsync(CancellationToken ct = default) => _dbContext.SaveChangesAsync(ct);
 }

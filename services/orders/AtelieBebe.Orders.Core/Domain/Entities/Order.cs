@@ -27,6 +27,8 @@ public sealed class Order : Entity, IAggregateRoot
     public OrderStatus Status { get; private set; }
     public string? Notes { get; private set; }
     public string? GiftMessage { get; private set; }
+    /// <summary>Set only when the order is a gift being sent to someone other than whoever's paying — distinct from CustomerName, which stays the buyer's own name.</summary>
+    public string? RecipientName { get; private set; }
     public string? CustomDetailsJson { get; private set; }
     public string? ShippingAddressJson { get; private set; }
     public Money ShippingCost { get; private set; } = Money.Zero();
@@ -52,7 +54,7 @@ public sealed class Order : Entity, IAggregateRoot
 
     private Order(Guid id, Guid? customerId, string customerName, Email customerEmail, string? customerPhone,
         Cpf? customerCpf, OrderType type, string? notes, string? customDetailsJson, string? shippingAddressJson,
-        Money shippingCost, string? giftMessage, string deliveryMethod) : base(id)
+        Money shippingCost, string? giftMessage, string deliveryMethod, string? recipientName) : base(id)
     {
         CustomerId = customerId;
         CustomerName = customerName;
@@ -69,13 +71,14 @@ public sealed class Order : Entity, IAggregateRoot
         ShippingAddressJson = DeliveryMethod == "Retirada" ? null : shippingAddressJson;
         ShippingCost = DeliveryMethod == "Retirada" ? Money.Zero() : shippingCost;
         GiftMessage = string.IsNullOrWhiteSpace(giftMessage) ? null : giftMessage.Trim();
+        RecipientName = string.IsNullOrWhiteSpace(recipientName) ? null : recipientName.Trim();
         CreatedAt = DateTime.UtcNow;
         UpdatedAt = CreatedAt;
     }
 
     public static Order Create(Guid? customerId, string customerName, Email customerEmail, string? customerPhone,
         Cpf? customerCpf, OrderType type, string? notes = null, string? customDetailsJson = null, string? shippingAddressJson = null,
-        Money? shippingCost = null, string? giftMessage = null, string deliveryMethod = "Entrega")
+        Money? shippingCost = null, string? giftMessage = null, string deliveryMethod = "Entrega", string? recipientName = null)
     {
         if (string.IsNullOrWhiteSpace(customerName))
             throw new DomainException("O nome do cliente é obrigatório.");
@@ -85,7 +88,7 @@ public sealed class Order : Entity, IAggregateRoot
             throw new DomainException("O CPF é obrigatório.");
 
         return new Order(Guid.NewGuid(), customerId, customerName.Trim(), customerEmail, customerPhone.Trim(),
-            customerCpf, type, notes, customDetailsJson, shippingAddressJson, shippingCost ?? Money.Zero(), giftMessage, deliveryMethod);
+            customerCpf, type, notes, customDetailsJson, shippingAddressJson, shippingCost ?? Money.Zero(), giftMessage, deliveryMethod, recipientName);
     }
 
     public void AddItem(Guid? productId, string productName, Money unitPrice, int quantity, string? optionsJson = null)

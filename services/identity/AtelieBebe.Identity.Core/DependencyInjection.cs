@@ -1,4 +1,5 @@
 using AtelieBebe.Identity.Core.Application.Abstractions;
+using AtelieBebe.Identity.Core.Application.Addresses;
 using AtelieBebe.Identity.Core.Application.Auth;
 using AtelieBebe.Identity.Core.Application.Customers;
 using AtelieBebe.Identity.Core.Domain.Repositories;
@@ -36,6 +37,7 @@ public static class DependencyInjection
         services.AddScoped<ICustomerRepository, CustomerRepository>();
         services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
         services.AddScoped<IEmailVerificationTokenRepository, EmailVerificationTokenRepository>();
+        services.AddScoped<ICustomerAddressRepository, CustomerAddressRepository>();
         services.AddScoped<IIdentityUnitOfWork, IdentityUnitOfWork>();
 
         services.AddScoped<IAppUrlProvider, AppUrlProvider>();
@@ -46,6 +48,7 @@ public static class DependencyInjection
         services.AddScoped<IAdminAuthService, AdminAuthService>();
         services.AddScoped<ICustomerAuthService, CustomerAuthService>();
         services.AddScoped<ICustomerAdminService, CustomerAdminService>();
+        services.AddScoped<ICustomerAddressService, CustomerAddressService>();
 
         services.AddHttpClient<IOrdersServiceClient, OrdersServiceClient>((sp, client) =>
             client.BaseAddress = new Uri(configuration["Services:Orders"] ?? "http://orders:8080"));

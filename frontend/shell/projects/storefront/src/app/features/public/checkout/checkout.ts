@@ -7,8 +7,10 @@ import { AuthService } from '@shared/core/services/auth.service';
 import { CartService } from '@shared/core/services/cart.service';
 import { CepService } from '@shared/core/services/cep.service';
 import { CouponService } from '@shared/core/services/coupon.service';
+import { CustomerAddressService } from '@shared/core/services/customer-address.service';
 import { OrderService } from '@shared/core/services/order.service';
 import { ShippingService } from '@shared/core/services/shipping.service';
+import { CustomerAddress } from '@shared/core/models/customer-address.model';
 import { ShippingAddress } from '@shared/core/models/order.model';
 import { PhoneMaskDirective } from '@shared/shared/directives/phone-mask.directive';
 
@@ -66,6 +68,10 @@ export class Checkout implements OnInit {
   private readonly cepService = inject(CepService);
   private readonly shippingService = inject(ShippingService);
   private readonly couponService = inject(CouponService);
+  private readonly addressService = inject(CustomerAddressService);
+
+  readonly savedAddresses = signal<CustomerAddress[]>([]);
+  readonly selectedAddressId = signal<string | 'new' | null>(null);
 
   readonly submitting = signal(false);
   readonly errorMessage = signal<string | null>(null);
@@ -120,6 +126,7 @@ export class Checkout implements OnInit {
     notes: [''],
     isGift: [false],
     giftMessage: [''],
+    recipientName: [''],
     cardNumber: [''],
     cardHolder: [''],
     cardExpiry: [''],
@@ -171,19 +178,30 @@ export class Checkout implements OnInit {
         });
       });
 
-      this.orderService.listMine().subscribe((orders) => {
-        const lastWithAddress = orders.find((o) => o.shippingAddressJson);
-        if (!lastWithAddress?.shippingAddressJson) return;
+      this.addressService.list().subscribe((addresses) => {
+        this.savedAddresses.set(addresses);
 
-        const address = JSON.parse(lastWithAddress.shippingAddressJson) as ShippingAddress;
-        this.form.patchValue({
-          zipCode: address.zipCode,
-          street: address.street,
-          number: address.number,
-          complement: address.complement ?? '',
-          neighborhood: address.neighborhood,
-          city: address.city,
-          state: address.state,
+        const defaultAddress = addresses.find((a) => a.isDefault) ?? addresses[0];
+        if (defaultAddress) {
+          this.selectAddress(defaultAddress);
+          return;
+        }
+
+        // No saved addresses yet — fall back to whatever address was used on the last order.
+        this.orderService.listMine().subscribe((orders) => {
+          const lastWithAddress = orders.find((o) => o.shippingAddressJson);
+          if (!lastWithAddress?.shippingAddressJson) return;
+
+          const address = JSON.parse(lastWithAddress.shippingAddressJson) as ShippingAddress;
+          this.form.patchValue({
+            zipCode: address.zipCode,
+            street: address.street,
+            number: address.number,
+            complement: address.complement ?? '',
+            neighborhood: address.neighborhood,
+            city: address.city,
+            state: address.state,
+          });
         });
       });
     }
@@ -221,6 +239,25 @@ export class Checkout implements OnInit {
     this.orderService.getCardEncryptionPublicKey().subscribe({
       next: ({ publicKey }) => this.cardPublicKey.set(publicKey),
       error: () => this.cardPublicKey.set(null),
+    });
+  }
+
+  selectAddress(address: CustomerAddress | 'new'): void {
+    if (address === 'new') {
+      this.selectedAddressId.set('new');
+      this.form.patchValue({ zipCode: '', street: '', number: '', complement: '', neighborhood: '', city: '', state: '' });
+      return;
+    }
+
+    this.selectedAddressId.set(address.id);
+    this.form.patchValue({
+      zipCode: address.zipCode,
+      street: address.street,
+      number: address.number,
+      complement: address.complement ?? '',
+      neighborhood: address.neighborhood,
+      city: address.city,
+      state: address.state,
     });
   }
 
@@ -384,6 +421,7 @@ export class Checkout implements OnInit {
         encryptedCard,
         installments,
         giftMessage: value.isGift && value.giftMessage ? value.giftMessage : null,
+        recipientName: value.isGift && value.recipientName ? value.recipientName : null,
         threeDsAuthenticationId,
         items: this.cart.items().map((item) => ({
           productId: item.product.id,

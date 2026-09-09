@@ -13,6 +13,7 @@ public interface IIdentityUnitOfWork
     ICustomerRepository Customers { get; }
     IPasswordResetTokenRepository PasswordResetTokens { get; }
     IEmailVerificationTokenRepository EmailVerificationTokens { get; }
+    ICustomerAddressRepository CustomerAddresses { get; }
 
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }

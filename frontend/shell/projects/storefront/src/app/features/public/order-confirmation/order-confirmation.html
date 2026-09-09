@@ -90,10 +90,15 @@
             }
           </div>
 
-          @if (o.giftMessage) {
+          @if (o.giftMessage || o.recipientName) {
             <div class="stat-card mb-4">
-              <h6 class="mb-2"><i class="bi bi-gift me-2"></i>Recado do presente</h6>
-              <p class="small text-secondary mb-0 fst-italic">"{{ o.giftMessage }}"</p>
+              <h6 class="mb-2"><i class="bi bi-gift me-2"></i>Presente</h6>
+              @if (o.recipientName) {
+                <p class="small mb-1">Para: <strong>{{ o.recipientName }}</strong></p>
+              }
+              @if (o.giftMessage) {
+                <p class="small text-secondary mb-0 fst-italic">"{{ o.giftMessage }}"</p>
+              }
             </div>
           }
 

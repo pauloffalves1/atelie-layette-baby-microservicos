@@ -26,6 +26,7 @@ export interface Order {
   total: number;
   notes: string | null;
   giftMessage: string | null;
+  recipientName: string | null;
   customDetailsJson: string | null;
   shippingAddressJson: string | null;
   deliveryMethod: DeliveryMethod;
@@ -69,6 +70,7 @@ export interface CreateStoreOrderRequest {
   giftMessage?: string | null;
   threeDsAuthenticationId?: string | null;
   deliveryMethod?: DeliveryMethod;
+  recipientName?: string | null;
 }
 
 export interface CustomOrderDetails {

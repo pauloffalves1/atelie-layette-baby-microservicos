@@ -50,6 +50,118 @@
     }
 
     <div class="mt-5 pt-4 border-top">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h6 class="mb-0">Meus endereços</h6>
+        @if (!addressFormOpen()) {
+          <button type="button" class="btn btn-sm btn-outline-dark rounded-pill" (click)="startAddAddress()">
+            <i class="bi bi-plus-lg me-1"></i>Adicionar endereço
+          </button>
+        }
+      </div>
+
+      @if (addressesLoading()) {
+        <div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div></div>
+      } @else if (addresses().length === 0 && !addressFormOpen()) {
+        <p class="small text-secondary">Você ainda não tem endereços salvos. Adicione um para agilizar suas próximas compras.</p>
+      } @else if (!addressFormOpen()) {
+        <div class="row g-3">
+          @for (address of addresses(); track address.id) {
+            <div class="col-12 col-md-6">
+              <div class="stat-card h-100">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                  <div>
+                    <h6 class="mb-1">
+                      {{ address.label }}
+                      @if (address.isDefault) {
+                        <span class="badge bg-blush ms-1">Padrão</span>
+                      }
+                    </h6>
+                    <p class="small text-secondary mb-0">
+                      {{ address.street }}, {{ address.number }}@if (address.complement) { — {{ address.complement }} }<br>
+                      {{ address.neighborhood }} · {{ address.city }}/{{ address.state }} · CEP {{ address.zipCode }}
+                    </p>
+                  </div>
+                </div>
+                <div class="d-flex gap-2 mt-3">
+                  <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" (click)="startEditAddress(address)">Editar</button>
+                  @if (!address.isDefault) {
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" (click)="setDefaultAddress(address)">Tornar padrão</button>
+                  }
+                  <button type="button" class="btn btn-sm btn-outline-danger rounded-pill" (click)="removeAddress(address)">Remover</button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      @if (addressFormOpen()) {
+        <form [formGroup]="addressForm" (ngSubmit)="saveAddress()" class="stat-card">
+          <div class="row g-3">
+            <div class="col-12 col-md-6">
+              <label class="form-label small">Nome do endereço (ex: Casa, Trabalho)</label>
+              <input type="text" class="form-control" formControlName="label">
+            </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label small">CEP</label>
+              <input type="text" class="form-control" formControlName="zipCode" maxlength="9">
+              @if (cepLoading()) {
+                <span class="small text-secondary">Buscando...</span>
+              }
+            </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label small">UF</label>
+              <input type="text" class="form-control" formControlName="state" maxlength="2">
+            </div>
+            @if (cepError()) {
+              <div class="col-12"><p class="small text-danger mb-0">{{ cepError() }}</p></div>
+            }
+            <div class="col-12 col-md-8">
+              <label class="form-label small">Rua</label>
+              <input type="text" class="form-control" formControlName="street">
+            </div>
+            <div class="col-6 col-md-4">
+              <label class="form-label small">Número</label>
+              <input type="text" class="form-control" formControlName="number">
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label small">Complemento</label>
+              <input type="text" class="form-control" formControlName="complement">
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label small">Bairro</label>
+              <input type="text" class="form-control" formControlName="neighborhood">
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label small">Cidade</label>
+              <input type="text" class="form-control" formControlName="city">
+            </div>
+            <div class="col-12 d-flex align-items-center gap-2">
+              <input type="checkbox" class="form-check-input" id="isDefaultAddress" formControlName="isDefault">
+              <label class="form-check-label small" for="isDefaultAddress">Usar como endereço padrão</label>
+            </div>
+          </div>
+
+          @if (addressError()) {
+            <p class="small text-danger mt-3 mb-0">{{ addressError() }}</p>
+          }
+
+          <div class="d-flex gap-2 mt-3">
+            <button type="submit" class="btn btn-sm btn-primary rounded-pill" [disabled]="addressSaving()">
+              @if (addressSaving()) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+              }
+              Salvar endereço
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" [disabled]="addressSaving()" (click)="cancelAddressForm()">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      }
+    </div>
+
+    <div class="mt-5 pt-4 border-top">
       <h6 class="text-danger">Excluir conta</h6>
 
       @if (loading()) {
