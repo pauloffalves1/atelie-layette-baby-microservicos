@@ -112,7 +112,8 @@ public sealed class PagBankGateway : IPaymentGateway
         var response = await _httpClient.SendAsync(request, ct);
         if (!response.IsSuccessStatusCode)
         {
-            _logger.LogWarning("Falha ao consultar pedido {PaymentId} no PagBank (HTTP {Status}).", paymentId, (int)response.StatusCode);
+            var body = await response.Content.ReadAsStringAsync(ct);
+            _logger.LogWarning("Falha ao consultar pedido {PaymentId} no PagBank (HTTP {Status}): {Body}", paymentId, (int)response.StatusCode, body);
             return null;
         }
 
