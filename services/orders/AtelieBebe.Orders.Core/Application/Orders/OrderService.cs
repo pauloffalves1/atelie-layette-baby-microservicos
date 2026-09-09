@@ -75,11 +75,12 @@ public sealed class OrderService : IOrderService
                 coupon.RecordUse();
             }
 
-            order.Submit();
-            _unitOfWork.Orders.Add(order);
-            await _unitOfWork.SaveChangesAsync(ct);
-
-            var dto = ToDto(order);
+            // Attempt the charge BEFORE persisting anything: order.Id already exists (assigned in the
+            // constructor) so the gateway calls below can reference it, but nothing is saved to the
+            // database yet. If PagBank itself is unreachable/errors out (as opposed to a card being
+            // declined, which is a legitimate completed attempt), we throw here and the order is never
+            // added — no ghost "Recebido" order left behind for a checkout the customer never actually
+            // completed, and no "pedido recebido" notification fires for an order that doesn't exist.
             string? declineReason = null;
             string? pixQrCodeImageUrl = null;
 
@@ -125,10 +126,13 @@ public sealed class OrderService : IOrderService
                     order.SetPixCharge(pix.ExternalId, pix.QrCodeText);
                     pixQrCodeImageUrl = pix.QrCodeImageUrl;
                 }
-
-                await _unitOfWork.SaveChangesAsync(ct);
-                dto = ToDto(order) with { PaymentDeclineReason = declineReason, PixQrCodeImageUrl = pixQrCodeImageUrl };
             }
+
+            order.Submit();
+            _unitOfWork.Orders.Add(order);
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            var dto = ToDto(order) with { PaymentDeclineReason = declineReason, PixQrCodeImageUrl = pixQrCodeImageUrl };
 
             _logger.LogInformation("Saindo de {Method}", nameof(CreateStoreOrderAsync));
             return dto;
