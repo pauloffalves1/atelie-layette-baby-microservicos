@@ -8,6 +8,7 @@ import { AuthService } from '@shared/core/services/auth.service';
 import { CartService } from '@shared/core/services/cart.service';
 import { CheckoutModalService } from '@shared/core/services/checkout-modal.service';
 import { ProductService } from '@shared/core/services/product.service';
+import { ProductZoomService } from '@shared/core/services/product-zoom.service';
 import { ReviewService } from '@shared/core/services/review.service';
 import { SeoService } from '@shared/core/services/seo.service';
 import { WishlistService } from '@shared/core/services/wishlist.service';
@@ -73,7 +74,6 @@ export class ProductDetail implements OnInit {
   readonly threadColorTouched = signal(false);
   readonly addedFeedback = signal(false);
   readonly activeImageIndex = signal(0);
-  readonly zoomOpen = signal(false);
 
   readonly galleryUrls = computed(() => {
     const p = this.product();
@@ -110,6 +110,7 @@ export class ProductDetail implements OnInit {
     private readonly productService: ProductService,
     readonly cart: CartService,
     readonly checkoutModal: CheckoutModalService,
+    private readonly productZoom: ProductZoomService,
   ) {}
 
   ngOnInit(): void {
@@ -180,11 +181,10 @@ export class ProductDetail implements OnInit {
   }
 
   openZoom(): void {
-    this.zoomOpen.set(true);
-  }
-
-  closeZoom(): void {
-    this.zoomOpen.set(false);
+    const p = this.product();
+    const url = this.galleryUrls()[this.activeImageIndex()];
+    if (!p || !url) return;
+    this.productZoom.open(resolveAssetUrl(url), p.name);
   }
 
   toggleFavorite(): void {
