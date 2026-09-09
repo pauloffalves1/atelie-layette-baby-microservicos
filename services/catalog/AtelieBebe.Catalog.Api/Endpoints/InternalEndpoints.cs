@@ -31,11 +31,21 @@ public static class InternalEndpoints
             return Results.Ok(new { count = result.TotalItems });
         });
 
-        // Backoffice's sitemap generator.
+        // Backoffice's sitemap generator — pages through everything so the catalog can grow past
+        // one page without silently truncating the sitemap.
         app.MapGet("/internal/products/active-slugs", async (IProductService service, CancellationToken ct) =>
         {
-            var result = await service.ListAsync(category: null, onlyActive: true, page: 1, pageSize: 1000, ct: ct);
-            return Results.Ok(result.Items.Select(p => p.Slug));
+            const int pageSize = 200;
+            var slugs = new List<string>();
+            var page = 1;
+            while (true)
+            {
+                var result = await service.ListAsync(category: null, onlyActive: true, page: page, pageSize: pageSize, ct: ct);
+                slugs.AddRange(result.Items.Select(p => p.Slug));
+                if (slugs.Count >= result.TotalItems || result.Items.Count == 0) break;
+                page++;
+            }
+            return Results.Ok(slugs);
         });
     }
 }

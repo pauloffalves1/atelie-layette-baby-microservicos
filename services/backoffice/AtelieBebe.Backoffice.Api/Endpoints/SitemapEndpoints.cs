@@ -14,6 +14,10 @@ public static class SitemapEndpoints
         "/sobre",
         "/galeria",
         "/contato",
+        "/politica-de-envio",
+        "/perguntas-frequentes",
+        "/termos-de-uso",
+        "/politica-de-privacidade",
     ];
 
     /// <summary>
