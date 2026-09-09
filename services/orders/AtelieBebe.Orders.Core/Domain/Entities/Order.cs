@@ -31,6 +31,8 @@ public sealed class Order : Entity, IAggregateRoot
     public Money ShippingCost { get; private set; } = Money.Zero();
     public PaymentStatus PaymentStatus { get; private set; } = PaymentStatus.Pendente;
     public string? ExternalPaymentId { get; private set; }
+    /// <summary>PIX copy-paste code, persisted so it can still be shown if the customer reloads the confirmation page before scanning it.</summary>
+    public string? PixQrCodeText { get; private set; }
     public string? TrackingCode { get; private set; }
     public string? CouponCode { get; private set; }
     public Money CouponDiscountAmount { get; private set; } = Money.Zero();
@@ -115,6 +117,14 @@ public sealed class Order : Entity, IAggregateRoot
 
         PaymentStatus = PaymentStatus.Recusado;
         ExternalPaymentId = externalPaymentId;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>Records a freshly generated PIX charge so its QR code survives a page reload until the webhook confirms payment.</summary>
+    public void SetPixCharge(string externalPaymentId, string qrCodeText)
+    {
+        ExternalPaymentId = externalPaymentId;
+        PixQrCodeText = qrCodeText;
         UpdatedAt = DateTime.UtcNow;
     }
 

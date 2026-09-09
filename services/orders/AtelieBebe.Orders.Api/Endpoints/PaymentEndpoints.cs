@@ -1,3 +1,4 @@
+using AtelieBebe.Orders.Core.Application.Abstractions;
 using AtelieBebe.Orders.Core.Application.Orders;
 
 namespace AtelieBebe.Orders.Api.Endpoints;
@@ -7,6 +8,15 @@ public static class PaymentEndpoints
     public static void MapPaymentEndpoints(this WebApplication app)
     {
         var group = app.MapGroup("/api/payments").WithTags("Pagamentos");
+
+        // Public — the checkout page needs this before the customer is authenticated to anything.
+        // The public key itself isn't secret (that's the point of asymmetric encryption); only
+        // PagBank can decrypt what the frontend encrypts with it.
+        group.MapGet("/pagbank/public-key", async (IPaymentGateway gateway, CancellationToken ct) =>
+        {
+            var publicKey = await gateway.GetCardEncryptionPublicKeyAsync(ct);
+            return publicKey is null ? Results.NotFound() : Results.Ok(new { publicKey });
+        });
 
         // PagBank posts the full Order object here whenever a charge's status changes — but the
         // body is only ever used to read the order's own "id" field; the actual status always

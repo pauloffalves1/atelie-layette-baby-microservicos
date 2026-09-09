@@ -148,27 +148,25 @@
           <div class="stat-card mb-4">
             <h6 class="mb-3"><i class="bi bi-credit-card me-2"></i>Pagamento</h6>
 
-            @if (paymentLinkError()) {
-              <div class="alert alert-danger small rounded-4">{{ paymentLinkError() }}</div>
+            @if (pixChargeError()) {
+              <div class="alert alert-danger small rounded-4">{{ pixChargeError() }}</div>
             }
 
-            @if (paymentLink(); as link) {
+            @if (pixCode(); as code) {
+              <label class="form-label small text-secondary">Código PIX copia-e-cola — envie ao cliente por WhatsApp</label>
               <div class="input-group input-group-sm mb-2">
-                <input type="text" class="form-control" [value]="link" readonly>
-                <button class="btn btn-outline-secondary" type="button" (click)="copyPaymentLink()">
-                  {{ paymentLinkCopied() ? 'Copiado!' : 'Copiar' }}
+                <input type="text" class="form-control" [value]="code" readonly>
+                <button class="btn btn-outline-secondary" type="button" (click)="copyPixCode()">
+                  {{ pixCodeCopied() ? 'Copiado!' : 'Copiar' }}
                 </button>
               </div>
-              <button class="btn btn-outline-primary btn-sm rounded-pill w-100" (click)="openPaymentLink()">
-                <i class="bi bi-box-arrow-up-right me-1"></i>Abrir página de pagamento
-              </button>
             } @else {
-              <p class="small text-secondary mb-3">Gere um link de pagamento para reenviar ao cliente ou abrir a página de pagamento diretamente.</p>
-              <button class="btn btn-primary rounded-pill w-100" [disabled]="generatingPaymentLink()" (click)="generatePaymentLink()">
-                @if (generatingPaymentLink()) {
+              <p class="small text-secondary mb-3">Gere uma cobrança PIX para reenviar ao cliente.</p>
+              <button class="btn btn-primary rounded-pill w-100" [disabled]="generatingPixCharge()" (click)="generatePixCharge()">
+                @if (generatingPixCharge()) {
                   <span class="spinner-border spinner-border-sm me-2"></span>
                 }
-                Gerar link de pagamento
+                Gerar cobrança PIX
               </button>
             }
           </div>

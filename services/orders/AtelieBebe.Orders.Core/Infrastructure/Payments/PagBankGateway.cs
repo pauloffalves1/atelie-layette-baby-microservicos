@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using AtelieBebe.Orders.Core.Application.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -8,27 +9,33 @@ using Microsoft.Extensions.Options;
 namespace AtelieBebe.Orders.Core.Infrastructure.Payments;
 
 /// <summary>
-/// Creates hosted Checkout links via PagBank's Checkout API (restricted to PIX and credit card —
-/// see <c>payment_methods</c> below) and resolves payment status by re-querying PagBank's Orders
-/// API for the order a webhook points at — the webhook body is only ever used for its <c>id</c>,
-/// never trusted for the actual charge status, same defensive pattern used for every gateway here.
+/// Charges directly against PagBank's Order API (POST /orders) instead of the hosted Checkout
+/// API — the checkout flow used to redirect to a PagBank-hosted page, but this account's token
+/// doesn't have "allowlist" access to the Checkout API in production (confirmed via PagBank
+/// support: HTTP 403 "allowlist_access_required" on POST /checkouts). The direct Order API isn't
+/// gated the same way. The card itself is encrypted client-side (see GetCardEncryptionPublicKeyAsync
+/// and the frontend's use of PagBank's JS SDK), so the raw card number/CVV never reaches this
+/// service — only the encrypted blob does.
 ///
-/// PagBank splits "did the checkout page get used" (a Checkout resource, status ACTIVE/INACTIVE/
-/// EXPIRED — never tells you if money moved) from "did the money move" (an Order resource,
-/// created once the customer pays, with a <c>charges[]</c> array carrying the real status) — so a
-/// checkout-status webhook is ignored by construction here: only an Order id (from an
-/// ORDER-origin webhook) resolves to anything via GetPaymentAsync's GET /orders/{id} call; a
-/// checkout id 404s there and the webhook safely no-ops.
-///
-/// Docs: https://developer.pagbank.com.br/reference/criar-checkout,
+/// Docs: https://developer.pagbank.com.br/reference/criar-chave-publica,
+/// https://developer.pagbank.com.br/reference/criar-pagar-pedido-com-cartao,
 /// https://developer.pagbank.com.br/reference/consultar-pedido
 /// </summary>
-public sealed class PagBankGateway : IPaymentGateway
+public sealed partial class PagBankGateway : IPaymentGateway
 {
     private readonly HttpClient _httpClient;
     private readonly PagBankOptions _options;
     private readonly AppUrlOptions _appUrls;
     private readonly ILogger<PagBankGateway> _logger;
+
+    // The public key is reusable across charges (per PagBank's docs) — cached process-wide (this
+    // gateway is registered as a typed HttpClient, i.e. transient, so an instance field would be
+    // re-created and re-fetched on every single request) to avoid minting a new key on every
+    // checkout page load.
+    private static readonly SemaphoreSlim PublicKeyLock = new(1, 1);
+    private static string? _cachedPublicKey;
+    private static DateTime _cachedPublicKeyAtUtc;
+    private static readonly TimeSpan PublicKeyTtl = TimeSpan.FromHours(1);
 
     public bool IsConfigured => !string.IsNullOrWhiteSpace(_options.Token);
 
@@ -40,66 +47,166 @@ public sealed class PagBankGateway : IPaymentGateway
         _logger = logger;
     }
 
-    public async Task<PaymentPreference?> CreatePreferenceAsync(Guid orderId, string description, decimal amount, string customerEmail, CancellationToken ct = default)
+    public async Task<string?> GetCardEncryptionPublicKeyAsync(CancellationToken ct = default)
     {
         if (!IsConfigured) return null;
 
-        var orderUrl = $"{_appUrls.PublicUrl}/pedido/{orderId}";
+        if (_cachedPublicKey is not null && DateTime.UtcNow - _cachedPublicKeyAtUtc < PublicKeyTtl)
+            return _cachedPublicKey;
+
+        await PublicKeyLock.WaitAsync(ct);
+        try
+        {
+            if (_cachedPublicKey is not null && DateTime.UtcNow - _cachedPublicKeyAtUtc < PublicKeyTtl)
+                return _cachedPublicKey;
+
+            using var request = new HttpRequestMessage(HttpMethod.Post, "public-keys")
+            {
+                Content = JsonContent.Create(new { type = "card" }),
+            };
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _options.Token);
+
+            var response = await _httpClient.SendAsync(request, ct);
+            var body = await response.Content.ReadAsStringAsync(ct);
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError("Falha ao obter chave pública do PagBank (HTTP {Status}): {Body}", (int)response.StatusCode, body);
+                return null;
+            }
+
+            var json = JsonDocument.Parse(body).RootElement;
+            var publicKey = json.TryGetProperty("public_key", out var pkEl) ? pkEl.GetString() : null;
+            if (string.IsNullOrWhiteSpace(publicKey))
+            {
+                _logger.LogError("Resposta do PagBank sem 'public_key' ao criar chave pública.");
+                return null;
+            }
+
+            _cachedPublicKey = publicKey;
+            _cachedPublicKeyAtUtc = DateTime.UtcNow;
+            return publicKey;
+        }
+        finally
+        {
+            PublicKeyLock.Release();
+        }
+    }
+
+    public async Task<CardChargeResult?> ChargeCardAsync(
+        Guid orderId, string description, decimal amount,
+        string customerName, string customerEmail, string customerTaxId, string? customerPhone,
+        string encryptedCard, int installments, CancellationToken ct = default)
+    {
+        if (!IsConfigured) return null;
+
         var payload = new
         {
             reference_id = orderId.ToString(),
-            customer = new { email = customerEmail },
-            // Lets PagBank's own hosted page collect/validate name, CPF, phone etc. — we already
-            // captured that at our own checkout, but re-entering it here risks a 400 from a format
-            // PagBank doesn't accept, so we send only what we're sure of and let the customer
-            // confirm/fill the rest on their page.
-            customer_modifiable = true,
-            items = new[]
-            {
-                new { reference_id = "item-1", name = description, quantity = 1, unit_amount = (int)Math.Round(amount * 100, MidpointRounding.AwayFromZero) },
-            },
-            // Ateliê only wants to offer PIX and credit card.
-            payment_methods = new object[] { new { type = "CREDIT_CARD" }, new { type = "PIX" } },
-            redirect_url = orderUrl,
+            customer = BuildCustomer(customerName, customerEmail, customerTaxId, customerPhone),
+            items = new[] { new { reference_id = "item-1", name = description, quantity = 1, unit_amount = ToCents(amount) } },
             notification_urls = new[] { $"{_appUrls.ApiPublicUrl}/api/payments/pagbank/webhook" },
+            charges = new[]
+            {
+                new
+                {
+                    reference_id = orderId.ToString(),
+                    description,
+                    amount = new { value = ToCents(amount), currency = "BRL" },
+                    payment_method = new
+                    {
+                        type = "CREDIT_CARD",
+                        installments = Math.Max(1, installments),
+                        capture = true,
+                        card = new { encrypted = encryptedCard },
+                        holder = new { name = customerName, tax_id = OnlyDigits(customerTaxId) },
+                    },
+                },
+            },
         };
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, "checkouts") { Content = JsonContent.Create(payload) };
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _options.Token);
-
-        var response = await _httpClient.SendAsync(request, ct);
-        if (!response.IsSuccessStatusCode)
+        var (order, error) = await PostOrderAsync(payload, ct);
+        if (order is null)
         {
-            var body = await response.Content.ReadAsStringAsync(ct);
-            _logger.LogError("Falha ao criar checkout no PagBank (HTTP {Status}): {Body}", (int)response.StatusCode, body);
+            _logger.LogError("Falha ao cobrar cartão no PagBank para o pedido {OrderId}: {Error}", orderId, error);
             return null;
         }
 
-        var json = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: ct);
-        if (!json.TryGetProperty("links", out var links))
-        {
-            _logger.LogError("Resposta do PagBank sem 'links' ao criar checkout para o pedido {OrderId}.", orderId);
-            return null;
-        }
+        var orderExternalId = order.Value.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
 
-        string? payUrl = null;
-        foreach (var link in links.EnumerateArray())
+        if (!order.Value.TryGetProperty("charges", out var charges) || charges.GetArrayLength() == 0)
+            return new CardChargeResult(false, "pending", orderExternalId, null);
+
+        var charge = charges[0];
+        var status = charge.TryGetProperty("status", out var statusEl) ? statusEl.GetString() : null;
+        var approved = status == "PAID";
+
+        string? declineReason = null;
+        if (!approved && charge.TryGetProperty("payment_response", out var paymentResponse) &&
+            paymentResponse.TryGetProperty("message", out var messageEl))
+            declineReason = messageEl.GetString();
+
+        return new CardChargeResult(approved, NormalizeChargeStatus(status), orderExternalId, declineReason);
+    }
+
+    public async Task<PixCharge?> CreatePixChargeAsync(
+        Guid orderId, string description, decimal amount,
+        string customerName, string customerEmail, string customerTaxId, string? customerPhone,
+        CancellationToken ct = default)
+    {
+        if (!IsConfigured) return null;
+
+        var payload = new
         {
-            if (link.TryGetProperty("rel", out var rel) && rel.GetString() == "PAY" && link.TryGetProperty("href", out var href))
+            reference_id = orderId.ToString(),
+            customer = BuildCustomer(customerName, customerEmail, customerTaxId, customerPhone),
+            items = new[] { new { reference_id = "item-1", name = description, quantity = 1, unit_amount = ToCents(amount) } },
+            notification_urls = new[] { $"{_appUrls.ApiPublicUrl}/api/payments/pagbank/webhook" },
+            qr_codes = new[]
             {
-                payUrl = href.GetString();
-                break;
+                new
+                {
+                    amount = new { value = ToCents(amount) },
+                    expiration_date = DateTimeOffset.UtcNow.AddHours(1).ToString("yyyy-MM-ddTHH:mm:sszzz"),
+                },
+            },
+        };
+
+        var (order, error) = await PostOrderAsync(payload, ct);
+        if (order is null)
+        {
+            _logger.LogError("Falha ao gerar cobrança PIX no PagBank para o pedido {OrderId}: {Error}", orderId, error);
+            return null;
+        }
+
+        var orderExternalId = order.Value.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
+        if (orderExternalId is null || !order.Value.TryGetProperty("qr_codes", out var qrCodes) || qrCodes.GetArrayLength() == 0)
+        {
+            _logger.LogError("Resposta do PagBank sem 'qr_codes' ao gerar cobrança PIX para o pedido {OrderId}.", orderId);
+            return null;
+        }
+
+        var qrCode = qrCodes[0];
+        var qrCodeText = qrCode.TryGetProperty("text", out var textEl) ? textEl.GetString() : null;
+        if (string.IsNullOrWhiteSpace(qrCodeText))
+        {
+            _logger.LogError("Resposta do PagBank sem 'text' no QR Code PIX para o pedido {OrderId}.", orderId);
+            return null;
+        }
+
+        string? qrCodeImageUrl = null;
+        if (qrCode.TryGetProperty("links", out var links))
+        {
+            foreach (var link in links.EnumerateArray())
+            {
+                if (link.TryGetProperty("rel", out var rel) && rel.GetString() == "QRCODE.PNG" && link.TryGetProperty("href", out var href))
+                {
+                    qrCodeImageUrl = href.GetString();
+                    break;
+                }
             }
         }
 
-        if (string.IsNullOrEmpty(payUrl))
-        {
-            _logger.LogError("Resposta do PagBank sem link 'PAY' ao criar checkout para o pedido {OrderId}.", orderId);
-            return null;
-        }
-
-        var checkoutId = json.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
-        return new PaymentPreference(payUrl, checkoutId);
+        return new PixCharge(orderExternalId, qrCodeText!, qrCodeImageUrl);
     }
 
     public async Task<PaymentDetails?> GetPaymentAsync(string paymentId, CancellationToken ct = default)
@@ -112,8 +219,8 @@ public sealed class PagBankGateway : IPaymentGateway
         var response = await _httpClient.SendAsync(request, ct);
         if (!response.IsSuccessStatusCode)
         {
-            var body = await response.Content.ReadAsStringAsync(ct);
-            _logger.LogWarning("Falha ao consultar pedido {PaymentId} no PagBank (HTTP {Status}): {Body}", paymentId, (int)response.StatusCode, body);
+            var errorBody = await response.Content.ReadAsStringAsync(ct);
+            _logger.LogWarning("Falha ao consultar pedido {PaymentId} no PagBank (HTTP {Status}): {Body}", paymentId, (int)response.StatusCode, errorBody);
             return null;
         }
 
@@ -127,13 +234,50 @@ public sealed class PagBankGateway : IPaymentGateway
         var lastCharge = charges[charges.GetArrayLength() - 1];
         var chargeStatus = lastCharge.TryGetProperty("status", out var statusEl) ? statusEl.GetString() : null;
 
-        var normalizedStatus = chargeStatus switch
-        {
-            "PAID" => "approved",
-            "DECLINED" or "CANCELED" => "rejected",
-            _ => chargeStatus ?? "pending",
-        };
-
-        return new PaymentDetails(normalizedStatus, externalReference);
+        return new PaymentDetails(NormalizeChargeStatus(chargeStatus), externalReference);
     }
+
+    private async Task<(JsonElement? Order, string? Error)> PostOrderAsync(object payload, CancellationToken ct)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, "orders") { Content = JsonContent.Create(payload) };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _options.Token);
+
+        var response = await _httpClient.SendAsync(request, ct);
+        var body = await response.Content.ReadAsStringAsync(ct);
+        if (!response.IsSuccessStatusCode)
+            return (null, $"HTTP {(int)response.StatusCode}: {body}");
+
+        return (JsonDocument.Parse(body).RootElement, null);
+    }
+
+    private static object BuildCustomer(string name, string email, string taxId, string? phone)
+    {
+        var phones = ParsePhone(phone);
+        return phones is null
+            ? new { name, email, tax_id = OnlyDigits(taxId) }
+            : new { name, email, tax_id = OnlyDigits(taxId), phones = new[] { phones } };
+    }
+
+    private static object? ParsePhone(string? phone)
+    {
+        var digits = OnlyDigits(phone);
+        if (digits.Length < 10) return null;
+
+        // Brazilian numbers: first 2 digits are the area code (DDD), the rest is the subscriber number.
+        return new { country = "55", area = digits[..2], number = digits[2..], type = "MOBILE" };
+    }
+
+    private static int ToCents(decimal amount) => (int)Math.Round(amount * 100, MidpointRounding.AwayFromZero);
+
+    private static string OnlyDigits(string? value) => value is null ? "" : NonDigitRegex().Replace(value, "");
+
+    private static string NormalizeChargeStatus(string? chargeStatus) => chargeStatus switch
+    {
+        "PAID" => "approved",
+        "DECLINED" or "CANCELED" => "rejected",
+        _ => chargeStatus ?? "pending",
+    };
+
+    [GeneratedRegex(@"\D")]
+    private static partial Regex NonDigitRegex();
 }

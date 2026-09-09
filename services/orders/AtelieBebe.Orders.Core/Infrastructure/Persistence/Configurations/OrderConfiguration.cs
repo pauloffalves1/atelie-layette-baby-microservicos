@@ -30,6 +30,7 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
             .HasDefaultValue(PaymentStatus.Pendente)
             .IsRequired();
         builder.Property(o => o.ExternalPaymentId).HasMaxLength(100);
+        builder.Property(o => o.PixQrCodeText).HasMaxLength(600);
         builder.Property(o => o.TrackingCode).HasMaxLength(60);
         builder.Property(o => o.CouponCode).HasMaxLength(30);
 

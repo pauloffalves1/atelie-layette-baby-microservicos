@@ -12,6 +12,19 @@ import { ShippingService } from '@shared/core/services/shipping.service';
 import { ShippingAddress } from '@shared/core/models/order.model';
 import { PhoneMaskDirective } from '@shared/shared/directives/phone-mask.directive';
 
+declare const PagSeguro: {
+  encryptCard(options: {
+    publicKey: string;
+    holder: string;
+    number: string;
+    expMonth: string;
+    expYear: string;
+    securityCode: string;
+  }): { encryptedCard?: string; hasErrors: boolean; errors?: { code: string; message: string }[] };
+};
+
+const PAGBANK_SDK_URL = 'https://assets.pagseguro.com.br/checkout-sdk-js/rc/dist/browser/pagseguro.min.js';
+
 @Component({
   selector: 'app-checkout',
   standalone: true,
@@ -30,6 +43,10 @@ export class Checkout implements OnInit {
   readonly cepError = signal<string | null>(null);
   readonly destinationState = signal('');
   readonly destinationCity = signal('');
+
+  readonly paymentMethod = signal<'PIX' | 'CREDIT_CARD'>('PIX');
+  readonly cardPublicKey = signal<string | null>(null);
+  readonly cardSdkReady = signal(false);
 
   readonly couponCode = signal('');
   readonly couponApplying = signal(false);
@@ -72,6 +89,11 @@ export class Checkout implements OnInit {
     city: ['', Validators.required],
     state: ['', Validators.required],
     notes: [''],
+    cardNumber: [''],
+    cardHolder: [''],
+    cardExpiry: [''],
+    cardCvv: [''],
+    installments: [1],
   });
 
   constructor(
@@ -145,6 +167,24 @@ export class Checkout implements OnInit {
           state: address.uf,
         });
       });
+
+    this.loadPagBankSdk();
+    this.orderService.getCardEncryptionPublicKey().subscribe({
+      next: ({ publicKey }) => this.cardPublicKey.set(publicKey),
+      error: () => this.cardPublicKey.set(null),
+    });
+  }
+
+  private loadPagBankSdk(): void {
+    if (document.querySelector(`script[src="${PAGBANK_SDK_URL}"]`)) {
+      this.cardSdkReady.set(true);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = PAGBANK_SDK_URL;
+    script.onload = () => this.cardSdkReady.set(true);
+    document.body.appendChild(script);
   }
 
   applyCoupon(): void {
@@ -187,6 +227,41 @@ export class Checkout implements OnInit {
     }
 
     const value = this.form.getRawValue();
+
+    if (this.paymentMethod() === 'CREDIT_CARD') {
+      const publicKey = this.cardPublicKey();
+      if (!this.cardSdkReady() || !publicKey || typeof PagSeguro === 'undefined') {
+        this.errorMessage.set('O pagamento com cartão ainda está carregando. Aguarde alguns instantes e tente novamente.');
+        return;
+      }
+
+      const [expMonth, expYear] = (value.cardExpiry || '').split('/').map((part) => part.trim());
+      const card = PagSeguro.encryptCard({
+        publicKey,
+        holder: value.cardHolder,
+        number: (value.cardNumber || '').replace(/\D/g, ''),
+        expMonth: expMonth || '',
+        expYear: expYear?.length === 2 ? `20${expYear}` : expYear || '',
+        securityCode: value.cardCvv,
+      });
+
+      if (card.hasErrors || !card.encryptedCard) {
+        this.errorMessage.set('Dados do cartão inválidos. Confira o número, validade e CVV.');
+        return;
+      }
+
+      this.submitOrder(value, 'CREDIT_CARD', card.encryptedCard, Number(value.installments) || 1);
+    } else {
+      this.submitOrder(value, 'PIX');
+    }
+  }
+
+  private submitOrder(
+    value: ReturnType<typeof this.form.getRawValue>,
+    paymentMethod: 'PIX' | 'CREDIT_CARD',
+    encryptedCard?: string,
+    installments?: number,
+  ): void {
     this.submitting.set(true);
     this.errorMessage.set(null);
 
@@ -210,6 +285,9 @@ export class Checkout implements OnInit {
         shippingAddressJson: JSON.stringify(shippingAddress),
         shippingCost: this.shippingCost(),
         couponCode: this.appliedCouponCode(),
+        paymentMethod,
+        encryptedCard,
+        installments,
         items: this.cart.items().map((item) => ({
           productId: item.product.id,
           productName: item.product.name,
@@ -223,13 +301,17 @@ export class Checkout implements OnInit {
       })
       .subscribe({
         next: (order) => {
-          this.cart.clear();
-
-          if (order.paymentUrl) {
-            window.location.href = order.paymentUrl;
+          if (paymentMethod === 'CREDIT_CARD' && order.paymentStatus === 'Recusado') {
+            this.submitting.set(false);
+            this.errorMessage.set(
+              order.paymentDeclineReason
+                ? `Pagamento recusado: ${order.paymentDeclineReason}. Confira os dados do cartão ou tente outro cartão.`
+                : 'Pagamento recusado pela operadora do cartão. Confira os dados ou tente outro cartão.',
+            );
             return;
           }
 
+          this.cart.clear();
           this.router.navigate(['/pedido', order.id]);
         },
         error: (err) => {

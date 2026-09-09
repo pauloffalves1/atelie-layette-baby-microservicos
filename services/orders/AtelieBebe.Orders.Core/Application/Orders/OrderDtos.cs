@@ -32,10 +32,13 @@ public sealed record OrderDto(
     string? TrackingCode,
     string? CouponCode,
     decimal CouponDiscountAmount,
-    string? PaymentUrl = null);
+    string? PaymentDeclineReason = null,
+    string? PixQrCodeText = null,
+    string? PixQrCodeImageUrl = null);
 
 public sealed record CreateOrderItemRequest(Guid? ProductId, string ProductName, decimal UnitPrice, int Quantity, string? OptionsJson);
 
+/// <summary>PaymentMethod is "CREDIT_CARD" or "PIX". EncryptedCard/Installments only apply to CREDIT_CARD — the card is encrypted client-side via PagBank's JS SDK before it ever reaches us.</summary>
 public sealed record CreateStoreOrderRequest(
     string CustomerName,
     string CustomerEmail,
@@ -45,7 +48,10 @@ public sealed record CreateStoreOrderRequest(
     string? ShippingAddressJson,
     decimal ShippingCost,
     IReadOnlyList<CreateOrderItemRequest> Items,
-    string? CouponCode = null);
+    string? CouponCode = null,
+    string PaymentMethod = "PIX",
+    string? EncryptedCard = null,
+    int Installments = 1);
 
 public sealed record CreateCustomOrderRequest(
     string CustomerName,

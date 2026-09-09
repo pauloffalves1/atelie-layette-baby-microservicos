@@ -36,10 +36,10 @@ export class AdminOrderDetail implements OnInit {
   readonly statusLabels = ORDER_STATUS_LABELS;
   readonly paymentStatusLabels = PAYMENT_STATUS_LABELS;
 
-  readonly generatingPaymentLink = signal(false);
-  readonly paymentLinkError = signal<string | null>(null);
-  readonly paymentLink = signal<string | null>(null);
-  readonly paymentLinkCopied = signal(false);
+  readonly generatingPixCharge = signal(false);
+  readonly pixChargeError = signal<string | null>(null);
+  readonly pixCode = signal<string | null>(null);
+  readonly pixCodeCopied = signal(false);
 
   readonly trackingCodeInput = signal('');
   readonly savingTrackingCode = signal(false);
@@ -79,39 +79,33 @@ export class AdminOrderDetail implements OnInit {
     });
   }
 
-  generatePaymentLink(): void {
-    this.generatingPaymentLink.set(true);
-    this.paymentLinkError.set(null);
-    this.paymentLinkCopied.set(false);
+  generatePixCharge(): void {
+    this.generatingPixCharge.set(true);
+    this.pixChargeError.set(null);
+    this.pixCodeCopied.set(false);
 
-    this.orderService.generatePaymentLink(this.orderId).subscribe({
-      next: ({ paymentUrl }) => {
-        this.paymentLink.set(paymentUrl);
-        this.generatingPaymentLink.set(false);
-        window.open(paymentUrl, '_blank', 'noopener');
+    this.orderService.generatePixCharge(this.orderId).subscribe({
+      next: ({ pixQrCodeText }) => {
+        this.pixCode.set(pixQrCodeText);
+        this.generatingPixCharge.set(false);
       },
       error: (err) => {
-        this.generatingPaymentLink.set(false);
-        this.paymentLinkError.set(err?.error?.detail ?? 'Não foi possível gerar o link de pagamento.');
+        this.generatingPixCharge.set(false);
+        this.pixChargeError.set(err?.error?.detail ?? 'Não foi possível gerar a cobrança PIX.');
       },
     });
   }
 
-  openPaymentLink(): void {
-    const url = this.paymentLink();
-    if (url) window.open(url, '_blank', 'noopener');
-  }
+  copyPixCode(): void {
+    const code = this.pixCode();
+    if (!code) return;
 
-  copyPaymentLink(): void {
-    const url = this.paymentLink();
-    if (!url) return;
-
-    navigator.clipboard.writeText(url).then(
+    navigator.clipboard.writeText(code).then(
       () => {
-        this.paymentLinkCopied.set(true);
-        setTimeout(() => this.paymentLinkCopied.set(false), 2000);
+        this.pixCodeCopied.set(true);
+        setTimeout(() => this.pixCodeCopied.set(false), 2000);
       },
-      () => this.paymentLinkError.set('Não foi possível copiar o link automaticamente — selecione e copie o texto do campo.'),
+      () => this.pixChargeError.set('Não foi possível copiar o código automaticamente — selecione e copie o texto do campo.'),
     );
   }
 

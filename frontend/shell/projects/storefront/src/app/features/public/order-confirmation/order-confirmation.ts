@@ -1,5 +1,5 @@
 import { CurrencyPipe } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { jsPDF } from 'jspdf';
@@ -19,15 +19,17 @@ import { OrderService } from '@shared/core/services/order.service';
   imports: [CurrencyPipe, RouterLink],
   templateUrl: './order-confirmation.html',
 })
-export class OrderConfirmation implements OnInit {
+export class OrderConfirmation implements OnInit, OnDestroy {
   readonly order = signal<Order | null>(null);
   readonly loading = signal(true);
   readonly notFound = signal(false);
+  readonly pixCodeCopied = signal(false);
   readonly statusLabels = ORDER_STATUS_LABELS;
   readonly statusFlow = ORDER_STATUS_FLOW;
   readonly paymentStatusLabels = PAYMENT_STATUS_LABELS;
 
   private readonly title = inject(Title);
+  private pollHandle: ReturnType<typeof setInterval> | null = null;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -41,11 +43,37 @@ export class OrderConfirmation implements OnInit {
         this.order.set(order);
         this.loading.set(false);
         this.title.setTitle(`Pedido #${order.id.slice(0, 8)} — ${SITE_NAME}`);
+
+        if (order.paymentStatus === 'Pendente' && order.pixQrCodeText) {
+          this.pollHandle = setInterval(() => {
+            this.orderService.getById(id).subscribe((refreshed) => {
+              this.order.set(refreshed);
+              if (refreshed.paymentStatus !== 'Pendente' && this.pollHandle) {
+                clearInterval(this.pollHandle);
+                this.pollHandle = null;
+              }
+            });
+          }, 5000);
+        }
       },
       error: () => {
         this.notFound.set(true);
         this.loading.set(false);
       },
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.pollHandle) clearInterval(this.pollHandle);
+  }
+
+  copyPixCode(): void {
+    const code = this.order()?.pixQrCodeText;
+    if (!code) return;
+
+    navigator.clipboard.writeText(code).then(() => {
+      this.pixCodeCopied.set(true);
+      setTimeout(() => this.pixCodeCopied.set(false), 2000);
     });
   }
 

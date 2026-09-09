@@ -74,20 +74,54 @@ public sealed class OrderService : IOrderService
             await _unitOfWork.SaveChangesAsync(ct);
 
             var dto = ToDto(order);
+            string? declineReason = null;
+            string? pixQrCodeImageUrl = null;
 
             if (_paymentGateway.IsConfigured)
             {
-                var preference = await _paymentGateway.CreatePreferenceAsync(
-                    order.Id, "Pedido Ateliê Layette Baby", order.Total.Amount, order.CustomerEmail.Value, ct);
-
-                if (preference is null)
+                if (string.Equals(request.PaymentMethod, "CREDIT_CARD", StringComparison.OrdinalIgnoreCase))
                 {
-                    throw new ConflictException(
-                        "Não foi possível gerar o pagamento online agora. Tente novamente em instantes ou fale " +
-                        "conosco pelo WhatsApp para finalizar sua encomenda.");
+                    if (string.IsNullOrWhiteSpace(request.EncryptedCard))
+                        throw new ConflictException("Dados do cartão inválidos. Tente novamente.");
+
+                    var charge = await _paymentGateway.ChargeCardAsync(
+                        order.Id, "Pedido Ateliê Layette Baby", order.Total.Amount,
+                        order.CustomerName, order.CustomerEmail.Value, order.CustomerCpf!.Value, order.CustomerPhone,
+                        request.EncryptedCard, request.Installments, ct);
+
+                    if (charge is null)
+                    {
+                        throw new ConflictException(
+                            "Não foi possível gerar o pagamento online agora. Tente novamente em instantes ou fale " +
+                            "conosco pelo WhatsApp para finalizar sua encomenda.");
+                    }
+
+                    if (charge.Approved)
+                        order.MarkPaymentApproved(charge.ExternalId!);
+                    else
+                        order.MarkPaymentRejected(charge.ExternalId);
+
+                    declineReason = charge.DeclineReason;
+                }
+                else
+                {
+                    var pix = await _paymentGateway.CreatePixChargeAsync(
+                        order.Id, "Pedido Ateliê Layette Baby", order.Total.Amount,
+                        order.CustomerName, order.CustomerEmail.Value, order.CustomerCpf!.Value, order.CustomerPhone, ct);
+
+                    if (pix is null)
+                    {
+                        throw new ConflictException(
+                            "Não foi possível gerar o pagamento online agora. Tente novamente em instantes ou fale " +
+                            "conosco pelo WhatsApp para finalizar sua encomenda.");
+                    }
+
+                    order.SetPixCharge(pix.ExternalId, pix.QrCodeText);
+                    pixQrCodeImageUrl = pix.QrCodeImageUrl;
                 }
 
-                dto = dto with { PaymentUrl = preference.CheckoutUrl };
+                await _unitOfWork.SaveChangesAsync(ct);
+                dto = ToDto(order) with { PaymentDeclineReason = declineReason, PixQrCodeImageUrl = pixQrCodeImageUrl };
             }
 
             _logger.LogInformation("Saindo de {Method}", nameof(CreateStoreOrderAsync));
@@ -298,32 +332,37 @@ public sealed class OrderService : IOrderService
         }
     }
 
-    public async Task<string> GeneratePaymentLinkAsync(Guid orderId, CancellationToken ct = default)
+    /// <summary>Admin-triggered payment retry — generates a fresh PIX charge (no card data to collect on this side) and returns its copy-paste code, e.g. to send the customer via WhatsApp.</summary>
+    public async Task<string> GeneratePixChargeAsync(Guid orderId, CancellationToken ct = default)
     {
-        _logger.LogInformation("Entrando em {Method}", nameof(GeneratePaymentLinkAsync));
+        _logger.LogInformation("Entrando em {Method}", nameof(GeneratePixChargeAsync));
         try
         {
             var order = await _unitOfWork.Orders.GetByIdAsync(orderId, ct)
                 ?? throw new NotFoundException("Pedido", orderId);
 
             if (order.PaymentStatus == PaymentStatus.Pago)
-                throw new ConflictException("Este pedido já está pago — não é necessário gerar um novo link de pagamento.");
+                throw new ConflictException("Este pedido já está pago — não é necessário gerar uma nova cobrança.");
 
             if (!_paymentGateway.IsConfigured)
                 throw new ConflictException("O meio de pagamento online ainda não foi configurado.");
 
-            var preference = await _paymentGateway.CreatePreferenceAsync(
-                order.Id, "Pedido Ateliê Layette Baby", order.Total.Amount, order.CustomerEmail.Value, ct);
+            var pix = await _paymentGateway.CreatePixChargeAsync(
+                order.Id, "Pedido Ateliê Layette Baby", order.Total.Amount,
+                order.CustomerName, order.CustomerEmail.Value, order.CustomerCpf!.Value, order.CustomerPhone, ct);
 
-            if (preference is null)
-                throw new ConflictException("Não foi possível gerar o link de pagamento agora. Tente novamente em instantes.");
+            if (pix is null)
+                throw new ConflictException("Não foi possível gerar a cobrança PIX agora. Tente novamente em instantes.");
 
-            _logger.LogInformation("Saindo de {Method}", nameof(GeneratePaymentLinkAsync));
-            return preference.CheckoutUrl;
+            order.SetPixCharge(pix.ExternalId, pix.QrCodeText);
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            _logger.LogInformation("Saindo de {Method}", nameof(GeneratePixChargeAsync));
+            return pix.QrCodeText;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro em {Method}", nameof(GeneratePaymentLinkAsync));
+            _logger.LogError(ex, "Erro em {Method}", nameof(GeneratePixChargeAsync));
             throw;
         }
     }
@@ -420,5 +459,6 @@ public sealed class OrderService : IOrderService
         o.ExternalPaymentId,
         o.TrackingCode,
         o.CouponCode,
-        o.CouponDiscountAmount.Amount);
+        o.CouponDiscountAmount.Amount,
+        PixQrCodeText: o.PixQrCodeText);
 }

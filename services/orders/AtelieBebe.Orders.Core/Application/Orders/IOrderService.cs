@@ -24,7 +24,7 @@ public interface IOrderService
     Task<OrderDto> SimulatePaymentAsync(Guid orderId, bool approved, CancellationToken ct = default);
 
     /// <summary>Admin action: creates a fresh PagBank checkout for an order (e.g. the customer never completed or abandoned the original one) and returns its URL, to open directly or send to the customer. Throws ConflictException when the gateway isn't configured or the order is already paid.</summary>
-    Task<string> GeneratePaymentLinkAsync(Guid orderId, CancellationToken ct = default);
+    Task<string> GeneratePixChargeAsync(Guid orderId, CancellationToken ct = default);
 
     /// <summary>Admin action: attaches/clears the shipping carrier's tracking code, shown to the customer on the order page.</summary>
     Task<OrderDto> SetTrackingCodeAsync(Guid orderId, SetTrackingCodeRequest request, CancellationToken ct = default);

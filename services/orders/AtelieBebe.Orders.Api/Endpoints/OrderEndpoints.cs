@@ -64,10 +64,11 @@ public static class OrderEndpoints
             return Results.Ok(updated);
         });
 
-        // Lets an admin (re)generate a payment link for an order — e.g. the customer abandoned the
-        // original Checkout Pro page, or the order was created before the gateway was configured.
+        // Lets an admin (re)generate a PIX charge for an order — e.g. the customer abandoned checkout,
+        // or the order was created before the gateway was configured. Returns the copy-paste code to
+        // relay to the customer (over WhatsApp, say) since there's no card form on the admin side.
         adminGroup.MapPost("/{id:guid}/payment-link", async (Guid id, IOrderService service, CancellationToken ct) =>
-            Results.Ok(new { paymentUrl = await service.GeneratePaymentLinkAsync(id, ct) }));
+            Results.Ok(new { pixQrCodeText = await service.GeneratePixChargeAsync(id, ct) }));
 
         adminGroup.MapGet("/export", async (string? status, string? paymentStatus, IOrderService service, CancellationToken ct) =>
         {

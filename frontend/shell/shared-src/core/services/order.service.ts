@@ -49,8 +49,12 @@ export class OrderService {
     return this.http.patch<Order>(`${this.adminUrl}/${id}/tracking-code`, { trackingCode });
   }
 
-  generatePaymentLink(orderId: string): Observable<{ paymentUrl: string }> {
-    return this.http.post<{ paymentUrl: string }>(`${this.adminUrl}/${orderId}/payment-link`, {});
+  generatePixCharge(orderId: string): Observable<{ pixQrCodeText: string }> {
+    return this.http.post<{ pixQrCodeText: string }>(`${this.adminUrl}/${orderId}/payment-link`, {});
+  }
+
+  getCardEncryptionPublicKey(): Observable<{ publicKey: string }> {
+    return this.http.get<{ publicKey: string }>(`${environment.apiUrl}/payments/pagbank/public-key`);
   }
 
   exportCsv(status?: string, paymentStatus?: string): Observable<Blob> {

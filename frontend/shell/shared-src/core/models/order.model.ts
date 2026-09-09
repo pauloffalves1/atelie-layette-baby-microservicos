@@ -35,7 +35,9 @@ export interface Order {
   trackingCode: string | null;
   couponCode: string | null;
   couponDiscountAmount: number;
-  paymentUrl: string | null;
+  paymentDeclineReason: string | null;
+  pixQrCodeText: string | null;
+  pixQrCodeImageUrl: string | null;
 }
 
 export interface CreateOrderItemRequest {
@@ -45,6 +47,8 @@ export interface CreateOrderItemRequest {
   quantity: number;
   optionsJson: string | null;
 }
+
+export type PaymentMethod = 'CREDIT_CARD' | 'PIX';
 
 export interface CreateStoreOrderRequest {
   customerName: string;
@@ -56,6 +60,9 @@ export interface CreateStoreOrderRequest {
   shippingCost: number;
   items: CreateOrderItemRequest[];
   couponCode?: string | null;
+  paymentMethod: PaymentMethod;
+  encryptedCard?: string | null;
+  installments?: number;
 }
 
 export interface CustomOrderDetails {
