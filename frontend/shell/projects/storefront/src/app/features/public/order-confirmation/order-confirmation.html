@@ -60,9 +60,9 @@
           @if (o.paymentStatus === 'Pendente' && o.pixQrCodeText) {
             <div class="stat-card mb-4 text-center">
               <h5 class="mb-3"><i class="bi bi-qr-code me-2"></i>Pague com PIX para confirmar seu pedido</h5>
-              @if (o.pixQrCodeImageUrl) {
-                <img [src]="o.pixQrCodeImageUrl" alt="QR Code PIX" class="mb-3" style="max-width: 220px;">
-              }
+              <div class="d-flex justify-content-center mb-3">
+                <app-pix-qr-code [text]="o.pixQrCodeText" [size]="200" />
+              </div>
               <p class="small text-secondary mb-2">Escaneie o QR Code no app do seu banco, ou copie o código abaixo:</p>
               <div class="input-group input-group-sm mb-2">
                 <input type="text" class="form-control" [value]="o.pixQrCodeText" readonly>

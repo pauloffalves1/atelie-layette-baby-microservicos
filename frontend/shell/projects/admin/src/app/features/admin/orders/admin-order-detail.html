@@ -165,6 +165,9 @@
             }
 
             @if (pixCode(); as code) {
+              <div class="d-flex justify-content-center mb-3">
+                <app-pix-qr-code [text]="code" [size]="160" />
+              </div>
               <label class="form-label small text-secondary">Código PIX copia-e-cola — envie ao cliente por WhatsApp</label>
               <div class="input-group input-group-sm mb-2">
                 <input type="text" class="form-control" [value]="code" readonly>

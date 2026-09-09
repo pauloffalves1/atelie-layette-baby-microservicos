@@ -12,11 +12,12 @@ import {
   ShippingAddress,
 } from '@shared/core/models/order.model';
 import { OrderService } from '@shared/core/services/order.service';
+import { PixQrCode } from '@shared/shared/components/pix-qr-code/pix-qr-code';
 
 @Component({
   selector: 'app-order-confirmation',
   standalone: true,
-  imports: [CurrencyPipe, RouterLink],
+  imports: [CurrencyPipe, RouterLink, PixQrCode],
   templateUrl: './order-confirmation.html',
 })
 export class OrderConfirmation implements OnInit, OnDestroy {

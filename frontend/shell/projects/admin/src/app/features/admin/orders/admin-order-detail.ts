@@ -11,6 +11,7 @@ import {
   ShippingAddress,
 } from '@shared/core/models/order.model';
 import { OrderService } from '@shared/core/services/order.service';
+import { PixQrCode } from '@shared/shared/components/pix-qr-code/pix-qr-code';
 import { CpfMaskPipe } from '@shared/shared/pipes/cpf-mask.pipe';
 
 const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
@@ -25,7 +26,7 @@ const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
 @Component({
   selector: 'app-admin-order-detail',
   standalone: true,
-  imports: [CurrencyPipe, DatePipe, RouterLink, CpfMaskPipe],
+  imports: [CurrencyPipe, DatePipe, RouterLink, CpfMaskPipe, PixQrCode],
   templateUrl: './admin-order-detail.html',
 })
 export class AdminOrderDetail implements OnInit {
