@@ -32,6 +32,7 @@ app.MapWishlistEndpoints();
 app.MapGalleryEndpoints();
 app.MapSiteImageEndpoints();
 app.MapInternalEndpoints();
+app.MapSeoEndpoints();
 app.MapHealthChecks("/health");
 
 // Served the same way the monolith served /api/uploads/** — a plain static-file mapping over the
