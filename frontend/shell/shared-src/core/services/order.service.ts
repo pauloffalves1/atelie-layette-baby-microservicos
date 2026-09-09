@@ -57,6 +57,10 @@ export class OrderService {
     return this.http.get<{ publicKey: string }>(`${environment.apiUrl}/payments/pagbank/public-key`);
   }
 
+  getThreeDsSession(): Observable<{ session: string; environment: 'SANDBOX' | 'PROD' }> {
+    return this.http.get<{ session: string; environment: 'SANDBOX' | 'PROD' }>(`${environment.apiUrl}/payments/pagbank/3ds-session`);
+  }
+
   exportCsv(status?: string, paymentStatus?: string): Observable<Blob> {
     const params: Record<string, string> = {};
     if (status) params['status'] = status;

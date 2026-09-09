@@ -17,10 +17,13 @@ public sealed class FakePaymentGateway : IPaymentGateway
     public Task<string?> GetCardEncryptionPublicKeyAsync(CancellationToken ct = default) =>
         Task.FromResult<string?>("fake-public-key-for-local-development");
 
+    public Task<ThreeDsSession?> CreateThreeDsSessionAsync(CancellationToken ct = default) =>
+        Task.FromResult<ThreeDsSession?>(new ThreeDsSession("fake-3ds-session-for-local-development", "SANDBOX"));
+
     public Task<CardChargeResult?> ChargeCardAsync(
         Guid orderId, string description, decimal amount,
         string customerName, string customerEmail, string customerTaxId, string? customerPhone,
-        string encryptedCard, int installments, CancellationToken ct = default) =>
+        string encryptedCard, int installments, string? threeDsAuthenticationId, CancellationToken ct = default) =>
         Task.FromResult<CardChargeResult?>(new CardChargeResult(true, "approved", $"FAKE-{orderId}", null));
 
     public Task<PixCharge?> CreatePixChargeAsync(

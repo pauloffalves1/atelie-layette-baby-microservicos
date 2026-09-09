@@ -53,7 +53,8 @@ public sealed record CreateStoreOrderRequest(
     string PaymentMethod = "PIX",
     string? EncryptedCard = null,
     int Installments = 1,
-    string? GiftMessage = null);
+    string? GiftMessage = null,
+    string? ThreeDsAuthenticationId = null);
 
 public sealed record CreateCustomOrderRequest(
     string CustomerName,

@@ -88,7 +88,7 @@ public sealed class OrderService : IOrderService
                     var charge = await _paymentGateway.ChargeCardAsync(
                         order.Id, "Pedido Ateliê Layette Baby", order.Total.Amount,
                         order.CustomerName, order.CustomerEmail.Value, order.CustomerCpf!.Value, order.CustomerPhone,
-                        request.EncryptedCard, request.Installments, ct);
+                        request.EncryptedCard, request.Installments, request.ThreeDsAuthenticationId, ct);
 
                     if (charge is null)
                     {

@@ -92,12 +92,54 @@ public sealed partial class PagBankGateway : IPaymentGateway
         }
     }
 
+    public async Task<ThreeDsSession?> CreateThreeDsSessionAsync(CancellationToken ct = default)
+    {
+        if (!IsConfigured) return null;
+
+        // Lives on a different host than every other call here (sdk.pagseguro.com, not
+        // api.pagseguro.com) — same sandbox/production split, just a different subdomain.
+        var host = _options.Sandbox ? "https://sandbox.sdk.pagseguro.com" : "https://sdk.pagseguro.com";
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"{host}/checkout-sdk/sessions");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _options.Token);
+
+        var response = await _httpClient.SendAsync(request, ct);
+        var body = await response.Content.ReadAsStringAsync(ct);
+        if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogError("Falha ao criar sessão 3DS no PagBank (HTTP {Status}): {Body}", (int)response.StatusCode, body);
+            return null;
+        }
+
+        var json = JsonDocument.Parse(body).RootElement;
+        var session = json.TryGetProperty("session", out var sessionEl) ? sessionEl.GetString() : null;
+        if (string.IsNullOrWhiteSpace(session))
+        {
+            _logger.LogError("Resposta do PagBank sem 'session' ao criar sessão 3DS.");
+            return null;
+        }
+
+        return new ThreeDsSession(session, _options.Sandbox ? "SANDBOX" : "PROD");
+    }
+
     public async Task<CardChargeResult?> ChargeCardAsync(
         Guid orderId, string description, decimal amount,
         string customerName, string customerEmail, string customerTaxId, string? customerPhone,
-        string encryptedCard, int installments, CancellationToken ct = default)
+        string encryptedCard, int installments, string? threeDsAuthenticationId, CancellationToken ct = default)
     {
         if (!IsConfigured) return null;
+
+        var paymentMethod = new Dictionary<string, object>
+        {
+            ["type"] = "CREDIT_CARD",
+            ["installments"] = Math.Max(1, installments),
+            ["capture"] = true,
+            ["card"] = new { encrypted = encryptedCard },
+            ["holder"] = new { name = customerName, tax_id = OnlyDigits(customerTaxId) },
+        };
+        // Absent (rather than sent as null) when the frontend's 3DS challenge didn't complete — we
+        // still charge the card either way, just without the fraud-liability shift 3DS provides.
+        if (!string.IsNullOrWhiteSpace(threeDsAuthenticationId))
+            paymentMethod["authentication_method"] = new { type = "THREEDS", id = threeDsAuthenticationId };
 
         var payload = new
         {
@@ -112,14 +154,7 @@ public sealed partial class PagBankGateway : IPaymentGateway
                     reference_id = orderId.ToString(),
                     description,
                     amount = new { value = ToCents(amount), currency = "BRL" },
-                    payment_method = new
-                    {
-                        type = "CREDIT_CARD",
-                        installments = Math.Max(1, installments),
-                        capture = true,
-                        card = new { encrypted = encryptedCard },
-                        holder = new { name = customerName, tax_id = OnlyDigits(customerTaxId) },
-                    },
+                    payment_method = paymentMethod,
                 },
             },
         };

@@ -18,6 +18,14 @@ public static class PaymentEndpoints
             return publicKey is null ? Results.NotFound() : Results.Ok(new { publicKey });
         });
 
+        // Public, same reasoning as public-key above — fetched fresh per checkout attempt since
+        // the session PagBank returns is only valid for 30 minutes.
+        group.MapGet("/pagbank/3ds-session", async (IPaymentGateway gateway, CancellationToken ct) =>
+        {
+            var session = await gateway.CreateThreeDsSessionAsync(ct);
+            return session is null ? Results.NotFound() : Results.Ok(new { session = session.Session, environment = session.Environment });
+        });
+
         // PagBank posts the full Order object here whenever a charge's status changes — but the
         // body is only ever used to read the order's own "id" field; the actual status always
         // comes from re-fetching GET /orders/{id} (see PagBankGateway.GetPaymentAsync), never from

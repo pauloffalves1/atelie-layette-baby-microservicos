@@ -65,6 +65,7 @@ export interface CreateStoreOrderRequest {
   encryptedCard?: string | null;
   installments?: number;
   giftMessage?: string | null;
+  threeDsAuthenticationId?: string | null;
 }
 
 export interface CustomOrderDetails {

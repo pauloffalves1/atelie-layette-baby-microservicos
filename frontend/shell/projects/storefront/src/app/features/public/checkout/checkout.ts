@@ -2,7 +2,7 @@ import { CurrencyPipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { catchError, debounceTime, distinctUntilChanged, filter, map, of, switchMap, tap } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, filter, firstValueFrom, map, of, switchMap, tap } from 'rxjs';
 import { AuthService } from '@shared/core/services/auth.service';
 import { CartService } from '@shared/core/services/cart.service';
 import { CepService } from '@shared/core/services/cep.service';
@@ -21,7 +21,37 @@ declare const PagSeguro: {
     expYear: string;
     securityCode: string;
   }): { encryptedCard?: string; hasErrors: boolean; errors?: { code: string; message: string }[] };
+  setUp(options: { session: string; env: 'SANDBOX' | 'PROD' }): void;
+  authenticate3DS(request: {
+    data: {
+      customer: {
+        name: string;
+        email: string;
+        phones: { country: string; area: string; number: string; type: string }[];
+      };
+      paymentMethod: {
+        type: 'CREDIT_CARD';
+        installments: number;
+        card: { number: string; expMonth: string; expYear: string; holder: { name: string } };
+      };
+      amount: { value: number; currency: string };
+      billingAddress: { street: string; number: string; regionCode: string; country: string; city: string; postalCode: string };
+      dataOnly: boolean;
+    };
+  }): Promise<{ status: string; authenticationStatus?: string; id?: string }>;
 };
+
+interface ParsedPhone {
+  country: string;
+  area: string;
+  number: string;
+  type: string;
+}
+
+function parsePhone(phone: string): ParsedPhone | null {
+  const digits = phone.replace(/\D/g, '');
+  return digits.length < 10 ? null : { country: '55', area: digits.slice(0, 2), number: digits.slice(2), type: 'MOBILE' };
+}
 
 const PAGBANK_SDK_URL = 'https://assets.pagseguro.com.br/checkout-sdk-js/rc/dist/browser/pagseguro.min.js';
 
@@ -237,13 +267,16 @@ export class Checkout implements OnInit {
         return;
       }
 
-      const [expMonth, expYear] = (value.cardExpiry || '').split('/').map((part) => part.trim());
+      const [expMonth, expYearRaw] = (value.cardExpiry || '').split('/').map((part) => part.trim());
+      const expYear = expYearRaw?.length === 2 ? `20${expYearRaw}` : expYearRaw || '';
+      const cardNumber = (value.cardNumber || '').replace(/\D/g, '');
+
       const card = PagSeguro.encryptCard({
         publicKey,
         holder: value.cardHolder,
-        number: (value.cardNumber || '').replace(/\D/g, ''),
+        number: cardNumber,
         expMonth: expMonth || '',
-        expYear: expYear?.length === 2 ? `20${expYear}` : expYear || '',
+        expYear,
         securityCode: value.cardCvv,
       });
 
@@ -252,10 +285,51 @@ export class Checkout implements OnInit {
         return;
       }
 
-      this.submitOrder(value, 'CREDIT_CARD', card.encryptedCard, Number(value.installments) || 1);
+      this.authenticate3ds(value, cardNumber, expMonth || '', expYear)
+        .then((threeDsAuthenticationId) =>
+          this.submitOrder(value, 'CREDIT_CARD', card.encryptedCard, Number(value.installments) || 1, threeDsAuthenticationId),
+        )
+        // 3DS is a fraud-liability nicety, not a hard requirement to charge — any failure in the
+        // authentication step itself (not the challenge outcome) still lets checkout proceed.
+        .catch(() => this.submitOrder(value, 'CREDIT_CARD', card.encryptedCard, Number(value.installments) || 1));
     } else {
       this.submitOrder(value, 'PIX');
     }
+  }
+
+  /** Resolves to the 3DS authentication id on success, or null if the challenge wasn't completed — either way checkout proceeds. */
+  private async authenticate3ds(
+    value: ReturnType<typeof this.form.getRawValue>,
+    cardNumber: string,
+    expMonth: string,
+    expYear: string,
+  ): Promise<string | null> {
+    const { session, environment } = await firstValueFrom(this.orderService.getThreeDsSession());
+    PagSeguro.setUp({ session, env: environment });
+
+    const phone = parsePhone(value.customerPhone);
+    const result = await PagSeguro.authenticate3DS({
+      data: {
+        customer: { name: value.customerName, email: value.customerEmail, phones: phone ? [phone] : [] },
+        paymentMethod: {
+          type: 'CREDIT_CARD',
+          installments: Number(value.installments) || 1,
+          card: { number: cardNumber, expMonth, expYear, holder: { name: value.cardHolder } },
+        },
+        amount: { value: Math.round(this.total() * 100), currency: 'BRL' },
+        billingAddress: {
+          street: value.street,
+          number: value.number,
+          regionCode: value.state,
+          country: 'BRA',
+          city: value.city,
+          postalCode: value.zipCode.replace(/\D/g, ''),
+        },
+        dataOnly: false,
+      },
+    });
+
+    return result.status === 'AUTH_FLOW_COMPLETED' && result.authenticationStatus === 'AUTHENTICATED' ? result.id ?? null : null;
   }
 
   private submitOrder(
@@ -263,6 +337,7 @@ export class Checkout implements OnInit {
     paymentMethod: 'PIX' | 'CREDIT_CARD',
     encryptedCard?: string,
     installments?: number,
+    threeDsAuthenticationId?: string | null,
   ): void {
     this.submitting.set(true);
     this.errorMessage.set(null);
@@ -291,6 +366,7 @@ export class Checkout implements OnInit {
         encryptedCard,
         installments,
         giftMessage: value.isGift && value.giftMessage ? value.giftMessage : null,
+        threeDsAuthenticationId,
         items: this.cart.items().map((item) => ({
           productId: item.product.id,
           productName: item.product.name,
