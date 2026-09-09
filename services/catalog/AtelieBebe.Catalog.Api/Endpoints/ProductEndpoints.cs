@@ -64,6 +64,14 @@ public static class ProductEndpoints
             return Results.Ok(updated);
         });
 
+        adminGroup.MapDelete("/{id:guid}", async (Guid id, HttpContext http, IProductService service, AdminAuditPublisher auditPublisher, CancellationToken ct) =>
+        {
+            var product = await service.GetByIdAsync(id, ct);
+            await service.DeleteAsync(id, ct);
+            await auditPublisher.PublishAsync(http.User.GetUserId(), http.User.GetName(), "ProductDeleted", $"Produto '{product.Name}' excluído", ct);
+            return Results.NoContent();
+        });
+
         adminGroup.MapPut("/{id:guid}/customers", async (Guid id, SetAllowedCustomersRequest request, IProductService service, CancellationToken ct) =>
             Results.Ok(await service.SetAllowedCustomersAsync(id, request, ct)));
 

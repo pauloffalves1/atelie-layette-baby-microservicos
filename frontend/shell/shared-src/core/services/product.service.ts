@@ -76,6 +76,10 @@ export class ProductService {
     return this.http.patch<Product>(`${this.adminUrl}/${id}/active?active=${active}`, {});
   }
 
+  delete(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.adminUrl}/${id}`);
+  }
+
   uploadImage(file: File): Observable<{ url: string }> {
     const formData = new FormData();
     formData.append('file', file);

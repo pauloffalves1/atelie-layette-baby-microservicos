@@ -10,11 +10,13 @@ namespace AtelieBebe.Catalog.Core.Application.Products;
 public sealed class ProductService : IProductService
 {
     private readonly ICatalogUnitOfWork _unitOfWork;
+    private readonly IOrdersServiceClient _ordersServiceClient;
     private readonly ILogger<ProductService> _logger;
 
-    public ProductService(ICatalogUnitOfWork unitOfWork, ILogger<ProductService> logger)
+    public ProductService(ICatalogUnitOfWork unitOfWork, IOrdersServiceClient ordersServiceClient, ILogger<ProductService> logger)
     {
         _unitOfWork = unitOfWork;
+        _ordersServiceClient = ordersServiceClient;
         _logger = logger;
     }
 
@@ -202,6 +204,29 @@ public sealed class ProductService : IProductService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro em {Method}", nameof(SetActiveAsync));
+            throw;
+        }
+    }
+
+    public async Task DeleteAsync(Guid id, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Entrando em {Method}", nameof(DeleteAsync));
+        try
+        {
+            var product = await _unitOfWork.Products.GetByIdAsync(id, ct)
+                ?? throw new NotFoundException("Produto", id);
+
+            if (await _ordersServiceClient.HasAnyOrderForProductAsync(id, ct))
+                throw new ConflictException($"'{product.Name}' já faz parte de encomendas e não pode ser excluído — inative o produto em vez disso.");
+
+            _unitOfWork.Products.Remove(product);
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            _logger.LogInformation("Saindo de {Method}", nameof(DeleteAsync));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro em {Method}", nameof(DeleteAsync));
             throw;
         }
     }

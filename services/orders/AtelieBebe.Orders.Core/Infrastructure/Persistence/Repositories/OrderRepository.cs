@@ -66,5 +66,10 @@ public sealed class OrderRepository : IOrderRepository
             .SelectMany(o => o.Items)
             .AnyAsync(i => i.ProductId == productId, ct);
 
+    public Task<bool> HasAnyOrderForProductAsync(Guid productId, CancellationToken ct = default) =>
+        _dbContext.Orders
+            .SelectMany(o => o.Items)
+            .AnyAsync(i => i.ProductId == productId, ct);
+
     public void Add(Order order) => _dbContext.Orders.Add(order);
 }

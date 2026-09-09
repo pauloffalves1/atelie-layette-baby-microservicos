@@ -4,4 +4,7 @@ namespace AtelieBebe.Catalog.Core.Application.Abstractions;
 public interface IOrdersServiceClient
 {
     Task<bool> CustomerHasPurchasedProductAsync(Guid customerId, Guid productId, CancellationToken ct = default);
+
+    /// <summary>Blocks product deletion — a product that appears in any order (any customer) can't be removed.</summary>
+    Task<bool> HasAnyOrderForProductAsync(Guid productId, CancellationToken ct = default);
 }

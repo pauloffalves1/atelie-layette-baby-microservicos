@@ -15,6 +15,10 @@ public static class InternalEndpoints
         app.MapGet("/internal/orders/has-purchased", async (Guid customerId, Guid productId, IOrderRepository orders, CancellationToken ct) =>
             Results.Ok(new { hasPurchased = await orders.CustomerHasPurchasedProductAsync(customerId, productId, ct) }));
 
+        // Catalog's product-deletion guard — a product that appears in any order can't be deleted.
+        app.MapGet("/internal/orders/has-any-for-product/{productId:guid}", async (Guid productId, IOrderRepository orders, CancellationToken ct) =>
+            Results.Ok(new { hasOrders = await orders.HasAnyOrderForProductAsync(productId, ct) }));
+
         // Identity's account-deletion decision (remove vs. anonymize).
         app.MapGet("/internal/orders/has-any-for-customer/{customerId:guid}", async (Guid customerId, IOrderRepository orders, CancellationToken ct) =>
         {

@@ -18,5 +18,8 @@ public interface IOrderRepository
     /// <summary>Used to gate product reviews to customers who actually bought the product — any order status counts, not just delivered.</summary>
     Task<bool> CustomerHasPurchasedProductAsync(Guid customerId, Guid productId, CancellationToken ct = default);
 
+    /// <summary>Used to block Catalog from deleting a product that appears in any order (any customer, any status) — preserves order history integrity.</summary>
+    Task<bool> HasAnyOrderForProductAsync(Guid productId, CancellationToken ct = default);
+
     void Add(Order order);
 }

@@ -18,6 +18,8 @@ export class AdminProductList implements OnInit {
   readonly totalPages = signal(0);
   readonly loading = signal(true);
 
+  readonly deletingId = signal<string | null>(null);
+
   readonly selectedIds = signal<string[]>([]);
   readonly bulkDiscount = signal<number | null>(null);
   readonly bulkStartsAt = signal('');
@@ -51,6 +53,26 @@ export class AdminProductList implements OnInit {
 
   toggleActive(product: Product): void {
     this.productService.setActive(product.id, !product.active).subscribe(() => this.load());
+  }
+
+  deleteProduct(product: Product): void {
+    if (this.deletingId()) return;
+    const confirmed = confirm(
+      `Excluir "${product.name}" definitivamente? Essa ação não pode ser desfeita. Se preferir só esconder da loja, use o botão de ativar/inativar.`,
+    );
+    if (!confirmed) return;
+
+    this.deletingId.set(product.id);
+    this.productService.delete(product.id).subscribe({
+      next: () => {
+        this.deletingId.set(null);
+        this.load();
+      },
+      error: (err) => {
+        this.deletingId.set(null);
+        alert(err?.error?.detail ?? 'Não foi possível excluir o produto.');
+      },
+    });
   }
 
   toggleSelected(productId: string, checked: boolean): void {

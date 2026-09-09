@@ -16,5 +16,13 @@ public sealed class OrdersServiceClient : IOrdersServiceClient
         return result?.HasPurchased ?? false;
     }
 
+    public async Task<bool> HasAnyOrderForProductAsync(Guid productId, CancellationToken ct = default)
+    {
+        var result = await _httpClient.GetFromJsonAsync<HasOrdersResponse>(
+            $"/internal/orders/has-any-for-product/{productId}", ct);
+        return result?.HasOrders ?? false;
+    }
+
     private sealed record HasPurchasedResponse(bool HasPurchased);
+    private sealed record HasOrdersResponse(bool HasOrders);
 }

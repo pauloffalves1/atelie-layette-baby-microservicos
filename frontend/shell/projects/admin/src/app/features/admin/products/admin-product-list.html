@@ -95,11 +95,14 @@
                   </span>
                 </td>
                 <td class="text-end">
-                  <a [routerLink]="['/admin/produtos', product.id, 'editar']" class="btn btn-sm btn-outline-secondary rounded-pill me-1">
+                  <a [routerLink]="['/admin/produtos', product.id, 'editar']" class="btn btn-sm btn-outline-secondary rounded-pill me-1" title="Editar produto">
                     <i class="bi bi-pencil"></i>
                   </a>
-                  <button class="btn btn-sm btn-outline-secondary rounded-pill" (click)="toggleActive(product)">
+                  <button class="btn btn-sm btn-outline-secondary rounded-pill me-1" (click)="toggleActive(product)" [title]="product.active ? 'Inativar (some da loja)' : 'Ativar (volta a aparecer na loja)'">
                     <i class="bi" [class.bi-eye-slash]="product.active" [class.bi-eye]="!product.active"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-danger rounded-pill" [disabled]="deletingId() === product.id" (click)="deleteProduct(product)" title="Excluir produto definitivamente">
+                    <i class="bi bi-trash"></i>
                   </button>
                 </td>
               </tr>
