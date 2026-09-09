@@ -1,6 +1,7 @@
 import { Component, HostListener, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs';
 import { AuthService } from '@shared/core/services/auth.service';
 import { CartService } from '@shared/core/services/cart.service';
 import { NewsletterService } from '@shared/core/services/newsletter.service';
@@ -19,19 +20,30 @@ export class PublicLayout {
   readonly newsletterSubmitting = signal(false);
   readonly newsletterSubscribed = signal(false);
 
-  // Native toggle for the account dropdown — this app never loads Bootstrap's JS bundle (only its
-  // SCSS partials, per client architecture), so the markup's old `data-bs-toggle="dropdown"` never
-  // did anything; nothing here actually wired it up to open on click.
+  // Native toggles for the account dropdown and the mobile nav — this app never loads Bootstrap's
+  // JS bundle (only its SCSS partials, per client architecture), so the markup's old
+  // `data-bs-toggle="dropdown"`/`data-bs-toggle="collapse"` never did anything; nothing here
+  // actually wired either one up to open on click.
   readonly accountMenuOpen = signal(false);
+  readonly mobileMenuOpen = signal(false);
 
   constructor(
     readonly cart: CartService,
     readonly auth: AuthService,
     private readonly newsletterService: NewsletterService,
-  ) {}
+    router: Router,
+  ) {
+    router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
+      this.mobileMenuOpen.set(false);
+    });
+  }
 
   toggleAccountMenu(): void {
     this.accountMenuOpen.update((open) => !open);
+  }
+
+  toggleMobileMenu(): void {
+    this.mobileMenuOpen.update((open) => !open);
   }
 
   @HostListener('document:click', ['$event'])
