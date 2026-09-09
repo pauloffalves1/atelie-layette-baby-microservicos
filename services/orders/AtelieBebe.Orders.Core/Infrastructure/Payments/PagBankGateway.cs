@@ -190,18 +190,28 @@ public sealed partial class PagBankGateway : IPaymentGateway
     {
         if (!IsConfigured) return null;
 
+        // PIX modeled as a charge's payment_method (matching PagBank's own example), not the older
+        // top-level qr_codes array — same order-creation endpoint either way, so ExternalId still
+        // ends up being the PagBank *order* id (ORDE_...), keeping GetPaymentAsync/the webhook
+        // (both keyed on that order id) working unchanged.
         var payload = new
         {
             reference_id = orderId.ToString(),
             customer = BuildCustomer(customerName, customerEmail, customerTaxId, customerPhone),
             items = new[] { new { reference_id = "item-1", name = description, quantity = 1, unit_amount = ToCents(amount) } },
             notification_urls = new[] { $"{_appUrls.ApiPublicUrl}/api/payments/pagbank/webhook" },
-            qr_codes = new[]
+            charges = new[]
             {
                 new
                 {
-                    amount = new { value = ToCents(amount) },
-                    expiration_date = DateTimeOffset.UtcNow.AddHours(1).ToString("yyyy-MM-ddTHH:mm:sszzz"),
+                    reference_id = orderId.ToString(),
+                    description,
+                    amount = new { value = ToCents(amount), currency = "BRL" },
+                    payment_method = new
+                    {
+                        type = "PIX",
+                        pix = new { expiration_date = DateTimeOffset.UtcNow.AddHours(1).ToString("yyyy-MM-ddTHH:mm:sszzz") },
+                    },
                 },
             },
         };
@@ -214,22 +224,24 @@ public sealed partial class PagBankGateway : IPaymentGateway
         }
 
         var orderExternalId = order.Value.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
-        if (orderExternalId is null || !order.Value.TryGetProperty("qr_codes", out var qrCodes) || qrCodes.GetArrayLength() == 0)
+        if (orderExternalId is null || !order.Value.TryGetProperty("charges", out var charges) || charges.GetArrayLength() == 0)
         {
-            _logger.LogError("Resposta do PagBank sem 'qr_codes' ao gerar cobrança PIX para o pedido {OrderId}.", orderId);
+            _logger.LogError("Resposta do PagBank sem 'charges' ao gerar cobrança PIX para o pedido {OrderId}.", orderId);
             return null;
         }
 
-        var qrCode = qrCodes[0];
-        var qrCodeText = qrCode.TryGetProperty("text", out var textEl) ? textEl.GetString() : null;
+        var charge = charges[0];
+        var qrCodeText = charge.TryGetProperty("qr_code", out var qrCodeEl) && qrCodeEl.TryGetProperty("text", out var textEl)
+            ? textEl.GetString()
+            : null;
         if (string.IsNullOrWhiteSpace(qrCodeText))
         {
-            _logger.LogError("Resposta do PagBank sem 'text' no QR Code PIX para o pedido {OrderId}.", orderId);
+            _logger.LogError("Resposta do PagBank sem 'qr_code.text' ao gerar cobrança PIX para o pedido {OrderId}.", orderId);
             return null;
         }
 
         string? qrCodeImageUrl = null;
-        if (qrCode.TryGetProperty("links", out var links))
+        if (charge.TryGetProperty("links", out var links))
         {
             foreach (var link in links.EnumerateArray())
             {
