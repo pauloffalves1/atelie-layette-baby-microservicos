@@ -36,14 +36,11 @@ public static class DbInitializer
             ("Fralda de Boca Bordada Florzinha", "Fralda de Boca", 34.90m, false, "Fralda de boca avulsa com bordado floral."),
         };
 
-        var allowedCategories = seedData.Select(p => p.Category).ToHashSet();
-        var discontinued = await dbContext.Products.Where(p => !allowedCategories.Contains(p.Category)).ToListAsync();
-        if (discontinued.Count > 0)
-        {
-            dbContext.Products.RemoveRange(discontinued);
-            await dbContext.SaveChangesAsync();
-        }
-
+        // NOTE: this used to also delete any product whose category wasn't in this hardcoded seed
+        // list, to enforce a "burp-cloths-only" catalog. That silently destroyed real admin-added
+        // products (Almofadinha, Toalha, kits) the moment this container restarted, since the
+        // catalog had grown beyond this list without the list being updated. Seeding must only ever
+        // add missing demo rows, never delete live data based on a hardcoded allowlist.
         var existingSlugs = (await dbContext.Products.Select(p => p.Slug).ToListAsync()).ToHashSet();
 
         var newProducts = seedData
