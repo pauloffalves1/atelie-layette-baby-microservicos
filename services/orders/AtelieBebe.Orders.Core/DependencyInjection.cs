@@ -24,10 +24,10 @@ public static class DependencyInjection
     {
         services.AddSingleton<DomainEventsToOutboxInterceptor>();
 
-        var connectionString = configuration.GetConnectionString("Default") ?? "Data Source=orders.db";
+        var connectionString = configuration.GetConnectionString("Default") ?? "Server=localhost;Database=OrdersDb;Trusted_Connection=True;TrustServerCertificate=True";
         services.AddDbContext<OrdersDbContext>((sp, options) =>
         {
-            options.UseSqlite(connectionString);
+            options.UseSqlServer(connectionString);
             options.AddInterceptors(sp.GetRequiredService<DomainEventsToOutboxInterceptor>());
         });
         services.AddScoped<IOutboxDbContext>(sp => sp.GetRequiredService<OrdersDbContext>());

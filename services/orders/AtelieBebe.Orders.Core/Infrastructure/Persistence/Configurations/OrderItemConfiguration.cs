@@ -13,7 +13,7 @@ public sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
         builder.HasKey(i => i.Id);
 
         builder.Property(i => i.ProductName).IsRequired().HasMaxLength(200);
-        builder.Property(i => i.OptionsJson).HasColumnType("TEXT");
+        builder.Property(i => i.OptionsJson);
         builder.Property(i => i.Quantity).IsRequired();
 
         builder.Property(i => i.UnitPrice)

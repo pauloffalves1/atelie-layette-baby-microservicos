@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    One-shot, throwaway tool: copies every row from each service's old SQLite database file into
+    its new SQL Server database, preserving GUID primary keys (critical — OrderItem.ProductId and
+    similar cross-service references are plain GUIDs with no real FK constraint across services,
+    so the values must match exactly what they were before). Not part of the running app, not
+    referenced by any service — run manually, once, per docs/README.md in this folder.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Only this tool still talks to SQLite — every service itself now uses SQL Server only. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\services\identity\AtelieBebe.Identity.Core\AtelieBebe.Identity.Core.csproj" />
+    <ProjectReference Include="..\..\services\catalog\AtelieBebe.Catalog.Core\AtelieBebe.Catalog.Core.csproj" />
+    <ProjectReference Include="..\..\services\orders\AtelieBebe.Orders.Core\AtelieBebe.Orders.Core.csproj" />
+    <ProjectReference Include="..\..\services\backoffice\AtelieBebe.Backoffice.Core\AtelieBebe.Backoffice.Core.csproj" />
+  </ItemGroup>
+
+</Project>

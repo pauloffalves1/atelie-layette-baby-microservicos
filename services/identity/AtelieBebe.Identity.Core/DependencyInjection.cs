@@ -22,10 +22,10 @@ public static class DependencyInjection
     {
         services.AddSingleton<DomainEventsToOutboxInterceptor>();
 
-        var connectionString = configuration.GetConnectionString("Default") ?? "Data Source=identity.db";
+        var connectionString = configuration.GetConnectionString("Default") ?? "Server=localhost;Database=IdentityDb;Trusted_Connection=True;TrustServerCertificate=True";
         services.AddDbContext<IdentityDbContext>((sp, options) =>
         {
-            options.UseSqlite(connectionString);
+            options.UseSqlServer(connectionString);
             options.AddInterceptors(sp.GetRequiredService<DomainEventsToOutboxInterceptor>());
         });
         services.AddScoped<IOutboxDbContext>(sp => sp.GetRequiredService<IdentityDbContext>());
