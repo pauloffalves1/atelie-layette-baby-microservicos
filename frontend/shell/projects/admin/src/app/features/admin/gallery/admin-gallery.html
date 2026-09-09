@@ -31,7 +31,7 @@
           <div class="position-relative rounded-4 overflow-hidden shadow-sm" style="aspect-ratio: 4/5;">
             <img [src]="image.displayUrl" alt="Foto da galeria" class="w-100 h-100 object-fit-cover">
             <button type="button" class="btn btn-sm btn-danger rounded-circle position-absolute top-0 end-0 m-2"
-              [disabled]="image.deleting" (click)="deleteImage(image.id)" aria-label="Remover foto">
+              [disabled]="image.deleting" (click)="deleteImage(image.id)" aria-label="Remover foto" title="Remover foto da galeria">
               @if (image.deleting) {
                 <span class="spinner-border spinner-border-sm"></span>
               } @else {

@@ -1,6 +1,6 @@
 <div class="p-4 p-lg-5">
   <div class="d-flex align-items-center gap-3 mb-4">
-    <a routerLink="/admin/produtos" class="btn btn-sm btn-outline-secondary rounded-circle"><i class="bi bi-arrow-left"></i></a>
+    <a routerLink="/admin/produtos" class="btn btn-sm btn-outline-secondary rounded-circle" title="Voltar para produtos"><i class="bi bi-arrow-left"></i></a>
     <h2 class="mb-0">{{ isEditMode() ? 'Editar produto' : 'Novo produto' }}</h2>
   </div>
 
@@ -45,7 +45,7 @@
               <label for="product-imageUrl" class="form-label small fw-semibold">URL da imagem</label>
               <div class="d-flex gap-2">
                 <input type="text" id="product-imageUrl" class="form-control" formControlName="imageUrl" placeholder="https://...">
-                <label class="btn btn-outline-secondary text-nowrap mb-0" [class.disabled]="uploadingImage()">
+                <label class="btn btn-outline-secondary text-nowrap mb-0" [class.disabled]="uploadingImage()" title="Enviar imagem do computador">
                   @if (uploadingImage()) {
                     <span class="spinner-border spinner-border-sm"></span>
                   } @else {
