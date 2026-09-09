@@ -231,8 +231,9 @@ export class ProductDetail implements OnInit {
     this.reviewService
       .create(product.id, { rating: this.reviewRating(), comment: this.reviewComment().trim() || null, photoUrl: this.reviewPhotoUrl() })
       .subscribe({
-        next: (review) => {
-          this.reviews.update((list) => [review, ...list]);
+        next: () => {
+          // Not added to `reviews` — it's pending admin approval and won't show on the storefront
+          // until then; the "alreadyReviewed" state below covers the submitter's own confirmation.
           this.eligibility.update((current) => (current ? { ...current, alreadyReviewed: true } : current));
           this.reviewComment.set('');
           this.reviewRating.set(5);

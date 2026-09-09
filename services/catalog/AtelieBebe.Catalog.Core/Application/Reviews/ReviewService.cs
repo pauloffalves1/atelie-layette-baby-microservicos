@@ -1,4 +1,5 @@
 using AtelieBebe.Catalog.Core.Application.Abstractions;
+using AtelieBebe.SharedKernel.Common;
 using AtelieBebe.SharedKernel.Exceptions;
 using AtelieBebe.Catalog.Core.Domain.Entities;
 using Microsoft.Extensions.Logging;
@@ -23,7 +24,7 @@ public sealed class ReviewService : IReviewService
         _logger.LogInformation("Entrando em {Method}", nameof(ListByProductAsync));
         try
         {
-            var reviews = await _unitOfWork.ProductReviews.ListByProductAsync(productId, ct);
+            var reviews = await _unitOfWork.ProductReviews.ListByProductAsync(productId, onlyApproved: true, ct);
             var result = reviews.Select(ToDto).ToList();
 
             _logger.LogInformation("Saindo de {Method}", nameof(ListByProductAsync));
@@ -87,6 +88,77 @@ public sealed class ReviewService : IReviewService
         }
     }
 
+    public async Task<PagedResult<AdminProductReviewDto>> ListForAdminAsync(bool? approved, int page, int pageSize, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Entrando em {Method}", nameof(ListForAdminAsync));
+        try
+        {
+            var (normalizedPage, normalizedPageSize) = Pagination.Normalize(page, pageSize);
+            var (reviews, totalItems) = await _unitOfWork.ProductReviews.ListForAdminAsync(approved, normalizedPage, normalizedPageSize, ct);
+
+            var productIds = reviews.Select(r => r.ProductId).Distinct().ToList();
+            var products = await _unitOfWork.Products.ListByIdsAsync(productIds, ct);
+            var productNames = products.ToDictionary(p => p.Id, p => p.Name);
+
+            var items = reviews.Select(r => ToAdminDto(r, productNames.GetValueOrDefault(r.ProductId, "(produto removido)"))).ToList();
+            var result = new PagedResult<AdminProductReviewDto>(items, normalizedPage, normalizedPageSize, totalItems);
+
+            _logger.LogInformation("Saindo de {Method}", nameof(ListForAdminAsync));
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro em {Method}", nameof(ListForAdminAsync));
+            throw;
+        }
+    }
+
+    public async Task<AdminProductReviewDto> ApproveAsync(Guid id, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Entrando em {Method}", nameof(ApproveAsync));
+        try
+        {
+            var review = await _unitOfWork.ProductReviews.GetByIdAsync(id, ct)
+                ?? throw new NotFoundException("Avaliação", id);
+
+            review.Approve();
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            var product = await _unitOfWork.Products.GetByIdAsync(review.ProductId, ct);
+
+            _logger.LogInformation("Saindo de {Method}", nameof(ApproveAsync));
+            return ToAdminDto(review, product?.Name ?? "(produto removido)");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro em {Method}", nameof(ApproveAsync));
+            throw;
+        }
+    }
+
+    public async Task RejectAsync(Guid id, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Entrando em {Method}", nameof(RejectAsync));
+        try
+        {
+            var review = await _unitOfWork.ProductReviews.GetByIdAsync(id, ct)
+                ?? throw new NotFoundException("Avaliação", id);
+
+            _unitOfWork.ProductReviews.Remove(review);
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            _logger.LogInformation("Saindo de {Method}", nameof(RejectAsync));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro em {Method}", nameof(RejectAsync));
+            throw;
+        }
+    }
+
     private static ProductReviewDto ToDto(ProductReview r) =>
         new(r.Id, r.ProductId, r.CustomerName, r.Rating, r.Comment, r.PhotoUrl, r.CreatedAt);
+
+    private static AdminProductReviewDto ToAdminDto(ProductReview r, string productName) =>
+        new(r.Id, r.ProductId, productName, r.CustomerName, r.Rating, r.Comment, r.PhotoUrl, r.Approved, r.CreatedAt);
 }

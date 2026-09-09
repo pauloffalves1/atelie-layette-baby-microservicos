@@ -1,6 +1,7 @@
 using AtelieBebe.SharedKernel.Web;
 using AtelieBebe.Catalog.Api.Common;
 using AtelieBebe.Catalog.Core.Application.Abstractions;
+using AtelieBebe.SharedKernel.Messaging;
 using AtelieBebe.Catalog.Core.Application.Reviews;
 
 namespace AtelieBebe.Catalog.Api.Endpoints;
@@ -34,5 +35,24 @@ public static class ReviewEndpoints
         })
         .RequireAuthorization("CustomerOnly")
         .DisableAntiforgery();
+
+        var adminGroup = app.MapGroup("/api/admin/reviews").WithTags("Avaliações (admin)").RequireAuthorization("AdminOnly");
+
+        adminGroup.MapGet("/", async (bool? approved, IReviewService service, CancellationToken ct, int page = 1, int pageSize = 20) =>
+            Results.Ok(await service.ListForAdminAsync(approved, page, pageSize, ct)));
+
+        adminGroup.MapPatch("/{id:guid}/approve", async (Guid id, HttpContext http, IReviewService service, AdminAuditPublisher auditPublisher, CancellationToken ct) =>
+        {
+            var review = await service.ApproveAsync(id, ct);
+            await auditPublisher.PublishAsync(http.User.GetUserId(), http.User.GetName(), "ReviewApproved", $"Avaliação de '{review.CustomerName}' em '{review.ProductName}' aprovada", ct);
+            return Results.Ok(review);
+        });
+
+        adminGroup.MapDelete("/{id:guid}", async (Guid id, HttpContext http, IReviewService service, AdminAuditPublisher auditPublisher, CancellationToken ct) =>
+        {
+            await service.RejectAsync(id, ct);
+            await auditPublisher.PublishAsync(http.User.GetUserId(), http.User.GetName(), "ReviewRejected", "Avaliação rejeitada e removida", ct);
+            return Results.NoContent();
+        });
     }
 }

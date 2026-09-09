@@ -14,6 +14,9 @@ public sealed class ProductReview : Entity, IAggregateRoot
     public string? PhotoUrl { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
+    /// <summary>Pending admin approval until set — new reviews never show on the storefront right away.</summary>
+    public bool Approved { get; private set; }
+
     private ProductReview() { } // EF Core
 
     private ProductReview(Guid id, Guid productId, Guid customerId, string customerName, int rating, string? comment, string? photoUrl) : base(id)
@@ -25,7 +28,10 @@ public sealed class ProductReview : Entity, IAggregateRoot
         Comment = comment;
         PhotoUrl = photoUrl;
         CreatedAt = DateTime.UtcNow;
+        Approved = false;
     }
+
+    public void Approve() => Approved = true;
 
     public static ProductReview Create(Guid productId, Guid customerId, string customerName, int rating, string? comment, string? photoUrl = null)
     {

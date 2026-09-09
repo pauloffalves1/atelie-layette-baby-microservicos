@@ -56,6 +56,11 @@ export const routes: Routes = [
           import('./features/admin/contact-messages/admin-contact-messages').then((m) => m.AdminContactMessages),
       },
       {
+        path: 'avaliacoes',
+        title: `Avaliações — ${SITE_NAME}`,
+        loadComponent: () => import('./features/admin/reviews/admin-review-list').then((m) => m.AdminReviewList),
+      },
+      {
         path: 'clientes',
         title: `Clientes — ${SITE_NAME}`,
         loadComponent: () => import('./features/admin/customers/admin-customer-list').then((m) => m.AdminCustomerList),
