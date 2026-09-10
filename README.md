@@ -249,8 +249,11 @@ flowchart LR
 
 ## Requisitos
 
-Numeração própria desta arquitetura (RF/RNF), no formato EARS já usado em `spec/requirements.md`
-para o monólito — cobrindo o sistema como ele existe hoje, bem além do RF01–RF26 original.
+Numeração própria desta arquitetura (RF/RNF) — cobrindo o sistema como ele existe hoje, bem além do
+RF01–RF26 original do monólito. A versão formal Spec-Driven Development (user story + critérios de
+aceite em EARS por requisito, mesmo padrão usado no `spec/` do monólito) vive em
+[`spec/requirements.md`](spec/requirements.md), [`spec/design.md`](spec/design.md) e
+[`spec/tasks.md`](spec/tasks.md) deste repositório.
 
 ### Funcionais
 

@@ -16,6 +16,16 @@ storytelling, event storming, the full RF/RNF requirement catalog, the auth/perm
 the testing strategy. Read it for anything beyond the condensed notes below rather than re-deriving
 it from source.
 
+`spec/` holds the same requirement catalog reframed as formal Spec-Driven Development docs (same
+pattern as the frozen monolith's own `spec/`, but scoped to what's actually built here):
+`requirements.md` (user story + EARS acceptance criteria per requirement, cross-referenced to the
+README's RF/RNF numbers), `design.md` (architecture decisions and cross-service contracts per
+requirement, complementing rather than repeating README's diagrams), and `tasks.md` (a
+requirement-traceable implementation checklist). Append new `[ ]` tasks there, under a new
+`requirements.md` entry first, before starting a new feature — then update README's RF/RNF table and
+Status list to match once it's done (see the commit that added RF22-RF27 for the shape of that
+update).
+
 ## Commands
 
 ```bash

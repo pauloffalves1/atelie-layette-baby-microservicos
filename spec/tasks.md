@@ -1,0 +1,133 @@
+# Implementation Plan — Ateliê Layette Baby (Microsserviços)
+
+Checklist rastreável por requisito, refletindo o que já está implementado, testado e (onde aplicável)
+em produção. Ver `README.md` → "Status" para o histórico narrativo completo de cada item, incluindo
+armadilhas encontradas e como foram corrigidas — este arquivo é o índice rastreável, não a
+substituição daquele relato.
+
+## Infraestrutura base
+
+- [x] SharedKernel + Identity + Catalog + Orders + Backoffice + Notifications + Gateway — testados
+      ponta a ponta (local e Docker Compose).
+- [x] Dockerfiles + `docker-compose.yml` — 7 containers sobem e funcionam (`-p microservices`).
+- [x] Manifests de Kubernetes (`k8s/`) — aplicados e testados no Docker Desktop.
+- [x] Microfrontend Angular (`frontend/shell` + remotes `storefront`/`admin`, Native Federation).
+- [x] Migração SQLite → SQL Server (Identity, Catalog, Orders, Backoffice).
+- [x] `.slnx` único + CI (`unit-tests` + `e2e` jobs no GitHub Actions).
+- [x] Estratégia de testes: 5 projetos xUnit, TDD, BDD (Reqnroll), e2e (Playwright), carga (k6).
+- [x] Extraído para repositório próprio (`pauloffalves1/atelie-layette-baby-microservicos`) via
+      `git subtree split`.
+- [x] Migração de produção real (`layettebaby.com.br` na VPS Hostinger, Docker Compose).
+- [x] Vulnerabilidades de dependências corrigidas (`Microsoft.OpenApi`, `System.Security.Cryptography.Xml`,
+      `SQLitePCLRaw.lib.e_sqlite3`).
+- [x] Dev local com `dotnet run` corrigido (conn strings SQL Server) + dados de produção restaurados
+      localmente para desenvolvimento.
+- [ ] New Relic — chart do Helm identificado e testado, falta cluster ativo + license key real (não
+      provisionável no momento).
+
+## Requisito 1 — Navegação e busca no catálogo público (RF01, RF02)
+
+- [x] Listagem paginada com filtro por categoria e busca por nome.
+- [x] Produtos exclusivos (`ProductCustomerAccessEntry`) tratados como 404 para quem não tem acesso.
+
+## Requisito 2 — Carrinho e personalização de bordado (RF03)
+
+- [x] Bloqueio client-side de adicionar ao carrinho sem texto/cor de bordado.
+
+## Requisito 3 — Checkout e criação de pedido (RF04, RF05)
+
+- [x] Revalidação de preço contra Catalog no momento da criação do pedido.
+- [x] Cobrança PIX + QR code persistido, sobrevivendo a reload.
+- [x] Outbox: gravação do evento na mesma transação da criação do pedido.
+
+## Requisito 4 — Ciclo de vida do pedido (RF06, RF07, RF22, RF25)
+
+- [x] Cancelamento pela cliente restrito ao status `Recebido`.
+- [x] Máquina de estados validada nas transições de status pela administradora.
+- [x] **E-mail em toda mudança de status, incluindo `Cancelado`** (2026-09-10) — bug de serialização
+      de enum no outbox corrigido (`JsonStringEnumConverter`). Verificado via logs de produção
+      antes/depois.
+- [x] **Exclusão de encomenda restrita à administradora geral** (2026-09-10) — endpoint exige
+      `Orders` + `AdminManagement`; botão só aparece no painel para quem tem `AdminManagement`.
+
+## Requisito 5 — Avaliações de produtos (RF08, RF09, RF24)
+
+- [x] Avaliação exige compra prévia, criada como pendente.
+- [x] Aprovação pela administradora publica a avaliação e a torna elegível para destaque.
+- [x] **Carrossel de avaliações na home** (2026-09-10) — testado no navegador; precisou do partial
+      `bootstrap/scss/carousel` tanto no `storefront` quanto no `shell` (o app composto usa a folha
+      de estilos do shell, não a do remote isoladamente).
+
+## Requisito 6 — Cupons de desconto (RF10)
+
+- [x] Cupom recusado se expirado, desativado, limite atingido, ou formato inválido.
+
+## Requisito 7 — Promoções por período (RF11)
+
+- [x] Preço promocional calculado on-demand por janela de tempo, sem job agendado.
+
+## Requisito 8 — Favoritos e aviso de reposição (RF12)
+
+- [x] Reativação de produto emite aviso de reposição para quem favoritou.
+
+## Requisito 9 — Lembrete de carrinho abandonado (RF13)
+
+- [x] Lembrete emitido quando um carrinho fica montado sem finalizar por tempo demais.
+
+## Requisito 10 — Prévia de compartilhamento para bots / SEO (RF14)
+
+- [x] Preview OG/Twitter server-renderizado via roteamento nginx `$is_bot` → `/api/seo/*`.
+
+## Requisito 11 — 2FA para administradoras (RF15)
+
+- [x] Ativação de 2FA exige verificação de código TOTP antes de marcar a conta como protegida.
+
+## Requisito 12 — Exclusão de conta pela cliente / LGPD (RF16)
+
+- [x] Anonimização de dados pessoais preservando o histórico de pedidos.
+
+## Requisito 13 — Integridade do catálogo (RF17)
+
+- [x] Exclusão de produto recusada quando ele aparece em algum pedido.
+
+## Requisito 14 — Permissões granulares por administradora (RF18, RF19, RF20, RF21)
+
+- [x] Cadastro de nova administradora exige escolha explícita de permissões (`AdminPermission.None`
+      por padrão).
+- [x] 403 + menu oculto para área sem permissão correspondente.
+- [x] Guarda contra a última conta com `AdminManagement` perder essa permissão.
+- [x] Troca de senha e 2FA como autoatendimento, sem exigir `AdminManagement`.
+- [x] Validado de ponta a ponta contra a stack real: criação de admin limitado, 403/200 corretos,
+      troca de senha, as duas travas de segurança.
+
+## Requisito 15 — Recibo de pedido em PDF (RF23)
+
+- [x] **Redesenhado** (2026-09-10) — logo, endereço/CNPJ e tabela de itens via `jsPDF` +
+      `jspdf-autotable`, gerado no navegador.
+
+## Requisito 16 — Pagamento em construção / PagBank (RF26)
+
+- [x] **Checkout bloqueado até credenciais de produção** (2026-09-10) — `GET
+      /api/payments/pagbank/status` consultado pelo frontend; enquanto `sandbox: true`, bloqueia e
+      orienta contato via WhatsApp.
+
+## Requisito 17 — Encerramento de sessão por inatividade (RF27)
+
+- [x] **Logout automático (15 min)** (2026-09-10) — `IdleTimeoutService` testado de ponta a ponta com
+      timeout temporariamente reduzido para validação (aba mantida em foco); revertido para 15 min
+      reais depois, confirmado via `git diff` vazio.
+
+## Requisito 18 — Requisitos não funcionais transversais (RNF01–RNF06)
+
+- [x] JWT RS256 (chave privada só em Identity).
+- [x] Rate limiting no Gateway nas rotas de autenticação.
+- [x] Outbox com retry (máx. 5 tentativas) isolando falha de publicação de operação síncrona.
+- [x] Backup automatizado diário (`ops/backup-dbs.sh`) com retenção de 10 cópias + sync externo.
+- [x] Interface e dados semeados 100% em pt-BR.
+- [x] Segredos só via `.env`/variáveis de ambiente, nunca commitados.
+
+## Fora do escopo deste `spec/` (documentado apenas no `README.md`)
+
+- Renomeação "Galeria" → "Dicas para o casal" (2026-09-10) — mudança de rótulo/URL sem alterar
+  comportamento; não gera um requisito novo, ver README → Status.
+- Ajustes visuais pontuais (rodapé, FAQ, tooltips) sem regra de negócio associada.
