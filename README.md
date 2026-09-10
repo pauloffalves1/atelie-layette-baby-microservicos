@@ -1,29 +1,434 @@
-# Ateliê Layette Baby — exercício de microsserviços
+# Ateliê Layette Baby — arquitetura de microsserviços
 
-Decomposição de aprendizado do monólito em `server/`/`client/` — **não afeta a produção**
-(layettebaby.com.br continua no monólito). Roda inteiramente aqui, em `microservices/`, com seu
-próprio banco por serviço, mensageria e chaves.
+Esta é a arquitetura em produção: **`layettebaby.com.br` roda inteiramente sobre o que está
+documentado aqui** desde a migração de 2026-09-08 (ver "Status" no fim deste documento). O antigo
+monólito `server/`/`client/` (raiz do repositório) foi mantido parado por algumas semanas como
+rollback e não recebe mais mudanças — qualquer trabalho novo entra aqui, em `microservices/`.
+
+Este documento segue um estilo inspirado em Spec-Driven Development: além de arquitetura e "como
+rodar", cobre a visão de negócio, como o domínio foi descoberto (domain storytelling/event
+storming), os requisitos funcionais/não funcionais atuais, autenticação/autorização, e a estratégia
+de testes (unitários, TDD, BDD, UI/e2e e carga) — com os projetos de teste reais linkados de cada
+subseção, não apenas descritos em prosa.
+
+## Sumário
+
+- [Visão de negócio](#visão-de-negócio)
+- [Arquitetura](#arquitetura)
+- [Domain Storytelling](#domain-storytelling)
+- [Event Storming](#event-storming)
+- [Requisitos](#requisitos)
+- [Autenticação e Autorização](#autenticação-e-autorização)
+- [Estratégia de testes](#estratégia-de-testes)
+- [Rodando localmente com `dotnet run` (sem Docker)](#rodando-localmente-com-dotnet-run-sem-docker)
+- [Rodando com Docker Compose](#rodando-com-docker-compose)
+- [Rodando no Kubernetes (Docker Desktop)](#rodando-no-kubernetes-docker-desktop)
+- [Fora do escopo (deliberado)](#fora-do-escopo-deliberado)
+- [Status](#status)
+
+## Visão de negócio
+
+O Ateliê Layette Baby é especializado exclusivamente em **fraldas de ombro e boca bordadas** para
+bebês — não é uma loja de enxoval genérica. As únicas categorias de produto são "Kit Ombro e Boca",
+"Fralda de Ombro" e "Fralda de Boca" (reforçado em código: `Catalog`'s `DbInitializer` remove no
+startup qualquer produto seedado fora dessas categorias). Toda peça pode ser personalizada com um
+bordado (texto + cor da linha), escolhido pelo cliente na própria página do produto antes de
+adicionar ao carrinho.
+
+Duas personas usam o sistema:
+
+- **Cliente final** — navega a loja sem precisar de conta, monta o carrinho com personalização por
+  item, faz login apenas para finalizar a compra (checkout exige `CustomerOnly`), acompanha pedidos
+  em "Minha conta", pode cancelar um pedido enquanto ele não entrou em produção, avalia produtos que
+  comprou, e pode favoritar peças (`/favoritos`) ou ser convidada a comprar de novo quando um item
+  favoritado volta ao estoque.
+- **Administradora do ateliê** — dona do negócio, único papel administrativo (sem hierarquia de
+  permissões além de admin vs. cliente). Gerencia catálogo, promoções, cupons, pedidos (mudança de
+  status, código de rastreio), moderação de avaliações, mensagens de contato, newsletter, imagens do
+  site/galeria, e acompanha um dashboard agregado com auditoria de ações administrativas. Protege a
+  própria conta com 2FA opcional (TOTP).
 
 ## Arquitetura
 
 | Serviço | Dono de | Porta interna |
 |---|---|---|
-| `identity` | Admin (+2FA), Customer (auth, CPF, verificação de e-mail) — assina os JWTs (RS256) | 8080 |
-| `catalog` | Product, GalleryImage, SiteImage, ProductReview, WishlistItem, upload de arquivos | 8080 |
+| `identity` | Admin (+2FA), Customer (auth, CPF, verificação de e-mail, endereço) — assina os JWTs (RS256) | 8080 |
+| `catalog` | Product, GalleryImage, SiteImage, ProductReview, WishlistItem, upload de arquivos, previews de SEO para bots | 8080 |
 | `orders` | Order, Coupon, CartSnapshot (+lembrete de carrinho abandonado), pagamento (PagBank) | 8080 |
 | `backoffice` | ContactMessage, NewsletterSubscriber, AuditLog, Dashboard (agregação), Sitemap | 8080 |
 | `notifications` | Worker — consome eventos do RabbitMQ, envia WhatsApp/e-mail | 8080 (só health) |
-| `gateway` | YARP — único ponto de entrada HTTP, roteia por prefixo de path | 8080 |
+| `gateway` | YARP — único ponto de entrada HTTP, roteia por prefixo de path, rate limiting, valida JWT | 8080 |
 
 `shared/AtelieBebe.SharedKernel`: `Entity`/`ValueObject`/exceções, infraestrutura do outbox
-transacional, cliente RabbitMQ (publish/subscribe), autenticação JWT compartilhada (RS256).
+transacional, cliente RabbitMQ (publish/subscribe), autenticação JWT compartilhada (RS256),
+`AdminAuditPublisher` (publica um evento de auditoria a cada ação administrativa relevante).
+
+```mermaid
+graph TB
+    subgraph Frontend
+        Shell[Shell Angular<br/>Native Federation]
+    end
+    Shell -->|"/api/*"| GW[Gateway · YARP<br/>JWT + rate limiting]
+    GW --> ID[Identity]
+    GW --> CAT[Catalog]
+    GW --> ORD[Orders]
+    GW --> BO[Backoffice]
+
+    ORD -.->|valida preço| CAT
+    CAT -.->|elegibilidade de review| ORD
+    BO -.->|dashboard agregado| ID
+    BO -.->|dashboard agregado| CAT
+    BO -.->|dashboard agregado| ORD
+
+    ID --> IDB[(IdentityDb)]
+    CAT --> CATB[(CatalogDb)]
+    ORD --> ORDB[(OrdersDb)]
+    BO --> BOB[(BackofficeDb)]
+
+    ID -.outbox.-> MQ{{RabbitMQ<br/>atelie.events}}
+    CAT -.outbox.-> MQ
+    ORD -.outbox.-> MQ
+    BO -.outbox.-> MQ
+    MQ --> NOT[Notifications<br/>Worker]
+    MQ --> BO
+
+    style GW fill:#f8d7e0
+    style MQ fill:#fff3cd
+```
 
 Cada serviço grava seus próprios eventos de domínio na própria tabela outbox (mesma transação da
 mudança de estado) e um `OutboxPublisherService` os publica no RabbitMQ (exchange `atelie.events`,
-routing key = nome do evento). `Notifications` e `Backoffice` (auditoria) consomem o que interessa.
-Chamadas síncronas entre serviços existem só onde é inevitável (Orders→Catalog para validar preço,
-Catalog→Orders para elegibilidade de review, Backoffice→Orders/Catalog/Identity para o dashboard) —
-o resto é resolvido no frontend, chamando o Gateway por serviço.
+routing key = nome do evento). `Notifications` (WhatsApp/e-mail) e `Backoffice` (auditoria via
+`AdminAuditConsumer`) consomem o que interessa a cada um. Chamadas síncronas entre serviços existem
+só onde é inevitável (Orders→Catalog para validar preço, Catalog→Orders para elegibilidade de
+review, Backoffice→Identity/Catalog/Orders para o dashboard) — o resto é resolvido no frontend,
+chamando o Gateway por serviço.
+
+O frontend é um microfrontend Angular (Native Federation): `shell` é o host servido em `/`, que
+carrega `storefront` (loja pública) e `admin` (painel administrativo) como remotes em runtime —
+cada um é um projeto Angular independente, testável e deployável isoladamente.
+
+## Domain Storytelling
+
+Quatro histórias cobrindo os fluxos que mais concentram regras de negócio — ator → atividade →
+objeto de trabalho, na notação de domain storytelling.
+
+### 1. Cliente compra uma peça personalizada
+
+**Cliente** navega a **Loja** → abre um **Produto** → escolhe texto e cor do bordado → adiciona ao
+**Carrinho** → faz login (ou cria conta) → confirma o **Pedido** no Checkout → paga via **PIX** →
+recebe a confirmação.
+
+```mermaid
+sequenceDiagram
+    actor C as Cliente
+    participant SF as Storefront
+    participant GW as Gateway
+    participant CAT as Catalog
+    participant ORD as Orders
+    participant PB as PagBank
+
+    C->>SF: Escolhe produto + bordado, adiciona ao carrinho
+    C->>SF: Login (CustomerOnly)
+    SF->>GW: POST /api/orders/store
+    GW->>ORD: (roteado)
+    ORD->>CAT: Valida preço de cada item
+    CAT-->>ORD: Preço atual confirmado
+    ORD->>ORD: Order.Create + AddItem + Submit()
+    ORD->>PB: Gera cobrança PIX
+    PB-->>ORD: QR code / copia-e-cola
+    ORD-->>C: Pedido "Recebido" + QR code
+    PB->>ORD: Webhook de pagamento aprovado
+    ORD->>ORD: MarkPaymentApproved (idempotente)
+```
+
+### 2. Cliente cancela um pedido antes da produção começar
+
+**Cliente** acessa **Minha conta** → escolhe um pedido com status "Recebido" → cancela. O sistema
+recusa se a produção já começou, orientando a falar pelo WhatsApp.
+
+```mermaid
+sequenceDiagram
+    actor C as Cliente
+    participant ORD as Orders
+
+    C->>ORD: POST /api/orders/{id}/cancel
+    alt pedido pertence à cliente E status == Recebido
+        ORD->>ORD: order.ChangeStatus(Cancelado)
+        ORD-->>C: 200 — pedido cancelado
+    else status já avançou
+        ORD-->>C: 409 — "fale conosco pelo WhatsApp"
+    else pedido de outra pessoa
+        ORD-->>C: 404 — não encontrado
+    end
+```
+
+Coberto ponta a ponta pelo BDD em
+[`AtelieBebe.Orders.Core.Tests/Features/CancelamentoDePedido.feature`](services/orders/AtelieBebe.Orders.Core.Tests/Features/CancelamentoDePedido.feature).
+
+### 3. Administradora modera uma avaliação
+
+**Cliente** que comprou um produto envia uma **Avaliação** (nota + comentário + foto opcional) →
+avaliação nasce pendente, invisível na loja → **Administradora** aprova ou rejeita no painel → só
+avaliações aprovadas aparecem na página do produto e na home.
+
+```mermaid
+sequenceDiagram
+    actor C as Cliente
+    participant CAT as Catalog
+    actor A as Administradora
+
+    C->>CAT: POST /api/products/{id}/reviews (elegível: já comprou)
+    CAT-->>C: Avaliação criada, approved=false
+    Note over CAT: Invisível em /api/products/{id}/reviews (público)
+    A->>CAT: GET /api/admin/reviews?approved=false
+    A->>CAT: PATCH /api/admin/reviews/{id}/approve
+    CAT->>CAT: AdminAuditPublisher: "ReviewApproved"
+    Note over CAT: Agora visível na loja e em destaques da home
+```
+
+### 4. Sistema convida a cliente a comprar de novo (eventos de domínio)
+
+Sem nenhuma ação manual: um produto favoritado volta ao estoque, ou um carrinho fica montado sem
+finalizar por tempo demais — o próprio agregado levanta o evento, o outbox garante que ele não se
+perde, e o worker de notificações decide o que fazer.
+
+```mermaid
+sequenceDiagram
+    participant CAT as Catalog
+    participant OUT as Outbox (CatalogDb)
+    participant MQ as RabbitMQ
+    participant NOT as Notifications
+
+    Note over CAT: Admin reativa produto esgotado (SetActive(true))
+    CAT->>CAT: AddDomainEvent(ProductBackInStockDomainEvent)
+    CAT->>OUT: Grava na mesma transação
+    OUT->>MQ: OutboxPublisherService publica
+    MQ->>NOT: Consome ProductBackInStockDomainEvent
+    NOT->>NOT: Notifica clientes com o produto na wishlist
+```
+
+## Event Storming
+
+Todos os eventos de domínio reais do código — cada um nasce dentro de um agregado (nunca é
+"levantado" por um serviço de aplicação diretamente) e é persistido no outbox na mesma transação da
+mudança de estado.
+
+| Evento | Agregado / serviço | Disparado por | Consumido por |
+|---|---|---|---|
+| `CustomerRegisteredDomainEvent` | `Customer` (Identity) | `Customer.Register()` | Notifications (e-mail de boas-vindas) |
+| `EmailVerificationRequestedDomainEvent` | `Customer` (Identity) | `Customer.RequestEmailVerification()` | Notifications (e-mail com link) |
+| `PasswordResetRequestedDomainEvent` | `Customer` (Identity) | `Customer.RequestPasswordReset()` | Notifications (e-mail com link) |
+| `ProductBackInStockDomainEvent` | `Product` (Catalog) | `Product.SetActive(true)`, reativando um produto inativo | Notifications (avisa quem tem na wishlist) |
+| `WishlistReminderDomainEvent` | `WishlistItem` (Catalog) | Job periódico de lembrete de favoritos | Notifications |
+| `OrderCreatedDomainEvent` | `Order` (Orders) | `Order.Submit()` | Notifications (confirmação + aviso à administradora) |
+| `OrderStatusChangedDomainEvent` | `Order` (Orders) | `Order.ChangeStatus()` | Notifications (avisa a cliente da mudança) |
+| `AbandonedCartReminderDomainEvent` | `CartSnapshot` (Orders) | Job periódico de carrinho abandonado | Notifications |
+| `ContactMessageReceivedDomainEvent` | `ContactMessage` (Backoffice) | `ContactMessage.Create()` | Notifications (avisa a administradora) |
+
+Além do outbox de domínio, cada ação administrativa relevante (aprovar review, mudar status de
+pedido, ativar 2FA, etc.) publica separadamente via `AdminAuditPublisher` (SharedKernel) para a fila
+de auditoria, consumida só pelo `Backoffice` (`AdminAuditConsumer`) e gravada como `AuditLog` — um
+canal deliberadamente à parte dos eventos de domínio, porque auditoria é uma preocupação
+transversal (toda ação de todo serviço), não parte do modelo de nenhum agregado de negócio.
+
+```mermaid
+flowchart LR
+    subgraph Serviço de origem
+        AGG[Agregado] -->|AddDomainEvent| OUT[(Outbox<br/>mesma transação)]
+    end
+    OUT -->|OutboxPublisherService, a cada 5s| MQ{{RabbitMQ<br/>exchange atelie.events}}
+    MQ --> NOT[Notifications Worker<br/>WhatsApp / Resend e-mail]
+    MQ --> AUD[Backoffice<br/>AdminAuditConsumer]
+```
+
+## Requisitos
+
+Numeração própria desta arquitetura (RF/RNF), no formato EARS já usado em `spec/requirements.md`
+para o monólito — cobrindo o sistema como ele existe hoje, bem além do RF01–RF26 original.
+
+### Funcionais
+
+- **RF01** — Quando uma visitante acessa a loja, o sistema deve listar produtos ativos paginados,
+  com filtro por categoria e busca por nome.
+- **RF02** — Quando uma cliente abre um produto exclusivo (`IsExclusive`) sem estar na lista de
+  clientes autorizadas, o sistema deve tratá-lo como inexistente (404), nunca revelar que existe.
+- **RF03** — Quando uma cliente adiciona um item ao carrinho, o sistema deve exigir texto e cor do
+  bordado antes de permitir a adição.
+- **RF04** — Quando uma cliente finaliza o checkout, o sistema deve revalidar o preço de cada item
+  contra o Catalog no momento da criação do pedido, nunca confiar no preço enviado pelo cliente.
+- **RF05** — Quando um pedido é criado, o sistema deve gerar uma cobrança PIX e persistir o QR code
+  para sobreviver a um reload da página de confirmação.
+- **RF06** — Quando uma cliente tenta cancelar um pedido, o sistema deve permitir somente enquanto o
+  status for "Recebido", recusando com orientação de contato nos demais casos.
+- **RF07** — Quando uma administradora muda o status de um pedido, o sistema deve validar a
+  transição contra a máquina de estados (`Recebido → EmProducao → Pronto → Enviado → Entregue`,
+  com `Cancelado` acessível a partir dos três primeiros).
+- **RF08** — Quando uma cliente envia uma avaliação, o sistema deve criá-la como pendente e
+  exigir que ela já tenha comprado o produto (checagem cross-service com Orders).
+- **RF09** — Quando uma administradora aprova uma avaliação, o sistema deve torná-la visível na
+  loja e elegível para aparecer nos destaques da home.
+- **RF10** — Quando um cupom é aplicado, o sistema deve recusar se ele estiver expirado, desativado,
+  com limite de usos atingido, ou com código em formato inválido (letras/números apenas).
+- **RF11** — Quando um produto tem uma promoção ativa (dentro da janela configurada), o sistema deve
+  calcular o preço efetivo automaticamente, sem job nenhum — a checagem é por horário, on-demand.
+- **RF12** — Quando uma administradora reativa um produto que estava inativo, o sistema deve emitir
+  um aviso de reposição de estoque para quem tiver esse produto favoritado.
+- **RF13** — Quando um carrinho fica montado sem finalizar por tempo demais, o sistema deve emitir
+  um lembrete de carrinho abandonado.
+- **RF14** — Quando uma visitante compartilha o link de um produto num app de mensagens, o sistema
+  deve servir um preview OG/Twitter Card server-renderizado (bots não executam JavaScript).
+- **RF15** — Quando uma administradora ativa 2FA, o sistema deve exigir a verificação de um código
+  TOTP contra o segredo antes de marcar a conta como protegida.
+- **RF16** — Quando uma cliente pede exclusão de conta (LGPD), o sistema deve anonimizar os dados
+  pessoais preservando o histórico de pedidos (que já guarda sua própria cópia dos dados na compra).
+- **RF17** — Quando uma administradora exclui um produto que aparece em algum pedido, o sistema deve
+  recusar a exclusão para preservar a integridade do histórico.
+
+### Não funcionais
+
+- **RNF01** — O sistema deve validar e assinar tokens JWT com RSA (RS256): Identity assina com a
+  chave privada, os demais serviços validam só com a pública — nenhum serviço além de Identity pode
+  forjar um token.
+- **RNF02** — O Gateway deve aplicar rate limiting nas rotas de autenticação, independente do rate
+  limiting que cada serviço já aplica na própria borda.
+- **RNF03** — A perda de conexão com o RabbitMQ não deve derrubar operações síncronas (login,
+  pedido, listagem) — apenas a publicação de eventos falha graciosamente (log + retry, descartada
+  após 5 tentativas).
+- **RNF04** — Os bancos de dados devem ter backup automatizado diário (`ops/backup-dbs.sh`, `BACKUP
+  DATABASE` nativo do SQL Server) com sincronização para armazenamento externo (Google Drive via
+  rclone) e retenção das 10 cópias mais recentes.
+- **RNF05** — Toda a interface, mensagens de erro e dados semeados devem estar em português do
+  Brasil (`pt-BR`).
+- **RNF06** — Nenhum serviço deve ler segredos (senha do banco, credenciais do RabbitMQ, tokens de
+  API) fora de variáveis de ambiente (`.env`, nunca commitado).
+
+## Autenticação e Autorização
+
+RS256 compartilhado via `AtelieBebe.SharedKernel.Auth`: **Identity** é o único serviço que assina
+tokens (guarda a chave privada); **Gateway**, **Catalog**, **Orders** e **Backoffice** só validam,
+usando a chave pública montada a partir do mesmo par de chaves (`keys/jwt-private.pem` /
+`jwt-public.pem`, gerado uma vez, nunca commitado). Dois fluxos independentes, mesmo esquema JWT
+bearer, roles diferentes:
+
+```mermaid
+sequenceDiagram
+    actor U as Admin ou Cliente
+    participant ID as Identity
+    participant GW as Gateway
+    participant SVC as Catalog/Orders/Backoffice
+
+    U->>ID: POST /api/auth/login (customer) ou /api/admin/auth/login
+    alt Admin com 2FA ativo
+        ID-->>U: Pede código TOTP
+        U->>ID: POST /api/admin/auth/2fa/verify
+    end
+    ID-->>U: JWT assinado (RS256), role=admin ou role=customer
+    U->>GW: Requisição com Authorization: Bearer <token>
+    GW->>GW: Valida assinatura (chave pública) antes de rotear
+    GW->>SVC: Encaminha (token já validado)
+    SVC->>SVC: RequireAuthorization("AdminOnly" | "CustomerOnly")
+```
+
+- **Admin** (`AdminAuthService`, policy `AdminOnly`, role `admin`) — login com e-mail/senha (BCrypt)
+  e, se `TwoFactorEnabled`, um segundo passo com código TOTP contra `TwoFactorSecret` antes de emitir
+  o token. Backend do painel administrativo inteiro.
+- **Customer** (`CustomerAuthService`, policy `CustomerOnly`, role `customer`) — login com e-mail/
+  senha, cadastro com CPF (validado com dígitos verificadores reais, não só formato), verificação de
+  e-mail e redefinição de senha por link com token de uso único.
+
+No frontend, `auth.interceptor.ts` decide qual dos dois tokens anexar a cada chamada olhando se a
+URL contém `/admin/` — nunca envia nenhum dos dois para um host de terceiro (ex.: ViaCEP).
+
+## Estratégia de testes
+
+Cobertura real (não só descrita) para uma fatia representativa de cada tipo de teste — o padrão
+estabelecido aqui deve ser replicado para os serviços/telas ainda não cobertos à medida que o
+sistema cresce.
+
+### Testes unitários (xUnit)
+
+Um projeto `*.Core.Tests` por serviço com banco, mais um para o `SharedKernel` — cobrindo as
+invariantes de domínio mais valiosas de cada um, sem tocar EF Core/banco (mesmo padrão do monólito
+em `server/test/AtelieBebe.Domain.Tests`):
+
+| Projeto | Cobre |
+|---|---|
+| [`shared/AtelieBebe.SharedKernel.Tests`](shared/AtelieBebe.SharedKernel.Tests) | `Money`, `Email`, `Cpf` — os value objects usados por todo o sistema |
+| [`services/orders/AtelieBebe.Orders.Core.Tests`](services/orders/AtelieBebe.Orders.Core.Tests) | Máquina de estados de `Order`, `Coupon`, `OrderItem` — mais o BDD abaixo |
+| [`services/catalog/AtelieBebe.Catalog.Core.Tests`](services/catalog/AtelieBebe.Catalog.Core.Tests) | `Product` — acesso exclusivo, promoções, evento de reposição de estoque |
+| [`services/identity/AtelieBebe.Identity.Core.Tests`](services/identity/AtelieBebe.Identity.Core.Tests) | `Customer` (cadastro, anonimização LGPD), `Admin` (2FA) |
+| [`services/backoffice/AtelieBebe.Backoffice.Core.Tests`](services/backoffice/AtelieBebe.Backoffice.Core.Tests) | `ContactMessage`, `NewsletterSubscriber` |
+
+Rodar todos os de um serviço: `cd services/orders/AtelieBebe.Orders.Core.Tests && dotnet test`
+(mesma ideia nos outros diretórios). Um único `dotnet test` para tudo exigiria uma `.slnx` na raiz
+de `microservices/`, que ainda não existe — cada projeto é independente por enquanto.
+
+### TDD (red-green-refactor)
+
+Exemplo real, não hipotético: `Coupon.Create` normalizava o código (trim + uppercase) mas nunca
+validava o formato — um código como `"BEM VINDA-10"` era aceito. O teste
+`CouponTests.Create_CodeWithSpacesOrSymbols_ThrowsDomainException` foi escrito primeiro (🔴 vermelho
+— 4 casos falhando, "No exception was thrown"), depois `Coupon.Create` ganhou a validação por regex
+`^[A-Z0-9]+$` (🟢 verde — os mesmos 4 casos passando, os outros 34 testes de Orders continuando
+verdes). Veja o teste e a validação em
+[`CouponTests.cs`](services/orders/AtelieBebe.Orders.Core.Tests/Domain/CouponTests.cs) e
+[`Coupon.cs`](services/orders/AtelieBebe.Orders.Core/Domain/Entities/Coupon.cs).
+
+### BDD (Reqnroll)
+
+[`Reqnroll`](https://reqnroll.net/) + `Reqnroll.xUnit`, cenários em português no mesmo projeto de
+testes do Orders — [`Features/CancelamentoDePedido.feature`](services/orders/AtelieBebe.Orders.Core.Tests/Features/CancelamentoDePedido.feature)
+cobre a história de domínio nº 2 (cancelamento pela cliente) direto contra `OrderService`, com
+`IOrdersUnitOfWork`/`IOrderRepository` mockados via NSubstitute — sem banco, sem HTTP:
+
+```gherkin
+Esquema do Cenário: Cliente não pode cancelar pedido que já saiu de Recebido
+    Dado que o pedido muda para o status "<status>"
+    Quando a própria cliente pede o cancelamento do pedido
+    Então o cancelamento é recusado com a mensagem "Só é possível cancelar o pedido..."
+```
+
+Roda junto dos unitários: `cd services/orders/AtelieBebe.Orders.Core.Tests && dotnet test`.
+
+### Testes de UI / e2e (Playwright)
+
+[`frontend/shell/e2e/`](frontend/shell/e2e) — Playwright contra os 3 `ng serve` reais (shell +
+storefront + admin, portas 4210/4201/4202, mesma topologia da seção "Rodando localmente" abaixo),
+exercitando o app pelo navegador de verdade, não por render isolado de componente:
+
+- `home-and-shop.spec.ts` — home → loja → abrir um produto do catálogo seedado; busca sem resultado.
+- `add-to-cart.spec.ts` — produto → escolher bordado + cor → adicionar ao carrinho → conferir no
+  `/carrinho` (o carrinho vive em `localStorage`, então é uma navegação de verdade, não um clique no
+  modal de resumo).
+- `login-validation.spec.ts` — validação client-side do formulário de login (sem dependência de
+  conta real: formulário reativo Angular, nenhuma chamada ao backend).
+
+```bash
+cd frontend/shell
+npm run test:e2e             # sobe os 3 dev servers sozinho e roda tudo
+```
+
+Rode sempre via `npm run test:e2e` (ou `./node_modules/.bin/playwright test`), **nunca via `npx
+playwright test`** — `npx` neste projeto resolve um segundo exemplar de `@playwright/test` além do
+instalado localmente, e as duas instâncias corrompem o registro interno de suítes do Playwright
+(`"Playwright Test did not expect test() to be called here"`, com 0 testes coletados). `home-and-
+shop` e `add-to-cart` dependem do backend rodando localmente (Gateway + Catalog com produtos
+seedados) — `login-validation` roda sozinha, sem nenhum serviço .NET no ar.
+
+### Testes de carga (k6)
+
+[`load-tests/gateway-smoke.js`](load-tests/gateway-smoke.js) — duas cargas simultâneas contra o
+Gateway: navegação no catálogo (`ramping-vus`, até 20 VUs) e login (`constant-vus`, 5 VUs),
+com thresholds de latência (`p(95)<500ms` na listagem de produtos, `p(95)<1500ms` no login — mais
+folgado porque o hash BCrypt é proposital e lento) e de taxa de erro (`<1%`). Criação de pedido fica
+fora da carga padrão (evita gravar linhas reais e dispachar notificações a cada iteração) — só entra
+com `-e INCLUDE_ORDER_CREATION=true`, e nunca contra produção.
+
+```bash
+k6 run load-tests/gateway-smoke.js                                    # local, :5100
+k6 run -e LOAD_TEST_CUSTOMER_EMAIL=... -e LOAD_TEST_CUSTOMER_PASSWORD=... load-tests/gateway-smoke.js  # inclui o cenário de login
+```
 
 ## Rodando localmente com `dotnet run` (sem Docker)
 
@@ -50,21 +455,26 @@ Rode cada um (na pasta `Api`/`Worker` do serviço) com `ASPNETCORE_ENVIRONMENT=D
 RabbitMQ precisa estar rodando (`docker run -d -p 5672:5672 -p 15672:15672 rabbitmq:4-management`)
 para o outbox/auditoria funcionar — sem ele, tudo continua funcionando (logins, pedidos, listagem),
 só a publicação de eventos falha graciosamente (log + retry) e é descartada depois de 5 tentativas.
+Um SQL Server local também é necessário (`ConnectionStrings:Default` em cada
+`appsettings.Development.json`) — os 4 serviços com banco rodam `Database.MigrateAsync()`
+automaticamente no startup.
 
-Depois de tudo no ar, `http://localhost:5100/api/...` é o único endereço que o frontend precisa
-conhecer.
+Depois de tudo no ar, `http://localhost:5100/api/...` é o único endereço que o backend precisa
+expor ao frontend. Para o frontend, veja os 3 `ng serve` na seção de testes de UI acima (portas
+4210/4201/4202).
 
 ## Rodando com Docker Compose
 
 ```bash
+cp .env.example .env   # preencher os valores — nunca commitar
 docker compose build
 docker compose up -d
 ```
 
-Sobe RabbitMQ + os 6 serviços com os hostnames internos (`http://catalog:8080` etc.) já
+Sobe RabbitMQ + SQL Server + os 6 serviços com os hostnames internos (`http://catalog:8080` etc.) já
 configurados em cada `appsettings.json`. Gateway exposto em `http://localhost:5100`. Painel do
-RabbitMQ em `http://localhost:15672` (guest/guest). Dados persistem em volumes nomeados
-(`docker compose down` sem `-v` preserva os bancos).
+RabbitMQ em `http://localhost:15672`. Dados persistem em volumes nomeados (`docker compose down` sem
+`-v` preserva os bancos).
 
 ## Rodando no Kubernetes (Docker Desktop)
 
@@ -104,9 +514,11 @@ Os Deployments já têm a anotação `newrelic.com/inject-dotnet: "true"` — o 
 
 ## Fora do escopo (deliberado)
 
-- Banco além de SQLite, múltiplas réplicas por serviço (incompatível com SQLite-por-arquivo).
-- Ingress Controller / TLS no cluster local (Kubernetes) — a VPS de produção usa Nginx/Certbot direto.
+- Ingress Controller / TLS no cluster local (Kubernetes) — a VPS de produção usa Nginx/Certbot
+  direto.
 - CI/CD para esta estrutura.
+- Suíte de testes exaustiva (100% de cobertura) — a "Estratégia de testes" acima cobre uma fatia
+  real e representativa de cada tipo; o padrão deve se expandir aos poucos.
 
 ## Status
 
@@ -154,5 +566,12 @@ Os Deployments já têm a anotação `newrelic.com/inject-dotnet: "true"` — o 
       `/` (shell) e `/mf/storefront/`, `/mf/admin/` (remotes) — mesma abordagem já usada para o
       monólito, evitando a necessidade de Dockerfiles para os 3 apps Angular. O monólito antigo
       fica parado (não removido) por algumas semanas como rollback, com banco/uploads intactos.
+- [x] **Migração SQLite → SQL Server** (2026-09) — os 4 serviços com banco (Identity, Catalog,
+      Orders, Backoffice) rodam sobre uma única instância de SQL Server compartilhada (um banco por
+      serviço), com backup automatizado via `ops/backup-dbs.sh` (`BACKUP DATABASE` nativo + sync
+      para Google Drive).
+- [x] **Estratégia de testes** (2026-09) — testes unitários (5 projetos xUnit, 109 testes), um
+      exemplo real de TDD, BDD com Reqnroll, testes de UI/e2e com Playwright e um script de carga
+      com k6 — ver "Estratégia de testes" acima.
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
       nos manifests; falta aplicar num cluster ativo e uma license key real.

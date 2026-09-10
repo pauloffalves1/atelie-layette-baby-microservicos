@@ -6,7 +6,8 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "test:e2e": "playwright test"
   },
   "private": true,
   "packageManager": "npm@11.13.0",
@@ -28,6 +29,7 @@
   },
   "devDependencies": {
     "@angular/build": "^22.1.2",
+    "@playwright/test": "^1.63.0",
     "@angular/cli": "^22.1.2",
     "@angular/compiler-cli": "^22.1.0",
     "@softarc/native-federation-orchestrator": "^4.6.0",
