@@ -132,16 +132,15 @@ public sealed class CustomerAdminService : ICustomerAdminService
             var customer = await _unitOfWork.Customers.GetByIdAsync(id, ct)
                 ?? throw new NotFoundException("Cliente", id);
 
-            if (customer.IsAnonymized)
-            {
-                _logger.LogInformation("Saindo de {Method}", nameof(RemoveAsync));
-                return;
-            }
-
             var hasOrders = await _ordersServiceClient.CustomerHasOrdersAsync(id, ct);
+
+            // Order count is re-checked even for an already-anonymized customer: if the order(s) that
+            // once justified keeping the row (instead of a hard delete) were later removed — e.g. via
+            // the admin's own order-deletion button — the row can finally be purged instead of
+            // lingering forever as an unreachable "Cliente removido" ghost.
             if (!hasOrders)
                 _unitOfWork.Customers.Remove(customer);
-            else
+            else if (!customer.IsAnonymized)
                 customer.Anonymize(_passwordHasher.Hash(Guid.NewGuid().ToString("N")));
 
             await _unitOfWork.SaveChangesAsync(ct);
