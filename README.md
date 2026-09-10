@@ -302,6 +302,20 @@ para o monólito — cobrindo o sistema como ele existe hoje, bem além do RF01�
 - **RF21** — Qualquer administradora deve poder alterar a própria senha e ativar/desativar 2FA sem
   precisar da permissão "Gerenciar Administradores" — são ações de autoatendimento sobre a própria
   conta, não sobre outras contas.
+- **RF22** — Quando uma administradora muda o status de um pedido para qualquer valor — incluindo
+  `Cancelado` —, o sistema deve enviar um e-mail de notificação à cliente.
+- **RF23** — Quando uma cliente baixa o recibo em PDF de um pedido, o sistema deve incluir a logo e o
+  endereço/CNPJ do ateliê (o mesmo usado no cálculo de frete) e uma tabela com os itens do pedido.
+- **RF24** — Quando a home carrega avaliações aprovadas com comentário, o sistema deve exibi-las num
+  carrossel com avanço automático, navegável manualmente pela cliente.
+- **RF25** — Quando uma administradora exclui uma encomenda, o sistema deve exigir a permissão
+  "Gerenciar Administradores" além da permissão de Encomendas — ação restrita à administradora geral.
+- **RF26** — Enquanto as credenciais de produção do PagBank não estiverem configuradas, o sistema deve
+  bloquear a finalização de pagamento no checkout e orientar a cliente a entrar em contato pelo
+  WhatsApp.
+- **RF27** — Quando uma cliente ou administradora fica 15 minutos sem interagir com a página (sem
+  mouse/teclado/toque), o sistema deve encerrar a sessão e redirecionar para a tela de login
+  correspondente.
 
 ### Não funcionais
 
@@ -673,6 +687,31 @@ contra o Gateway via `docker run --network host`).
       baixados foram apagados do disco local depois de restaurados (dados reais de cliente); a pasta
       `services/catalog/AtelieBebe.Catalog.Api/uploads/` (onde as imagens restauradas ficam) entrou
       no `.gitignore` — não existia entrada pra ela antes.
+- [x] **E-mail em toda mudança de status** (2026-09-10) — a causa raiz do e-mail de mudança de status
+      não sair era o outbox serializar os enums do evento como número, enquanto o consumidor de
+      Notifications esperava strings; `JsonStringEnumConverter` adicionado ao
+      `DomainEventsToOutboxInterceptor` corrige a falha silenciosa (`JsonException` engolida) pra
+      todas as transições, incluindo `Cancelado`. Verificado via logs da VPS antes/depois.
+- [x] **Recibo em PDF redesenhado** (2026-09-10) — logo, endereço/CNPJ do ateliê e tabela de itens via
+      `jsPDF` + `jspdf-autotable`, gerado no navegador a partir da confirmação do pedido.
+- [x] **Carrossel de avaliações na home** (2026-09-10) — testado no navegador; precisou do partial
+      `bootstrap/scss/carousel` tanto no `storefront` quanto no `shell` (o app composto usa a folha de
+      estilos do shell, não a do remote isoladamente — ver "Permissões granulares" para outro exemplo
+      da mesma armadilha de Native Federation).
+- [x] **Exclusão de encomendas restrita à administradora geral** (2026-09-10) — endpoint exige as
+      permissões `Orders` e `AdminManagement` simultaneamente; botão só aparece no painel pra quem tem
+      `AdminManagement`.
+- [x] **Pagamento em construção até o PagBank de produção** (2026-09-10) — checkout busca
+      `/api/payments/pagbank/status` e, enquanto `sandbox: true`, bloqueia a finalização e orienta
+      contato via WhatsApp em vez de expor um checkout que não processa cobrança real.
+- [x] **Logout automático por inatividade (15 min)** (2026-09-10) — `IdleTimeoutService` reseta um
+      temporizador a cada mouse/teclado/toque/scroll/click e desloga ao expirar. Testado de ponta a
+      ponta com o timeout temporariamente reduzido pra 15s (aba mantida em foco — `setTimeout` é
+      pausado pelo navegador em abas sem foco, o que não é bug, é comportamento esperado do browser);
+      confirmado redirecionamento + token limpo, depois revertido pro valor real de 15 min.
+- [x] **Renomeação "Galeria" → "Dicas para o casal"** (2026-09-10) — mesmo conteúdo (fotos reais +
+      banners promocionais), só o rótulo/URL mudaram (`/galeria` → `/dicas-para-o-casal`, com redirect
+      do caminho antigo); sitemap atualizado.
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
       nos manifests; falta aplicar num cluster ativo e uma license key real. **Não avancei aqui** —
       exige um cluster de verdade e uma license key real da New Relic, que eu não tenho como
