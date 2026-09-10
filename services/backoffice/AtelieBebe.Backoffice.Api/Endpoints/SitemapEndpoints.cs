@@ -12,7 +12,7 @@ public static class SitemapEndpoints
         "/",
         "/loja",
         "/sobre",
-        "/galeria",
+        "/dicas-para-o-casal",
         "/contato",
         "/politica-de-envio",
         "/perguntas-frequentes",

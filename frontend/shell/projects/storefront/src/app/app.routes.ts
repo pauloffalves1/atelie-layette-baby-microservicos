@@ -34,14 +34,15 @@ export const routes: Routes = [
         loadComponent: () => import('./features/public/checkout/checkout').then((m) => m.Checkout),
       },
       { path: 'encomenda-personalizada', redirectTo: 'contato', pathMatch: 'full' },
+      { path: 'galeria', redirectTo: 'dicas-para-o-casal', pathMatch: 'full' },
       {
         path: 'sobre',
         title: `Sobre o ateliê — ${SITE_NAME}`,
         loadComponent: () => import('./features/public/about/about').then((m) => m.About),
       },
       {
-        path: 'galeria',
-        title: `Galeria — ${SITE_NAME}`,
+        path: 'dicas-para-o-casal',
+        title: `Dicas para o casal — ${SITE_NAME}`,
         loadComponent: () => import('./features/public/gallery/gallery').then((m) => m.Gallery),
       },
       {

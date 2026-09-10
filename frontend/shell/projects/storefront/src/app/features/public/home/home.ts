@@ -27,8 +27,8 @@ export class Home implements OnInit, OnDestroy {
   // default image that then gets swapped for the real one (a visible "flash" on every load).
   readonly heroImageUrl = signal<string | null>(null);
   // Real delivered-work photos for the trust/social-proof section — empty until the admin has
-  // uploaded at least one (no fallback placeholders here, unlike the full /galeria page, since a
-  // home section with obviously-fake stock photos would undermine the trust it's meant to build).
+  // uploaded at least one (no fallback placeholders here, unlike the full /dicas-para-o-casal page,
+  // since a home section with obviously-fake stock photos would undermine the trust it's meant to build).
   readonly showcaseImages = signal<string[]>([]);
 
   // Empty until there's at least one approved review with a comment — same "no fake placeholders"

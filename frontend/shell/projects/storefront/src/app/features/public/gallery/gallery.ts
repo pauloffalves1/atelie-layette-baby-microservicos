@@ -5,7 +5,7 @@ import { resolveAssetUrl } from '@shared/core/utils/asset-url';
 
 const FALLBACK_IMAGES = Array.from(
   { length: 12 },
-  (_, i) => `https://picsum.photos/seed/atelie-bebe-galeria-${i + 1}/600/700`,
+  (_, i) => `https://picsum.photos/seed/atelie-bebe-dicas-${i + 1}/600/700`,
 );
 
 @Component({
@@ -24,9 +24,9 @@ export class Gallery implements OnInit {
 
   ngOnInit(): void {
     this.seo.update({
-      title: 'Galeria',
+      title: 'Dicas para o casal',
       description: 'Veja fotos de fraldas de ombro e boca bordadas já entregues pelo Ateliê Layette Baby — inspire-se para a sua encomenda personalizada.',
-      path: '/galeria',
+      path: '/dicas-para-o-casal',
     });
 
     this.galleryImageService.list().subscribe({
