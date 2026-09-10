@@ -1,11 +1,13 @@
-import { Component, HostListener, signal } from '@angular/core';
+import { Component, HostListener, effect, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
+import { IDLE_TIMEOUT_MS } from '@shared/core/constants/site';
 import { AnalyticsService } from '@shared/core/services/analytics.service';
 import { AuthService } from '@shared/core/services/auth.service';
 import { CartService } from '@shared/core/services/cart.service';
 import { CheckoutModalService } from '@shared/core/services/checkout-modal.service';
+import { IdleTimeoutService } from '@shared/core/services/idle-timeout.service';
 import { NewsletterService } from '@shared/core/services/newsletter.service';
 import { CheckoutModal } from '@shared/shared/components/checkout-modal/checkout-modal';
 import { CookieBanner } from '@shared/shared/components/cookie-banner/cookie-banner';
@@ -37,6 +39,7 @@ export class PublicLayout {
     readonly checkoutModal: CheckoutModalService,
     private readonly newsletterService: NewsletterService,
     private readonly analytics: AnalyticsService,
+    private readonly idleTimeout: IdleTimeoutService,
     router: Router,
   ) {
     router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
@@ -46,6 +49,20 @@ export class PublicLayout {
     // No-op unless the visitor already accepted cookies on a previous visit — a fresh "accept"
     // click also calls this itself (see CookieBanner), this only covers returning visitors.
     this.analytics.initIfAccepted();
+
+    // Only a logged-in customer has a session worth timing out — browsing anonymously never starts
+    // the timer. PublicLayout is mounted once for the whole storefront lifetime, so this effect
+    // naturally starts/stops as the customer logs in/out, no manual cleanup needed elsewhere.
+    effect(() => {
+      if (this.auth.isAuthenticated()) {
+        this.idleTimeout.start(IDLE_TIMEOUT_MS, () => {
+          this.auth.logout();
+          router.navigate(['/entrar']);
+        });
+      } else {
+        this.idleTimeout.stop();
+      }
+    });
   }
 
   toggleAccountMenu(): void {
