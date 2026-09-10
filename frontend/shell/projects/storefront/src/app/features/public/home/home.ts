@@ -1,5 +1,5 @@
 import { CurrencyPipe } from '@angular/common';
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { GalleryImageService } from '@shared/core/services/gallery-image.service';
 import { ProductService } from '@shared/core/services/product.service';
@@ -12,6 +12,7 @@ import { FeaturedReview } from '@shared/core/models/review.model';
 import { AssetUrlPipe } from '@shared/shared/pipes/asset-url.pipe';
 
 const SHOWCASE_LIMIT = 6;
+const AUTO_ADVANCE_MS = 6000;
 
 @Component({
   selector: 'app-home',
@@ -19,7 +20,7 @@ const SHOWCASE_LIMIT = 6;
   imports: [RouterLink, CurrencyPipe, AssetUrlPipe],
   templateUrl: './home.html',
 })
-export class Home implements OnInit {
+export class Home implements OnInit, OnDestroy {
   readonly featured = signal<Product[]>([]);
   readonly loading = signal(true);
   // Null until the site-images lookup resolves, so the template renders nothing rather than a
@@ -33,6 +34,11 @@ export class Home implements OnInit {
   // Empty until there's at least one approved review with a comment — same "no fake placeholders"
   // rule as showcaseImages, hides the whole section rather than showing it half-empty.
   readonly featuredReviews = signal<FeaturedReview[]>([]);
+  // Carousel is driven entirely from here (no Bootstrap JS in this app — see public-layout.ts's
+  // native dropdown/collapse toggles for the same reason): only carousel's CSS partial is
+  // imported, this signal picks which .carousel-item gets the .active class.
+  readonly activeReviewIndex = signal(0);
+  private autoAdvanceHandle: ReturnType<typeof setInterval> | null = null;
 
   constructor(
     private readonly productService: ProductService,
@@ -73,8 +79,49 @@ export class Home implements OnInit {
     });
 
     this.reviewService.listFeatured().subscribe({
-      next: (reviews) => this.featuredReviews.set(reviews),
+      next: (reviews) => {
+        this.featuredReviews.set(reviews);
+        if (reviews.length > 1) this.startAutoAdvance();
+      },
       error: () => this.featuredReviews.set([]),
     });
+  }
+
+  ngOnDestroy(): void {
+    this.stopAutoAdvance();
+  }
+
+  nextReview(): void {
+    this.advance(1);
+    this.restartAutoAdvance();
+  }
+
+  previousReview(): void {
+    this.advance(-1);
+    this.restartAutoAdvance();
+  }
+
+  goToReview(index: number): void {
+    this.activeReviewIndex.set(index);
+    this.restartAutoAdvance();
+  }
+
+  private advance(step: 1 | -1): void {
+    const count = this.featuredReviews().length;
+    this.activeReviewIndex.set((this.activeReviewIndex() + step + count) % count);
+  }
+
+  private startAutoAdvance(): void {
+    this.autoAdvanceHandle = setInterval(() => this.advance(1), AUTO_ADVANCE_MS);
+  }
+
+  private stopAutoAdvance(): void {
+    if (this.autoAdvanceHandle) clearInterval(this.autoAdvanceHandle);
+    this.autoAdvanceHandle = null;
+  }
+
+  private restartAutoAdvance(): void {
+    this.stopAutoAdvance();
+    if (this.featuredReviews().length > 1) this.startAutoAdvance();
   }
 }

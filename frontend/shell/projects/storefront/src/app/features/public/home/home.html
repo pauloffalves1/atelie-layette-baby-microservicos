@@ -117,26 +117,44 @@
   <section class="py-5">
     <div class="container">
       <h2 class="section-title text-center mb-5">O que nossas clientes dizem</h2>
-      <div class="row g-4">
-        @for (review of featuredReviews(); track review.id) {
-          <div class="col-md-6 col-lg-4">
-            <div class="stat-card h-100">
-              <span class="text-warning d-block mb-2">
-                @for (star of [1, 2, 3, 4, 5]; track star) {
-                  <i class="bi" [class.bi-star-fill]="star <= review.rating" [class.bi-star]="star > review.rating"></i>
-                }
-              </span>
-              <p class="fst-italic mb-3">"{{ review.comment }}"</p>
-              <div class="d-flex align-items-center gap-2">
-                @if (review.photoUrl) {
-                  <img [src]="review.photoUrl | assetUrl" alt="" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
-                }
-                <div>
-                  <span class="fw-semibold d-block small">{{ review.customerName }}</span>
-                  <a [routerLink]="['/produto', review.productSlug]" class="small text-secondary">{{ review.productName }}</a>
+      <div class="reviews-carousel carousel carousel-dark slide mx-auto" style="max-width: 640px;">
+        <div class="carousel-inner">
+          @for (review of featuredReviews(); track review.id; let i = $index) {
+            <div class="carousel-item" [class.active]="i === activeReviewIndex()">
+              <div class="stat-card text-center mx-2">
+                <span class="text-warning d-block mb-2">
+                  @for (star of [1, 2, 3, 4, 5]; track star) {
+                    <i class="bi" [class.bi-star-fill]="star <= review.rating" [class.bi-star]="star > review.rating"></i>
+                  }
+                </span>
+                <p class="fst-italic mb-3">"{{ review.comment }}"</p>
+                <div class="d-flex align-items-center justify-content-center gap-2">
+                  @if (review.photoUrl) {
+                    <img [src]="review.photoUrl | assetUrl" alt="" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                  }
+                  <div class="text-start">
+                    <span class="fw-semibold d-block small">{{ review.customerName }}</span>
+                    <a [routerLink]="['/produto', review.productSlug]" class="small text-secondary">{{ review.productName }}</a>
+                  </div>
                 </div>
               </div>
             </div>
+          }
+        </div>
+
+        @if (featuredReviews().length > 1) {
+          <button class="carousel-control-prev" type="button" aria-label="Avaliação anterior" (click)="previousReview()">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+          </button>
+          <button class="carousel-control-next" type="button" aria-label="Próxima avaliação" (click)="nextReview()">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+          </button>
+          <div class="carousel-indicators position-relative mt-3">
+            @for (review of featuredReviews(); track review.id; let i = $index) {
+              <button type="button" [class.active]="i === activeReviewIndex()"
+                [attr.aria-current]="i === activeReviewIndex() ? 'true' : null"
+                [attr.aria-label]="'Ir para avaliação ' + (i + 1)" (click)="goToReview(i)"></button>
+            }
           </div>
         }
       </div>
