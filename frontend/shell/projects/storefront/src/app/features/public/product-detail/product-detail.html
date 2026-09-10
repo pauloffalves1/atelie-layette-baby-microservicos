@@ -48,6 +48,7 @@
                 style="width: 2.5rem; height: 2.5rem;"
                 [disabled]="favoriteBusy()"
                 [attr.aria-label]="isFavorited() ? 'Remover dos favoritos' : 'Adicionar aos favoritos'"
+                [title]="isFavorited() ? 'Remover dos favoritos' : 'Adicionar aos favoritos'"
                 (click)="toggleFavorite()">
                 <i class="bi" [class.bi-heart-fill]="isFavorited()" [class.text-danger]="isFavorited()" [class.bi-heart]="!isFavorited()"></i>
               </button>

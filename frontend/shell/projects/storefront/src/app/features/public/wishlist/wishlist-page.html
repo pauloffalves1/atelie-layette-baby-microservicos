@@ -38,6 +38,8 @@
                     type="button"
                     class="btn btn-sm btn-outline-danger rounded-pill"
                     [disabled]="removingId() === item.id"
+                    title="Remover dos favoritos"
+                    aria-label="Remover dos favoritos"
                     (click)="remove(item)">
                     <i class="bi bi-heartbreak"></i>
                   </button>
