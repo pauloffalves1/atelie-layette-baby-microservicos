@@ -1,0 +1,35 @@
+<Solution>
+  <Folder Name="/shared/">
+    <Project Path="shared/AtelieBebe.SharedKernel/AtelieBebe.SharedKernel.csproj" />
+    <Project Path="shared/AtelieBebe.SharedKernel.Tests/AtelieBebe.SharedKernel.Tests.csproj" />
+  </Folder>
+  <Folder Name="/identity/">
+    <Project Path="services/identity/AtelieBebe.Identity.Api/AtelieBebe.Identity.Api.csproj" />
+    <Project Path="services/identity/AtelieBebe.Identity.Core/AtelieBebe.Identity.Core.csproj" />
+    <Project Path="services/identity/AtelieBebe.Identity.Core.Tests/AtelieBebe.Identity.Core.Tests.csproj" />
+  </Folder>
+  <Folder Name="/catalog/">
+    <Project Path="services/catalog/AtelieBebe.Catalog.Api/AtelieBebe.Catalog.Api.csproj" />
+    <Project Path="services/catalog/AtelieBebe.Catalog.Core/AtelieBebe.Catalog.Core.csproj" />
+    <Project Path="services/catalog/AtelieBebe.Catalog.Core.Tests/AtelieBebe.Catalog.Core.Tests.csproj" />
+  </Folder>
+  <Folder Name="/orders/">
+    <Project Path="services/orders/AtelieBebe.Orders.Api/AtelieBebe.Orders.Api.csproj" />
+    <Project Path="services/orders/AtelieBebe.Orders.Core/AtelieBebe.Orders.Core.csproj" />
+    <Project Path="services/orders/AtelieBebe.Orders.Core.Tests/AtelieBebe.Orders.Core.Tests.csproj" />
+  </Folder>
+  <Folder Name="/backoffice/">
+    <Project Path="services/backoffice/AtelieBebe.Backoffice.Api/AtelieBebe.Backoffice.Api.csproj" />
+    <Project Path="services/backoffice/AtelieBebe.Backoffice.Core/AtelieBebe.Backoffice.Core.csproj" />
+    <Project Path="services/backoffice/AtelieBebe.Backoffice.Core.Tests/AtelieBebe.Backoffice.Core.Tests.csproj" />
+  </Folder>
+  <Folder Name="/notifications/">
+    <Project Path="services/notifications/AtelieBebe.Notifications.Worker/AtelieBebe.Notifications.Worker.csproj" />
+  </Folder>
+  <Folder Name="/gateway/">
+    <Project Path="services/gateway/AtelieBebe.Gateway/AtelieBebe.Gateway.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/DataMigration/DataMigration.csproj" />
+  </Folder>
+</Solution>

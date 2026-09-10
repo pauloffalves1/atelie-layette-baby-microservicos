@@ -23,6 +23,7 @@ subseção, não apenas descritos em prosa.
 - [Rodando localmente com `dotnet run` (sem Docker)](#rodando-localmente-com-dotnet-run-sem-docker)
 - [Rodando com Docker Compose](#rodando-com-docker-compose)
 - [Rodando no Kubernetes (Docker Desktop)](#rodando-no-kubernetes-docker-desktop)
+- [CI](#ci)
 - [Fora do escopo (deliberado)](#fora-do-escopo-deliberado)
 - [Status](#status)
 
@@ -361,8 +362,9 @@ em `server/test/AtelieBebe.Domain.Tests`):
 | [`services/backoffice/AtelieBebe.Backoffice.Core.Tests`](services/backoffice/AtelieBebe.Backoffice.Core.Tests) | `ContactMessage`, `NewsletterSubscriber` |
 
 Rodar todos os de um serviço: `cd services/orders/AtelieBebe.Orders.Core.Tests && dotnet test`
-(mesma ideia nos outros diretórios). Um único `dotnet test` para tudo exigiria uma `.slnx` na raiz
-de `microservices/`, que ainda não existe — cada projeto é independente por enquanto.
+(mesma ideia nos outros diretórios), ou os 109 de uma vez com
+[`AtelieBebe.Microservices.slnx`](AtelieBebe.Microservices.slnx) na raiz de `microservices/`:
+`dotnet test AtelieBebe.Microservices.slnx` (usada também pelo job `unit-tests` do CI, abaixo).
 
 ### TDD (red-green-refactor)
 
@@ -409,12 +411,18 @@ cd frontend/shell
 npm run test:e2e             # sobe os 3 dev servers sozinho e roda tudo
 ```
 
-Rode sempre via `npm run test:e2e` (ou `./node_modules/.bin/playwright test`), **nunca via `npx
-playwright test`** — `npx` neste projeto resolve um segundo exemplar de `@playwright/test` além do
-instalado localmente, e as duas instâncias corrompem o registro interno de suítes do Playwright
-(`"Playwright Test did not expect test() to be called here"`, com 0 testes coletados). `home-and-
-shop` e `add-to-cart` dependem do backend rodando localmente (Gateway + Catalog com produtos
-seedados) — `login-validation` roda sozinha, sem nenhum serviço .NET no ar.
+Rode sempre via `npm run test:e2e` (ou `./node_modules/.bin/playwright test`). `home-and-shop` e
+`add-to-cart` dependem do backend rodando localmente (Gateway + Catalog com produtos seedados) —
+`login-validation` roda sozinha, sem nenhum serviço .NET no ar.
+
+**Pegadinha de Windows — grafia da letra de unidade:** se o clone estiver, por exemplo, em
+`C:\IA\...` no disco mas for acessado via `C:\ia\...` (NTFS não faz distinção, então os dois
+"funcionam"), o Playwright resolve o mesmo arquivo de teste por dois caminhos com grafia diferente e
+corrompe o registro interno de suítes — `"Playwright Test did not expect test() to be called here"`,
+com 0 testes coletados, mesmo rodando via `npm run test:e2e` (não é um problema de `npx` resolver um
+`@playwright/test` duplicado; confirmado que só existe uma cópia instalada). A correção é abrir o
+terminal a partir do caminho com a grafia real do diretório no disco — confira com
+`(Get-Item "C:\ia\...").FullName` no PowerShell.
 
 ### Testes de carga (k6)
 
@@ -512,11 +520,21 @@ Os Deployments já têm a anotação `newrelic.com/inject-dotnet: "true"` — o 
 .NET automaticamente, sem mexer em Dockerfile. Só falta preencher `NEW_RELIC_LICENSE_KEY` no Secret
 `app-secrets` (`k8s/01-secrets.yaml`) com uma chave de uma conta New Relic (tem tier gratuito).
 
+## CI
+
+[`.github/workflows/microservices-ci.yml`](../.github/workflows/microservices-ci.yml) — dispara em
+push/PR que tocam `microservices/**`. Dois jobs: `unit-tests` (`dotnet test
+AtelieBebe.Microservices.slnx`, os 109 testes) e `e2e` (gera um par de chaves RS256 e um `.env` com
+valores dummy — suficientes porque os 3 specs não fazem login, pagamento nem disparam
+WhatsApp/e-mail/New Relic —, sobe o `docker compose`, espera o Gateway responder, e roda `npm run
+test:e2e`). Não roda os testes de carga (k6) nem o `server/`/`client/` do monólito antigo.
+
 ## Fora do escopo (deliberado)
 
 - Ingress Controller / TLS no cluster local (Kubernetes) — a VPS de produção usa Nginx/Certbot
   direto.
-- CI/CD para esta estrutura.
+- Testes de carga (k6) e o monólito antigo (`server/`/`client/`) rodarem no CI — só os testes
+  unitários e os e2e do `microservices/` (ver "CI" acima).
 - Suíte de testes exaustiva (100% de cobertura) — a "Estratégia de testes" acima cobre uma fatia
   real e representativa de cada tipo; o padrão deve se expandir aos poucos.
 
@@ -572,6 +590,14 @@ Os Deployments já têm a anotação `newrelic.com/inject-dotnet: "true"` — o 
       para Google Drive).
 - [x] **Estratégia de testes** (2026-09) — testes unitários (5 projetos xUnit, 109 testes), um
       exemplo real de TDD, BDD com Reqnroll, testes de UI/e2e com Playwright e um script de carga
-      com k6 — ver "Estratégia de testes" acima.
+      com k6 — ver "Estratégia de testes" acima. Todos rodados e verificados de ponta a ponta: 109/109
+      testes unitários, 7/7 e2e, e o smoke de carga do k6 dentro de todos os thresholds (p95 de 57ms na
+      listagem de produtos, limite era 500ms; 0% de erro).
+- [x] **`.slnx` único + CI** (2026-09) — `AtelieBebe.Microservices.slnx` na raiz de `microservices/`
+      roda os 109 testes com um `dotnet test` só; `.github/workflows/microservices-ci.yml` faz o mesmo
+      em CI (job `unit-tests`) e sobe o `docker compose` pra rodar os 7 e2e (job `e2e`) a cada push/PR
+      em `microservices/**` — ver "CI" acima.
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
-      nos manifests; falta aplicar num cluster ativo e uma license key real.
+      nos manifests; falta aplicar num cluster ativo e uma license key real. **Não avancei aqui** —
+      exige um cluster de verdade e uma license key real da New Relic, que eu não tenho como
+      provisionar.
