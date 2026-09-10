@@ -8,6 +8,11 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
+  // The 3 dev servers behind these tests compile chunks on demand (esbuild/Native Federation) —
+  // two workers hitting them at once made the first navigation in a run flaky (cold-compile took
+  // longer than the default 5s expect timeout, e.g. home-and-shop's initial hero assertion).
+  // Serializing removes the contention; these specs are fast enough that this costs little time.
+  workers: 1,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: 'list',
