@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using AtelieBebe.SharedKernel.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -13,7 +14,15 @@ namespace AtelieBebe.SharedKernel.Outbox;
 /// </summary>
 public sealed class DomainEventsToOutboxInterceptor : SaveChangesInterceptor
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new() { WriteIndented = false };
+    // Enums as their string name, not the numeric ordinal — a consuming service (e.g.
+    // Notifications, deserializing OrderStatusChangedDomainEvent's OldStatus/NewStatus as a plain
+    // string, since it has no reference to Orders.Core's OrderStatus enum type) would otherwise
+    // fail with "The JSON value could not be converted" on every single status change.
+    private static readonly JsonSerializerOptions SerializerOptions = new()
+    {
+        WriteIndented = false,
+        Converters = { new JsonStringEnumConverter() },
+    };
 
     public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
     {
