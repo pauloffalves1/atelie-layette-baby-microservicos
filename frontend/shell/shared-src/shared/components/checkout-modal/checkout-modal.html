@@ -243,6 +243,18 @@
 
             @case ('payment') {
               <form [formGroup]="form">
+                @if (paymentUnderConstruction()) {
+                  <div class="alert alert-warning rounded-4">
+                    <h6 class="alert-heading"><i class="bi bi-cone-striped me-2"></i>Pagamento on-line em construção</h6>
+                    <p class="small mb-2">
+                      Ainda estamos finalizando a liberação dos pagamentos on-line. Pra fechar seu pedido agora,
+                      fale com a gente pelo WhatsApp — combinamos tudo por lá.
+                    </p>
+                    <a [href]="whatsappContactUrl" target="_blank" rel="noopener" class="btn btn-success btn-sm rounded-pill">
+                      <i class="bi bi-whatsapp me-1"></i>Falar no WhatsApp
+                    </a>
+                  </div>
+                } @else {
                 <h6 class="mb-3"><i class="bi bi-credit-card me-2"></i>Meio de pagamento</h6>
                 <div class="d-flex gap-3 mb-3">
                   <div class="form-check">
@@ -288,6 +300,7 @@
                       <input type="text" class="form-control" formControlName="cardCvv" placeholder="123" autocomplete="cc-csc">
                     </div>
                   </div>
+                }
                 }
 
                 <div class="mb-3">
@@ -386,12 +399,18 @@
               }
               @case ('payment') {
                 <button type="button" class="btn btn-outline-secondary rounded-pill" (click)="modal.goTo('delivery')">Voltar</button>
-                <button type="button" class="btn btn-primary rounded-pill flex-fill" [disabled]="submitting()" (click)="submit()">
-                  @if (submitting()) {
-                    <span class="spinner-border spinner-border-sm me-2"></span>
-                  }
-                  Confirmar pedido
-                </button>
+                @if (paymentUnderConstruction()) {
+                  <a [href]="whatsappContactUrl" target="_blank" rel="noopener" class="btn btn-success rounded-pill flex-fill">
+                    <i class="bi bi-whatsapp me-1"></i>Falar no WhatsApp
+                  </a>
+                } @else {
+                  <button type="button" class="btn btn-primary rounded-pill flex-fill" [disabled]="submitting()" (click)="submit()">
+                    @if (submitting()) {
+                      <span class="spinner-border spinner-border-sm me-2"></span>
+                    }
+                    Confirmar pedido
+                  </button>
+                }
               }
             }
           </div>

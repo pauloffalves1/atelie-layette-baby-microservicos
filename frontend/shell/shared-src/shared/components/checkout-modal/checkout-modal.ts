@@ -18,6 +18,7 @@ import { ShippingAddress } from '../../../core/models/order.model';
 import { PhoneMaskDirective } from '../../directives/phone-mask.directive';
 import { AssetUrlPipe } from '../../pipes/asset-url.pipe';
 import { OrderConfirmationView } from '../order-confirmation-view/order-confirmation-view';
+import { WHATSAPP_NUMBER } from '../../../core/constants/site';
 
 declare const PagSeguro: {
   encryptCard(options: {
@@ -109,6 +110,11 @@ export class CheckoutModal {
   readonly cardPublicKey = signal<string | null>(null);
   readonly cardSdkReady = signal(false);
 
+  // True until PagBank hands over a real production token — checkout shows a holding notice
+  // instead of the payment form/PIX flow while this is true (see PaymentEndpoints.MapPaymentEndpoints).
+  readonly paymentUnderConstruction = signal(false);
+  readonly whatsappContactUrl = `https://wa.me/${WHATSAPP_NUMBER}`;
+
   readonly deliveryMethod = signal<'Entrega' | 'Retirada'>('Entrega');
 
   readonly couponCode = signal('');
@@ -174,6 +180,13 @@ export class CheckoutModal {
   });
 
   constructor() {
+    this.orderService.getPaymentStatus().subscribe({
+      next: ({ sandbox }) => this.paymentUnderConstruction.set(sandbox),
+      // Fail safe: if the status check itself fails, assume the worst rather than let a broken
+      // sandbox payment flow through.
+      error: () => this.paymentUnderConstruction.set(true),
+    });
+
     // Address fields only matter (and only need to validate) when the order is actually shipped —
     // "Retirada" skips them entirely so the form doesn't stay stuck invalid over a blank address.
     effect(() => {

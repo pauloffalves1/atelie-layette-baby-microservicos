@@ -13,6 +13,7 @@ import { ShippingService } from '@shared/core/services/shipping.service';
 import { CustomerAddress } from '@shared/core/models/customer-address.model';
 import { ShippingAddress } from '@shared/core/models/order.model';
 import { PhoneMaskDirective } from '@shared/shared/directives/phone-mask.directive';
+import { WHATSAPP_NUMBER } from '@shared/core/constants/site';
 
 declare const PagSeguro: {
   encryptCard(options: {
@@ -84,6 +85,10 @@ export class Checkout implements OnInit {
   readonly cardPublicKey = signal<string | null>(null);
   readonly cardSdkReady = signal(false);
 
+  // True until PagBank hands over a real production token — see checkout-modal.ts for the same gate.
+  readonly paymentUnderConstruction = signal(false);
+  readonly whatsappContactUrl = `https://wa.me/${WHATSAPP_NUMBER}`;
+
   readonly deliveryMethod = signal<'Entrega' | 'Retirada'>('Entrega');
 
   readonly couponCode = signal('');
@@ -145,6 +150,11 @@ export class Checkout implements OnInit {
     private readonly auth: AuthService,
     private readonly router: Router,
   ) {
+    this.orderService.getPaymentStatus().subscribe({
+      next: ({ sandbox }) => this.paymentUnderConstruction.set(sandbox),
+      error: () => this.paymentUnderConstruction.set(true),
+    });
+
     // Address fields only matter (and only need to validate) when the order is actually shipped —
     // "Retirada" skips them entirely so the form doesn't stay stuck invalid over a blank address.
     effect(() => {

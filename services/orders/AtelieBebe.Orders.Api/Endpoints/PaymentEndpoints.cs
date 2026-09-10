@@ -1,5 +1,7 @@
 using AtelieBebe.Orders.Core.Application.Abstractions;
 using AtelieBebe.Orders.Core.Application.Orders;
+using AtelieBebe.Orders.Core.Infrastructure.Payments;
+using Microsoft.Extensions.Options;
 
 namespace AtelieBebe.Orders.Api.Endpoints;
 
@@ -8,6 +10,12 @@ public static class PaymentEndpoints
     public static void MapPaymentEndpoints(this WebApplication app)
     {
         var group = app.MapGroup("/api/payments").WithTags("Pagamentos");
+
+        // Public, unauthenticated, no PagBank call — the checkout needs to know whether to show
+        // the real payment form or the "em construção" notice *before* doing anything else. True
+        // until PagBank hands over a production token (see PagBank:Sandbox / PAGBANK_SANDBOX).
+        group.MapGet("/pagbank/status", (IOptions<PagBankOptions> options) =>
+            Results.Ok(new { sandbox = options.Value.Sandbox }));
 
         // Public — the checkout page needs this before the customer is authenticated to anything.
         // The public key itself isn't secret (that's the point of asymmetric encryption); only
