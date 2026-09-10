@@ -250,7 +250,7 @@
                       Ainda estamos finalizando a liberação dos pagamentos on-line. Pra fechar seu pedido agora,
                       fale com a gente pelo WhatsApp — combinamos tudo por lá.
                     </p>
-                    <a [href]="whatsappContactUrl" target="_blank" rel="noopener" class="btn btn-success btn-sm rounded-pill">
+                    <a [href]="whatsappContactUrl" target="_blank" rel="noopener" class="btn btn-success btn-sm rounded-pill" (click)="cart.clear()">
                       <i class="bi bi-whatsapp me-1"></i>Falar no WhatsApp
                     </a>
                   </div>
@@ -400,7 +400,7 @@
               @case ('payment') {
                 <button type="button" class="btn btn-outline-secondary rounded-pill" (click)="modal.goTo('delivery')">Voltar</button>
                 @if (paymentUnderConstruction()) {
-                  <a [href]="whatsappContactUrl" target="_blank" rel="noopener" class="btn btn-success rounded-pill flex-fill">
+                  <a [href]="whatsappContactUrl" target="_blank" rel="noopener" class="btn btn-success rounded-pill flex-fill" (click)="cart.clear()">
                     <i class="bi bi-whatsapp me-1"></i>Falar no WhatsApp
                   </a>
                 } @else {
