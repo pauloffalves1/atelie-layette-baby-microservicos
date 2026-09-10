@@ -39,6 +39,14 @@ public sealed class ProductReviewRepository : IProductReviewRepository
         return (items, totalItems);
     }
 
+    public async Task<IReadOnlyList<ProductReview>> ListFeaturedAsync(int limit, CancellationToken ct = default) =>
+        await _dbContext.ProductReviews
+            .Where(r => r.Approved && r.Comment != null && r.Comment != "")
+            .OrderByDescending(r => r.Rating)
+            .ThenByDescending(r => r.CreatedAt)
+            .Take(limit)
+            .ToListAsync(ct);
+
     public void Add(ProductReview review) => _dbContext.ProductReviews.Add(review);
     public void Remove(ProductReview review) => _dbContext.ProductReviews.Remove(review);
 }

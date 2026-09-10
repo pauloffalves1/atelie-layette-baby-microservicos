@@ -113,6 +113,37 @@
   </section>
 }
 
+@if (featuredReviews().length > 0) {
+  <section class="py-5">
+    <div class="container">
+      <h2 class="section-title text-center mb-5">O que nossas clientes dizem</h2>
+      <div class="row g-4">
+        @for (review of featuredReviews(); track review.id) {
+          <div class="col-md-6 col-lg-4">
+            <div class="stat-card h-100">
+              <span class="text-warning d-block mb-2">
+                @for (star of [1, 2, 3, 4, 5]; track star) {
+                  <i class="bi" [class.bi-star-fill]="star <= review.rating" [class.bi-star]="star > review.rating"></i>
+                }
+              </span>
+              <p class="fst-italic mb-3">"{{ review.comment }}"</p>
+              <div class="d-flex align-items-center gap-2">
+                @if (review.photoUrl) {
+                  <img [src]="review.photoUrl | assetUrl" alt="" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                }
+                <div>
+                  <span class="fw-semibold d-block small">{{ review.customerName }}</span>
+                  <a [routerLink]="['/produto', review.productSlug]" class="small text-secondary">{{ review.productName }}</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+}
+
 <section class="py-5">
   <div class="container">
     <div class="row align-items-center bg-sage-light rounded-5 p-5 gy-4">

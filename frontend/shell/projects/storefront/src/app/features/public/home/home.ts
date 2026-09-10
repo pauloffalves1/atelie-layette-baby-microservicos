@@ -3,10 +3,12 @@ import { Component, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { GalleryImageService } from '@shared/core/services/gallery-image.service';
 import { ProductService } from '@shared/core/services/product.service';
+import { ReviewService } from '@shared/core/services/review.service';
 import { SeoService } from '@shared/core/services/seo.service';
 import { SiteImageService } from '@shared/core/services/site-image.service';
 import { resolveAssetUrl } from '@shared/core/utils/asset-url';
 import { Product } from '@shared/core/models/product.model';
+import { FeaturedReview } from '@shared/core/models/review.model';
 import { AssetUrlPipe } from '@shared/shared/pipes/asset-url.pipe';
 
 const SHOWCASE_LIMIT = 6;
@@ -28,10 +30,15 @@ export class Home implements OnInit {
   // home section with obviously-fake stock photos would undermine the trust it's meant to build).
   readonly showcaseImages = signal<string[]>([]);
 
+  // Empty until there's at least one approved review with a comment — same "no fake placeholders"
+  // rule as showcaseImages, hides the whole section rather than showing it half-empty.
+  readonly featuredReviews = signal<FeaturedReview[]>([]);
+
   constructor(
     private readonly productService: ProductService,
     private readonly siteImageService: SiteImageService,
     private readonly galleryImageService: GalleryImageService,
+    private readonly reviewService: ReviewService,
     private readonly seo: SeoService,
   ) {}
 
@@ -63,6 +70,11 @@ export class Home implements OnInit {
         this.showcaseImages.set(images.slice(0, SHOWCASE_LIMIT).map((i) => resolveAssetUrl(i.url)));
       },
       error: () => this.showcaseImages.set([]),
+    });
+
+    this.reviewService.listFeatured().subscribe({
+      next: (reviews) => this.featuredReviews.set(reviews),
+      error: () => this.featuredReviews.set([]),
     });
   }
 }

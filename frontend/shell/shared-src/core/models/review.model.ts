@@ -19,6 +19,17 @@ export interface ReviewEligibility {
   alreadyReviewed: boolean;
 }
 
+export interface FeaturedReview {
+  id: string;
+  productName: string;
+  productSlug: string;
+  customerName: string;
+  rating: number;
+  comment: string | null;
+  photoUrl: string | null;
+  createdAt: string;
+}
+
 export interface AdminProductReview {
   id: string;
   productId: string;

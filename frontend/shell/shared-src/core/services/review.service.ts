@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '@shared/environment';
 import { PagedResult } from '../models/pagination.model';
-import { AdminProductReview, CreateReviewRequest, ProductReview, ReviewEligibility } from '../models/review.model';
+import { AdminProductReview, CreateReviewRequest, FeaturedReview, ProductReview, ReviewEligibility } from '../models/review.model';
 
 @Injectable({ providedIn: 'root' })
 export class ReviewService {
@@ -17,6 +17,10 @@ export class ReviewService {
 
   getEligibility(productId: string): Observable<ReviewEligibility> {
     return this.http.get<ReviewEligibility>(`${environment.apiUrl}/products/${productId}/reviews/eligibility`);
+  }
+
+  listFeatured(limit = 6): Observable<FeaturedReview[]> {
+    return this.http.get<FeaturedReview[]>(`${environment.apiUrl}/products/reviews/featured?limit=${limit}`);
   }
 
   create(productId: string, request: CreateReviewRequest): Observable<ProductReview> {

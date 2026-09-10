@@ -11,6 +11,9 @@ public interface IProductReviewRepository
     /// <summary>Admin moderation queue — newest first, optionally filtered by approval status.</summary>
     Task<(IReadOnlyList<ProductReview> Items, int TotalItems)> ListForAdminAsync(bool? approved, int page, int pageSize, CancellationToken ct = default);
 
+    /// <summary>Best approved reviews with a comment, across all products — backs the homepage testimonials section.</summary>
+    Task<IReadOnlyList<ProductReview>> ListFeaturedAsync(int limit, CancellationToken ct = default);
+
     void Add(ProductReview review);
     void Remove(ProductReview review);
 }

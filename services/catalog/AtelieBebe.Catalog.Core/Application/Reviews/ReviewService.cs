@@ -88,6 +88,38 @@ public sealed class ReviewService : IReviewService
         }
     }
 
+    public async Task<IReadOnlyList<FeaturedReviewDto>> ListFeaturedAsync(int limit, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Entrando em {Method}", nameof(ListFeaturedAsync));
+        try
+        {
+            var reviews = await _unitOfWork.ProductReviews.ListFeaturedAsync(limit, ct);
+
+            var productIds = reviews.Select(r => r.ProductId).Distinct().ToList();
+            var products = await _unitOfWork.Products.ListByIdsAsync(productIds, ct);
+            var productsById = products.ToDictionary(p => p.Id);
+
+            // A review whose product was since deleted has nothing to link back to — skip it here
+            // rather than showing a testimonial that 404s when clicked.
+            var result = reviews
+                .Where(r => productsById.ContainsKey(r.ProductId))
+                .Select(r =>
+                {
+                    var product = productsById[r.ProductId];
+                    return new FeaturedReviewDto(r.Id, product.Name, product.Slug, r.CustomerName, r.Rating, r.Comment, r.PhotoUrl, r.CreatedAt);
+                })
+                .ToList();
+
+            _logger.LogInformation("Saindo de {Method}", nameof(ListFeaturedAsync));
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro em {Method}", nameof(ListFeaturedAsync));
+            throw;
+        }
+    }
+
     public async Task<PagedResult<AdminProductReviewDto>> ListForAdminAsync(bool? approved, int page, int pageSize, CancellationToken ct = default)
     {
         _logger.LogInformation("Entrando em {Method}", nameof(ListForAdminAsync));

@@ -10,6 +10,12 @@ public static class ReviewEndpoints
 {
     public static void MapReviewEndpoints(this WebApplication app)
     {
+        // Under /api/products so it rides the Gateway's existing catalog-products-route catch-all
+        // instead of needing its own route entry (bare /api/reviews/... would 404 through the Gateway).
+        app.MapGet("/api/products/reviews/featured", async (IReviewService service, CancellationToken ct, int limit = 6) =>
+            Results.Ok(await service.ListFeaturedAsync(limit, ct)))
+            .WithTags("Avaliações");
+
         var group = app.MapGroup("/api/products/{productId:guid}/reviews").WithTags("Avaliações");
 
         group.MapGet("/", async (Guid productId, IReviewService service, CancellationToken ct) =>
