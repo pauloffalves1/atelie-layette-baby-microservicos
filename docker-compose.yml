@@ -40,6 +40,10 @@ services:
       - "127.0.0.1:1433:1433" # host-local only, same pattern as rabbitmq's management port — never 0.0.0.0
     volumes:
       - sqlserver-data:/var/opt/mssql
+      # Native BACKUP DATABASE target — a host bind mount, not a named volume, so a backup survives
+      # even if the sqlserver-data volume itself is ever lost/corrupted. ops/backup-dbs.sh copies
+      # files out of here into /var/backups/... right after each backup and deletes them from here.
+      - /var/backups/sqlserver-native:/backup
     healthcheck:
       test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1"]
       interval: 10s
