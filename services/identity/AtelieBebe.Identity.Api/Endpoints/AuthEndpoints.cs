@@ -93,5 +93,15 @@ public static class AuthEndpoints
             return Results.NoContent();
         })
         .RequireAuthorization("AdminOnly");
+
+        // Self-service, like the 2FA endpoints above — any admin can change their own password,
+        // no AdminManagement permission required.
+        adminGroup.MapPost("/change-password", async (ChangeAdminPasswordRequest request, HttpContext http, IAdminAuthService service, AdminAuditPublisher auditPublisher, CancellationToken ct) =>
+        {
+            await service.ChangePasswordAsync(http.User.GetUserId(), request, ct);
+            await auditPublisher.PublishAsync(http.User.GetUserId(), http.User.GetName(), "AdminPasswordChanged", "Senha alterada", ct);
+            return Results.NoContent();
+        })
+        .RequireAuthorization("AdminOnly");
     }
 }

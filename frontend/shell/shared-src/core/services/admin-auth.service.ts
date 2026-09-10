@@ -2,7 +2,14 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { environment } from '@shared/environment';
-import { AdminLoginResponse, AuthResponse, AuthUser, LoginRequest, TwoFactorSetup } from '../models/auth.model';
+import {
+  AdminLoginResponse,
+  AdminPermissionName,
+  AuthResponse,
+  AuthUser,
+  LoginRequest,
+  TwoFactorSetup,
+} from '../models/auth.model';
 
 const STORAGE_KEY = 'atelie-bebe.admin.token';
 const USER_KEY = 'atelie-bebe.admin.user';
@@ -13,6 +20,11 @@ export class AdminAuthService {
 
   readonly currentUser = this.userSignal.asReadonly();
   readonly isAuthenticated = computed(() => this.userSignal() !== null);
+  readonly permissions = computed<AdminPermissionName[]>(() => this.userSignal()?.permissions ?? []);
+
+  hasPermission(permission: AdminPermissionName): boolean {
+    return this.permissions().includes(permission);
+  }
 
   constructor(private readonly http: HttpClient) {}
 
@@ -46,6 +58,10 @@ export class AdminAuthService {
     return this.http.post<void>(`${environment.apiUrl}/admin/auth/2fa/disable`, { password });
   }
 
+  changePassword(currentPassword: string, newPassword: string): Observable<void> {
+    return this.http.post<void>(`${environment.apiUrl}/admin/auth/change-password`, { currentPassword, newPassword });
+  }
+
   logout(): void {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(USER_KEY);
@@ -58,7 +74,12 @@ export class AdminAuthService {
 
   private persistSession(response: AuthResponse): void {
     localStorage.setItem(STORAGE_KEY, response.token);
-    const user: AuthUser = { id: response.id, name: response.name, email: response.email };
+    const user: AuthUser = {
+      id: response.id,
+      name: response.name,
+      email: response.email,
+      permissions: response.permissions ?? [],
+    };
     localStorage.setItem(USER_KEY, JSON.stringify(user));
     this.userSignal.set(user);
   }

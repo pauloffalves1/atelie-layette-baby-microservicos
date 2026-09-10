@@ -15,6 +15,12 @@ namespace AtelieBebe.SharedKernel.Auth;
 /// </summary>
 public static class JwtAuthenticationExtensions
 {
+    /// <summary>Claim type Identity issues one instance of per permission an admin holds.</summary>
+    public const string PermissionClaimType = "permission";
+
+    /// <summary>The authorization policy name for a given permission — e.g. "Admin.Products".</summary>
+    public static string PermissionPolicyName(AdminPermission permission) => $"Admin.{permission}";
+
     public static IServiceCollection AddSharedJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
     {
         var options = configuration.GetSection(JwtValidationOptions.SectionName).Get<JwtValidationOptions>()
@@ -40,9 +46,21 @@ public static class JwtAuthenticationExtensions
                 };
             });
 
-        services.AddAuthorizationBuilder()
+        var authorizationBuilder = services.AddAuthorizationBuilder()
             .AddPolicy("AdminOnly", policy => policy.RequireRole(Roles.Admin))
             .AddPolicy("CustomerOnly", policy => policy.RequireRole(Roles.Customer));
+
+        // One policy per AdminPermission flag ("Admin.Products", "Admin.Orders", ...) — an admin
+        // endpoint group requires the specific flag for its feature instead of blanket "AdminOnly",
+        // so permissions can be granted per admin (see PermissionClaimType/PermissionPolicyName).
+        foreach (var permission in Enum.GetValues<AdminPermission>())
+        {
+            if (permission is AdminPermission.None or AdminPermission.All) continue;
+
+            authorizationBuilder.AddPolicy(
+                PermissionPolicyName(permission),
+                policy => policy.RequireRole(Roles.Admin).RequireClaim(PermissionClaimType, permission.ToString()));
+        }
 
         return services;
     }

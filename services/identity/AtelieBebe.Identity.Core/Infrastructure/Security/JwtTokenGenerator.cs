@@ -29,15 +29,25 @@ public sealed class JwtTokenGenerator : IJwtTokenGenerator
     }
 
     public string GenerateCustomerToken(Customer customer) =>
-        GenerateToken(customer.Id, customer.Name, customer.Email.Value, Roles.Customer);
+        GenerateToken(customer.Id, customer.Name, customer.Email.Value, Roles.Customer, []);
 
     public string GenerateAdminToken(Admin admin) =>
-        GenerateToken(admin.Id, admin.Name, admin.Email.Value, Roles.Admin);
+        GenerateToken(admin.Id, admin.Name, admin.Email.Value, Roles.Admin,
+            admin.Permissions.ToPermissionStrings().Select(p => new Claim(JwtAuthenticationExtensions.PermissionClaimType, p)));
 
-    private string GenerateToken(Guid id, string name, string email, string role)
+    private string GenerateToken(Guid id, string name, string email, string role, IEnumerable<Claim> extraClaims)
     {
         var key = new RsaSecurityKey(_privateKey);
         var credentials = new SigningCredentials(key, SecurityAlgorithms.RsaSha256);
+
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, id.ToString()),
+            new(ClaimTypes.Name, name),
+            new(ClaimTypes.Email, email),
+            new(ClaimTypes.Role, role),
+        };
+        claims.AddRange(extraClaims);
 
         var descriptor = new SecurityTokenDescriptor
         {
@@ -45,13 +55,7 @@ public sealed class JwtTokenGenerator : IJwtTokenGenerator
             Audience = _options.Audience,
             Expires = DateTime.UtcNow.AddMinutes(_options.ExpiryMinutes),
             SigningCredentials = credentials,
-            Subject = new ClaimsIdentity(new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, id.ToString()),
-                new Claim(ClaimTypes.Name, name),
-                new Claim(ClaimTypes.Email, email),
-                new Claim(ClaimTypes.Role, role),
-            }),
+            Subject = new ClaimsIdentity(claims),
         };
 
         return _handler.CreateToken(descriptor);

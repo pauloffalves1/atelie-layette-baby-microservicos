@@ -1,8 +1,23 @@
+/** One of AdminPermission's flag names (backend: AtelieBebe.SharedKernel.Auth.AdminPermission). */
+export type AdminPermissionName =
+  | 'Products'
+  | 'Orders'
+  | 'Coupons'
+  | 'Reviews'
+  | 'ContactMessages'
+  | 'Newsletter'
+  | 'Customers'
+  | 'SiteContent'
+  | 'Dashboard'
+  | 'AdminManagement';
+
 export interface AuthResponse {
   token: string;
   id: string;
   name: string;
   email: string;
+  /** Populated for an admin login only — which feature areas this admin can use. */
+  permissions?: AdminPermissionName[];
 }
 
 export interface AdminLoginResponse {
@@ -40,6 +55,24 @@ export interface AuthUser {
   id: string;
   name: string;
   email: string;
+  /** Only set for an admin session — see AdminPermissionName. */
+  permissions?: AdminPermissionName[];
+}
+
+export interface AdminSummary {
+  id: string;
+  name: string;
+  email: string;
+  twoFactorEnabled: boolean;
+  permissions: AdminPermissionName[];
+  createdAt: string;
+}
+
+export interface CreateAdminRequest {
+  name: string;
+  email: string;
+  password: string;
+  permissions: AdminPermissionName[];
 }
 
 export interface CustomerProfile {

@@ -95,6 +95,11 @@ export const routes: Routes = [
         title: `Segurança — ${SITE_NAME}`,
         loadComponent: () => import('./features/admin/security/admin-security').then((m) => m.AdminSecurity),
       },
+      {
+        path: 'administradores',
+        title: `Administradores — ${SITE_NAME}`,
+        loadComponent: () => import('./features/admin/admins/admin-admin-list').then((m) => m.AdminAdminList),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

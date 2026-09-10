@@ -20,5 +20,9 @@ public sealed class AdminRepository : IAdminRepository
     public Task<Admin?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
         _dbContext.Admins.FirstOrDefaultAsync(a => a.Id == id, ct);
 
+    public Task<List<Admin>> ListAllAsync(CancellationToken ct = default) =>
+        _dbContext.Admins.OrderBy(a => a.Name).ToListAsync(ct);
+
     public void Add(Admin admin) => _dbContext.Admins.Add(admin);
+    public void Remove(Admin admin) => _dbContext.Admins.Remove(admin);
 }

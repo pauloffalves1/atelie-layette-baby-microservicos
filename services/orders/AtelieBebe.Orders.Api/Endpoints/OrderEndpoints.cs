@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using AtelieBebe.SharedKernel.Web;
+using AtelieBebe.SharedKernel.Auth;
 using AtelieBebe.SharedKernel.Messaging;
 using AtelieBebe.Orders.Core.Application.Orders;
 using Microsoft.AspNetCore.RateLimiting;
@@ -45,7 +46,8 @@ public static class OrderEndpoints
             Results.Ok(await service.LookupAsync(orderNumber, email, ct)))
             .RequireRateLimiting("auth");
 
-        var adminGroup = app.MapGroup("/api/admin/orders").WithTags("Encomendas (admin)").RequireAuthorization("AdminOnly");
+        var adminGroup = app.MapGroup("/api/admin/orders").WithTags("Encomendas (admin)")
+            .RequireAuthorization(JwtAuthenticationExtensions.PermissionPolicyName(AdminPermission.Orders));
 
         adminGroup.MapGet("/", async (string? status, string? paymentStatus, IOrderService service, CancellationToken ct, int page = 1, int pageSize = 20) =>
             Results.Ok(await service.ListAsync(status, paymentStatus, page, pageSize, ct)));

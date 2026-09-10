@@ -1,4 +1,5 @@
 using AtelieBebe.Backoffice.Core.Application.Dashboard;
+using AtelieBebe.SharedKernel.Auth;
 
 namespace AtelieBebe.Backoffice.Api.Endpoints;
 
@@ -9,6 +10,6 @@ public static class DashboardEndpoints
         app.MapGet("/api/admin/dashboard", async (IDashboardService service, CancellationToken ct) =>
             Results.Ok(await service.GetSummaryAsync(ct)))
             .WithTags("Dashboard (admin)")
-            .RequireAuthorization("AdminOnly");
+            .RequireAuthorization(JwtAuthenticationExtensions.PermissionPolicyName(AdminPermission.Dashboard));
     }
 }

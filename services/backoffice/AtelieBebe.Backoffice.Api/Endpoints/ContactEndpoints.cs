@@ -1,4 +1,5 @@
 using AtelieBebe.Backoffice.Core.Application.Contact;
+using AtelieBebe.SharedKernel.Auth;
 
 namespace AtelieBebe.Backoffice.Api.Endpoints;
 
@@ -15,6 +16,6 @@ public static class ContactEndpoints
         app.MapGet("/api/admin/contact-messages", async (IContactService service, CancellationToken ct, int page = 1, int pageSize = 20) =>
             Results.Ok(await service.ListAsync(page, pageSize, ct)))
             .WithTags("Contato (admin)")
-            .RequireAuthorization("AdminOnly");
+            .RequireAuthorization(JwtAuthenticationExtensions.PermissionPolicyName(AdminPermission.ContactMessages));
     }
 }

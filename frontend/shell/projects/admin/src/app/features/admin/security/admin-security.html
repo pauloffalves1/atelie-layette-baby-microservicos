@@ -65,5 +65,33 @@
         </div>
       }
     </div>
+
+    <div class="stat-card mt-4">
+      <h6 class="mb-2">Alterar senha</h6>
+      <p class="small text-secondary">Troque a senha usada para entrar no painel administrativo.</p>
+
+      <div class="mb-2">
+        <label class="form-label small fw-semibold">Senha atual</label>
+        <input type="password" class="form-control form-control-sm" [value]="currentPassword()"
+          (input)="currentPassword.set($any($event.target).value)">
+      </div>
+      <div class="mb-2">
+        <label class="form-label small fw-semibold">Nova senha</label>
+        <input type="password" class="form-control form-control-sm" [value]="newPassword()"
+          (input)="newPassword.set($any($event.target).value)">
+      </div>
+
+      @if (passwordError()) {
+        <p class="text-danger small mb-2">{{ passwordError() }}</p>
+      }
+      @if (passwordSuccess()) {
+        <p class="text-success small mb-2">Senha alterada com sucesso.</p>
+      }
+
+      <button type="button" class="btn btn-sm btn-primary rounded-pill" [disabled]="changingPassword()" (click)="changePassword()">
+        @if (changingPassword()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+        Alterar senha
+      </button>
+    </div>
   }
 </div>

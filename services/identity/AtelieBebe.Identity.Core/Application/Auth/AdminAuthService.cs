@@ -1,4 +1,5 @@
 using AtelieBebe.Identity.Core.Application.Abstractions;
+using AtelieBebe.SharedKernel.Auth;
 using AtelieBebe.SharedKernel.Exceptions;
 using Microsoft.Extensions.Logging;
 
@@ -40,7 +41,7 @@ public sealed class AdminAuthService : IAdminAuthService
 
             var token = _jwtTokenGenerator.GenerateAdminToken(admin);
             _logger.LogInformation("Saindo de {Method}", nameof(LoginAsync));
-            return new AdminLoginResponse(false, null, new AuthResponse(token, admin.Id, admin.Name, admin.Email.Value));
+            return new AdminLoginResponse(false, null, new AuthResponse(token, admin.Id, admin.Name, admin.Email.Value, admin.Permissions.ToPermissionStrings()));
         }
         catch (Exception ex)
         {
@@ -63,7 +64,7 @@ public sealed class AdminAuthService : IAdminAuthService
 
             var token = _jwtTokenGenerator.GenerateAdminToken(admin);
             _logger.LogInformation("Saindo de {Method}", nameof(VerifyTwoFactorAsync));
-            return new AuthResponse(token, admin.Id, admin.Name, admin.Email.Value);
+            return new AuthResponse(token, admin.Id, admin.Name, admin.Email.Value, admin.Permissions.ToPermissionStrings());
         }
         catch (Exception ex)
         {
@@ -149,6 +150,29 @@ public sealed class AdminAuthService : IAdminAuthService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro em {Method}", nameof(DisableTwoFactorAsync));
+            throw;
+        }
+    }
+
+    /// <summary>Self-service — any admin can change their own password, no AdminManagement permission needed.</summary>
+    public async Task ChangePasswordAsync(Guid adminId, ChangeAdminPasswordRequest request, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Entrando em {Method} para {AdminId}", nameof(ChangePasswordAsync), adminId);
+        try
+        {
+            var admin = await _unitOfWork.Admins.GetByIdAsync(adminId, ct)
+                ?? throw new NotFoundException("Administrador", adminId);
+
+            if (!_passwordHasher.Verify(request.CurrentPassword, admin.PasswordHash))
+                throw new UnauthorizedAppException("Senha atual incorreta.");
+
+            admin.ChangePassword(_passwordHasher.Hash(request.NewPassword));
+            await _unitOfWork.SaveChangesAsync(ct);
+            _logger.LogInformation("Saindo de {Method}", nameof(ChangePasswordAsync));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro em {Method}", nameof(ChangePasswordAsync));
             throw;
         }
     }

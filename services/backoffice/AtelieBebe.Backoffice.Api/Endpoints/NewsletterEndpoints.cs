@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using AtelieBebe.Backoffice.Core.Application.Newsletter;
+using AtelieBebe.SharedKernel.Auth;
 
 namespace AtelieBebe.Backoffice.Api.Endpoints;
 
@@ -14,7 +15,8 @@ public static class NewsletterEndpoints
             return Results.NoContent();
         }).WithTags("Newsletter");
 
-        var adminGroup = app.MapGroup("/api/admin/newsletter").WithTags("Newsletter (admin)").RequireAuthorization("AdminOnly");
+        var adminGroup = app.MapGroup("/api/admin/newsletter").WithTags("Newsletter (admin)")
+            .RequireAuthorization(JwtAuthenticationExtensions.PermissionPolicyName(AdminPermission.Newsletter));
 
         adminGroup.MapGet("/", async (INewsletterService service, CancellationToken ct) =>
             Results.Ok(await service.ListAsync(ct)));

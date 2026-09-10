@@ -5,39 +5,64 @@
     </a>
 
     <nav class="nav flex-column gap-1 flex-grow-1">
-      <a class="nav-link d-flex align-items-center gap-2" routerLink="/admin/dashboard" routerLinkActive="active">
-        <i class="bi bi-speedometer2"></i> Dashboard
-      </a>
-      <a class="nav-link d-flex align-items-center gap-2" routerLink="/admin/produtos" routerLinkActive="active">
-        <i class="bi bi-box-seam"></i> Produtos
-      </a>
-      <a class="nav-link d-flex align-items-center gap-2" routerLink="/admin/encomendas" routerLinkActive="active">
-        <i class="bi bi-receipt"></i> Encomendas
-      </a>
-      <a class="nav-link d-flex align-items-center gap-2" routerLink="/admin/cupons" routerLinkActive="active">
-        <i class="bi bi-ticket-perforated"></i> Cupons
-      </a>
-      <a class="nav-link d-flex align-items-center gap-2" routerLink="/admin/clientes" routerLinkActive="active">
-        <i class="bi bi-people"></i> Clientes
-      </a>
-      <a class="nav-link d-flex align-items-center gap-2" routerLink="/admin/avaliacoes" routerLinkActive="active">
-        <i class="bi bi-star"></i> Avaliações
-      </a>
-      <a class="nav-link d-flex align-items-center gap-2" routerLink="/admin/mensagens" routerLinkActive="active">
-        <i class="bi bi-chat-dots"></i> Mensagens
-      </a>
-      <a class="nav-link d-flex align-items-center gap-2" routerLink="/admin/imagens" routerLinkActive="active">
-        <i class="bi bi-images"></i> Imagens do site
-      </a>
-      <a class="nav-link d-flex align-items-center gap-2" routerLink="/admin/galeria" routerLinkActive="active">
-        <i class="bi bi-grid-3x3-gap"></i> Galeria
-      </a>
-      <a class="nav-link d-flex align-items-center gap-2" routerLink="/admin/newsletter" routerLinkActive="active">
-        <i class="bi bi-envelope-paper"></i> Newsletter
-      </a>
-      <a class="nav-link d-flex align-items-center gap-2" routerLink="/admin/auditoria" routerLinkActive="active">
-        <i class="bi bi-journal-text"></i> Auditoria
-      </a>
+      @if (auth.hasPermission('Dashboard')) {
+        <a class="nav-link d-flex align-items-center gap-2" routerLink="/admin/dashboard" routerLinkActive="active">
+          <i class="bi bi-speedometer2"></i> Dashboard
+        </a>
+      }
+      @if (auth.hasPermission('Products')) {
+        <a class="nav-link d-flex align-items-center gap-2" routerLink="/admin/produtos" routerLinkActive="active">
+          <i class="bi bi-box-seam"></i> Produtos
+        </a>
+      }
+      @if (auth.hasPermission('Orders')) {
+        <a class="nav-link d-flex align-items-center gap-2" routerLink="/admin/encomendas" routerLinkActive="active">
+          <i class="bi bi-receipt"></i> Encomendas
+        </a>
+      }
+      @if (auth.hasPermission('Coupons')) {
+        <a class="nav-link d-flex align-items-center gap-2" routerLink="/admin/cupons" routerLinkActive="active">
+          <i class="bi bi-ticket-perforated"></i> Cupons
+        </a>
+      }
+      @if (auth.hasPermission('Customers')) {
+        <a class="nav-link d-flex align-items-center gap-2" routerLink="/admin/clientes" routerLinkActive="active">
+          <i class="bi bi-people"></i> Clientes
+        </a>
+      }
+      @if (auth.hasPermission('Reviews')) {
+        <a class="nav-link d-flex align-items-center gap-2" routerLink="/admin/avaliacoes" routerLinkActive="active">
+          <i class="bi bi-star"></i> Avaliações
+        </a>
+      }
+      @if (auth.hasPermission('ContactMessages')) {
+        <a class="nav-link d-flex align-items-center gap-2" routerLink="/admin/mensagens" routerLinkActive="active">
+          <i class="bi bi-chat-dots"></i> Mensagens
+        </a>
+      }
+      @if (auth.hasPermission('SiteContent')) {
+        <a class="nav-link d-flex align-items-center gap-2" routerLink="/admin/imagens" routerLinkActive="active">
+          <i class="bi bi-images"></i> Imagens do site
+        </a>
+        <a class="nav-link d-flex align-items-center gap-2" routerLink="/admin/galeria" routerLinkActive="active">
+          <i class="bi bi-grid-3x3-gap"></i> Galeria
+        </a>
+      }
+      @if (auth.hasPermission('Newsletter')) {
+        <a class="nav-link d-flex align-items-center gap-2" routerLink="/admin/newsletter" routerLinkActive="active">
+          <i class="bi bi-envelope-paper"></i> Newsletter
+        </a>
+      }
+      @if (auth.hasPermission('Dashboard')) {
+        <a class="nav-link d-flex align-items-center gap-2" routerLink="/admin/auditoria" routerLinkActive="active">
+          <i class="bi bi-journal-text"></i> Auditoria
+        </a>
+      }
+      @if (auth.hasPermission('AdminManagement')) {
+        <a class="nav-link d-flex align-items-center gap-2" routerLink="/admin/administradores" routerLinkActive="active">
+          <i class="bi bi-person-badge"></i> Administradores
+        </a>
+      }
       <a class="nav-link d-flex align-items-center gap-2" routerLink="/admin/seguranca" routerLinkActive="active">
         <i class="bi bi-shield-lock"></i> Segurança
       </a>

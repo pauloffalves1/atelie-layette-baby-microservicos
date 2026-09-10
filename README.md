@@ -43,11 +43,12 @@ Duas personas usam o sistema:
   em "Minha conta", pode cancelar um pedido enquanto ele não entrou em produção, avalia produtos que
   comprou, e pode favoritar peças (`/favoritos`) ou ser convidada a comprar de novo quando um item
   favoritado volta ao estoque.
-- **Administradora do ateliê** — dona do negócio, único papel administrativo (sem hierarquia de
-  permissões além de admin vs. cliente). Gerencia catálogo, promoções, cupons, pedidos (mudança de
-  status, código de rastreio), moderação de avaliações, mensagens de contato, newsletter, imagens do
-  site/galeria, e acompanha um dashboard agregado com auditoria de ações administrativas. Protege a
-  própria conta com 2FA opcional (TOTP).
+- **Administradora do ateliê** — dona do negócio, pode cadastrar outras administradoras (funcionárias,
+  por exemplo) e escolher exatamente quais áreas cada uma acessa — ver "Permissões granulares por
+  administradora" abaixo. Gerencia catálogo, promoções, cupons, pedidos (mudança de status, código de
+  rastreio), moderação de avaliações, mensagens de contato, newsletter, imagens do site/galeria, e
+  acompanha um dashboard agregado com auditoria de ações administrativas. Cada administradora protege
+  a própria conta com 2FA opcional (TOTP) e pode trocar sua própria senha a qualquer momento.
 
 ## Arquitetura
 
@@ -285,6 +286,19 @@ para o monólito — cobrindo o sistema como ele existe hoje, bem além do RF01�
   pessoais preservando o histórico de pedidos (que já guarda sua própria cópia dos dados na compra).
 - **RF17** — Quando uma administradora exclui um produto que aparece em algum pedido, o sistema deve
   recusar a exclusão para preservar a integridade do histórico.
+- **RF18** — Quando uma administradora com a permissão "Gerenciar Administradores" cadastra uma nova
+  conta administrativa, o sistema deve exigir a escolha explícita de quais áreas (produtos,
+  encomendas, cupons, avaliações, mensagens, newsletter, clientes, imagens do site, dashboard,
+  gerenciar administradores) essa conta poderá acessar — nenhuma permissão é concedida por padrão.
+- **RF19** — Quando uma administradora tenta acessar uma área do painel sem a permissão
+  correspondente, o sistema deve recusar (403), tanto na API de cada serviço quanto ocultando o item
+  de menu no painel.
+- **RF20** — Quando a última administradora com a permissão "Gerenciar Administradores" tenta perder
+  essa permissão (removida por edição ou por exclusão da própria conta), o sistema deve recusar,
+  para nunca ficar sem ninguém capaz de gerenciar administradores.
+- **RF21** — Qualquer administradora deve poder alterar a própria senha e ativar/desativar 2FA sem
+  precisar da permissão "Gerenciar Administradores" — são ações de autoatendimento sobre a própria
+  conta, não sobre outras contas.
 
 ### Não funcionais
 
@@ -337,6 +351,34 @@ sequenceDiagram
 - **Customer** (`CustomerAuthService`, policy `CustomerOnly`, role `customer`) — login com e-mail/
   senha, cadastro com CPF (validado com dígitos verificadores reais, não só formato), verificação de
   e-mail e redefinição de senha por link com token de uso único.
+
+### Permissões granulares por administradora
+
+Desde 2026-09, `AdminOnly` sozinho não basta mais pra distinguir o que cada administradora pode
+fazer — pode existir mais de uma conta administrativa, cada uma com um subconjunto de áreas
+liberadas. `AtelieBebe.SharedKernel.Auth.AdminPermission` é um `[Flags] enum` (Products, Orders,
+Coupons, Reviews, ContactMessages, Newsletter, Customers, SiteContent, Dashboard,
+**AdminManagement**) — cada serviço registra uma policy por flag (`"Admin.Products"`,
+`"Admin.Orders"`, ...) em `JwtAuthenticationExtensions`, e cada grupo de endpoints admin troca
+`RequireAuthorization("AdminOnly")` pela policy da sua área. Identity emite uma claim `permission`
+por flag concedida — o token carrega a lista, nenhum serviço precisa consultar Identity de volta pra
+saber o que aquele admin pode fazer.
+
+- **`AdminManagement`** é só mais uma flag — quem a possui pode cadastrar novas administradoras
+  (`POST /api/admin/admins`) e editar a permissão de qualquer uma, inclusive a própria. Trocar a
+  própria senha e ativar/desativar 2FA continuam self-service, sem exigir `AdminManagement`.
+- `AdminManagementService` recusa (409) remover `AdminManagement` da última administradora que a
+  possui, e recusa uma administradora excluir a própria conta — nunca se pode ficar sem ninguém
+  capaz de gerenciar administradores.
+- A administradora seedada no primeiro boot (`AdminSeed:Email`/`AdminSeed:Password`) recebe todas as
+  permissões (`AdminPermission.All`) — sem isso, ninguém poderia conceder a primeira permissão a
+  mais ninguém. A migração `AddAdminPermissions` faz o mesmo, como backfill único, para qualquer
+  administradora que já existisse antes desse modelo (nunca como default de modelo — ver o
+  comentário em `AdminConfiguration.cs` sobre por que isso teria reativado silenciosamente o acesso
+  total em toda futura administradora criada com zero permissões).
+- No painel (`admin-layout.html`), cada item de menu só aparece se `AdminAuthService.hasPermission(...)`
+  for verdadeiro — só o front-end esconder o link não substitui a policy no backend, é só uma
+  conveniência de UX.
 
 No frontend, `auth.interceptor.ts` decide qual dos dois tokens anexar a cada chamada olhando se a
 URL contém `/admin/` — nunca envia nenhum dos dois para um host de terceiro (ex.: ViaCEP).
@@ -524,7 +566,7 @@ Os Deployments já têm a anotação `newrelic.com/inject-dotnet: "true"` — o 
 
 [`.github/workflows/microservices-ci.yml`](../.github/workflows/microservices-ci.yml) — dispara em
 push/PR que tocam `microservices/**`. Dois jobs: `unit-tests` (`dotnet test
-AtelieBebe.Microservices.slnx`, os 109 testes) e `e2e` (gera um par de chaves RS256 e um `.env` com
+AtelieBebe.Microservices.slnx`, os 121 testes) e `e2e` (gera um par de chaves RS256 e um `.env` com
 valores dummy — suficientes porque os 3 specs não fazem login, pagamento nem disparam
 WhatsApp/e-mail/New Relic —, sobe o `docker compose`, espera o Gateway responder, roda `npm run
 test:e2e` e, reaproveitando a mesma stack já de pé, o smoke de carga do k6 contra o Gateway via
@@ -589,17 +631,29 @@ test:e2e` e, reaproveitando a mesma stack já de pé, o smoke de carga do k6 con
       Orders, Backoffice) rodam sobre uma única instância de SQL Server compartilhada (um banco por
       serviço), com backup automatizado via `ops/backup-dbs.sh` (`BACKUP DATABASE` nativo + sync
       para Google Drive).
-- [x] **Estratégia de testes** (2026-09) — testes unitários (5 projetos xUnit, 109 testes), um
+- [x] **Estratégia de testes** (2026-09) — testes unitários (5 projetos xUnit, 121 testes), um
       exemplo real de TDD, BDD com Reqnroll, testes de UI/e2e com Playwright e um script de carga
-      com k6 — ver "Estratégia de testes" acima. Todos rodados e verificados de ponta a ponta: 109/109
+      com k6 — ver "Estratégia de testes" acima. Todos rodados e verificados de ponta a ponta: 121/121
       testes unitários, 7/7 e2e, e o smoke de carga do k6 dentro de todos os thresholds (p95 de 57ms na
       listagem de produtos, limite era 500ms; 0% de erro).
 - [x] **`.slnx` único + CI** (2026-09) — `AtelieBebe.Microservices.slnx` na raiz de `microservices/`
-      roda os 109 testes com um `dotnet test` só; `.github/workflows/microservices-ci.yml` faz o mesmo
+      roda os 121 testes com um `dotnet test` só; `.github/workflows/microservices-ci.yml` faz o mesmo
       em CI (job `unit-tests`) e sobe o `docker compose` pra rodar os 7 e2e mais o smoke de carga do
       k6 (job `e2e`) a cada push/PR em `microservices/**` — ver "CI" acima. Confirmado rodando de
       verdade no GitHub Actions (não só o YAML escrito): ambos os jobs `success` na primeira
       execução real.
+- [x] **Permissões granulares por administradora** (2026-09) — pode haver mais de uma conta
+      administrativa, cada uma com um subconjunto de áreas liberadas (`AdminPermission`, um `[Flags]
+      enum` por área); quem tem `AdminManagement` cadastra outras administradoras e edita permissões
+      (inclusive as próprias); trocar a própria senha e 2FA continuam self-service. Guarda contra
+      ficar sem ninguém que possa gerenciar administradores — ver "Permissões granulares por
+      administradora" acima. Validado de ponta a ponta contra a stack real: criação de admin
+      limitado, 403 nas áreas não concedidas, 200 nas concedidas, troca de senha, e as duas travas de
+      segurança (não remover a própria conta, não remover o último `AdminManagement`).
+- [x] **Vulnerabilidades de dependências corrigidas** (2026-09) — `Microsoft.OpenApi` (GHSA-v5pm-xwqc-g5wc)
+      e `System.Security.Cryptography.Xml` (GHSA-mmjf-rqrv-855v e correlatas) atualizados no monólito
+      e no microservices; `SQLitePCLRaw.lib.e_sqlite3` fixado numa versão sem a CVE-2025-6965 na
+      ferramenta `DataMigration`. `dotnet list package --vulnerable` limpo nos dois projetos.
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
       nos manifests; falta aplicar num cluster ativo e uma license key real. **Não avancei aqui** —
       exige um cluster de verdade e uma license key real da New Relic, que eu não tenho como

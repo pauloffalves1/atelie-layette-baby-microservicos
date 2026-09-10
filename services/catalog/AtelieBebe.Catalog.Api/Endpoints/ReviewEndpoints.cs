@@ -1,6 +1,7 @@
 using AtelieBebe.SharedKernel.Web;
 using AtelieBebe.Catalog.Api.Common;
 using AtelieBebe.Catalog.Core.Application.Abstractions;
+using AtelieBebe.SharedKernel.Auth;
 using AtelieBebe.SharedKernel.Messaging;
 using AtelieBebe.Catalog.Core.Application.Reviews;
 
@@ -42,7 +43,8 @@ public static class ReviewEndpoints
         .RequireAuthorization("CustomerOnly")
         .DisableAntiforgery();
 
-        var adminGroup = app.MapGroup("/api/admin/reviews").WithTags("Avaliações (admin)").RequireAuthorization("AdminOnly");
+        var adminGroup = app.MapGroup("/api/admin/reviews").WithTags("Avaliações (admin)")
+            .RequireAuthorization(JwtAuthenticationExtensions.PermissionPolicyName(AdminPermission.Reviews));
 
         adminGroup.MapGet("/", async (bool? approved, IReviewService service, CancellationToken ct, int page = 1, int pageSize = 20) =>
             Results.Ok(await service.ListForAdminAsync(approved, page, pageSize, ct)));

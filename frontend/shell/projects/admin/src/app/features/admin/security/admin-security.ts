@@ -23,6 +23,12 @@ export class AdminSecurity implements OnInit {
   readonly disableError = signal<string | null>(null);
   readonly confirmingDisable = signal(false);
 
+  readonly currentPassword = signal('');
+  readonly newPassword = signal('');
+  readonly changingPassword = signal(false);
+  readonly passwordError = signal<string | null>(null);
+  readonly passwordSuccess = signal(false);
+
   constructor(private readonly auth: AdminAuthService) {}
 
   ngOnInit(): void {
@@ -101,6 +107,27 @@ export class AdminSecurity implements OnInit {
       error: (err) => {
         this.disabling.set(false);
         this.disableError.set(err?.error?.detail ?? 'Senha incorreta.');
+      },
+    });
+  }
+
+  changePassword(): void {
+    if (!this.currentPassword() || !this.newPassword()) return;
+
+    this.changingPassword.set(true);
+    this.passwordError.set(null);
+    this.passwordSuccess.set(false);
+
+    this.auth.changePassword(this.currentPassword(), this.newPassword()).subscribe({
+      next: () => {
+        this.changingPassword.set(false);
+        this.passwordSuccess.set(true);
+        this.currentPassword.set('');
+        this.newPassword.set('');
+      },
+      error: (err) => {
+        this.changingPassword.set(false);
+        this.passwordError.set(err?.error?.detail ?? 'Não foi possível alterar a senha.');
       },
     });
   }

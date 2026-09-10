@@ -8,7 +8,8 @@ public sealed record RegisterCustomerRequest(
 public sealed record LoginRequest(string Email, string Password);
 public sealed record AdminLoginRequest(string Email, string Password);
 
-public sealed record AuthResponse(string Token, Guid Id, string Name, string Email);
+/// <summary>Permissions is populated for an admin login only — one string per granted <see cref="AtelieBebe.SharedKernel.Auth.AdminPermission"/> flag, for the admin UI to gate its own nav.</summary>
+public sealed record AuthResponse(string Token, Guid Id, string Name, string Email, IReadOnlyList<string>? Permissions = null);
 
 /// <summary>Either a completed login (Auth populated) or a request for the second 2FA step (RequiresTwoFactor + AdminId).</summary>
 public sealed record AdminLoginResponse(bool RequiresTwoFactor, Guid? AdminId, AuthResponse? Auth);
@@ -20,6 +21,7 @@ public sealed record TwoFactorSetupDto(string Secret, string OtpAuthUri);
 public sealed record EnableTwoFactorRequest(string Secret, string Code);
 
 public sealed record DisableTwoFactorRequest(string Password);
+public sealed record ChangeAdminPasswordRequest(string CurrentPassword, string NewPassword);
 
 public sealed record CustomerProfileDto(
     Guid Id, string Name, string Email, string? Phone, string? Cpf,

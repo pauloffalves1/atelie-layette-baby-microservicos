@@ -1,6 +1,7 @@
 using AtelieBebe.SharedKernel.Web;
 using AtelieBebe.Catalog.Api.Common;
 using AtelieBebe.Catalog.Core.Application.Abstractions;
+using AtelieBebe.SharedKernel.Auth;
 using AtelieBebe.SharedKernel.Exceptions;
 using AtelieBebe.Catalog.Core.Application.SiteImages;
 
@@ -21,7 +22,8 @@ public static class SiteImageEndpoints
             Results.Ok(await service.ListAsync(ct)))
             .WithTags("Imagens do site");
 
-        var adminGroup = app.MapGroup("/api/admin/site-images").WithTags("Imagens do site (admin)").RequireAuthorization("AdminOnly");
+        var adminGroup = app.MapGroup("/api/admin/site-images").WithTags("Imagens do site (admin)")
+            .RequireAuthorization(JwtAuthenticationExtensions.PermissionPolicyName(AdminPermission.SiteContent));
 
         adminGroup.MapPost("/{key}", async (string key, IFormFile file, IFileStorageService fileStorage,
             ISiteImageService service, CancellationToken ct) =>

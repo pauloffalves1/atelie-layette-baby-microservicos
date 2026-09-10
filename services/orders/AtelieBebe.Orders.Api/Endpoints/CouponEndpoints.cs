@@ -1,4 +1,5 @@
 using AtelieBebe.SharedKernel.Web;
+using AtelieBebe.SharedKernel.Auth;
 using AtelieBebe.SharedKernel.Messaging;
 using AtelieBebe.Orders.Core.Application.Coupons;
 using Microsoft.AspNetCore.RateLimiting;
@@ -14,7 +15,8 @@ public static class CouponEndpoints
             .WithTags("Cupons")
             .RequireRateLimiting("auth");
 
-        var adminGroup = app.MapGroup("/api/admin/coupons").WithTags("Cupons (admin)").RequireAuthorization("AdminOnly");
+        var adminGroup = app.MapGroup("/api/admin/coupons").WithTags("Cupons (admin)")
+            .RequireAuthorization(JwtAuthenticationExtensions.PermissionPolicyName(AdminPermission.Coupons));
 
         adminGroup.MapGet("/", async (ICouponService service, CancellationToken ct) =>
             Results.Ok(await service.ListAsync(ct)));

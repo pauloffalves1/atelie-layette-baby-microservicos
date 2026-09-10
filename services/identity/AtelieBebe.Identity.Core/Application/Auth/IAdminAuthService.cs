@@ -9,4 +9,5 @@ public interface IAdminAuthService
     Task<TwoFactorSetupDto> BeginTwoFactorSetupAsync(Guid adminId, CancellationToken ct = default);
     Task EnableTwoFactorAsync(Guid adminId, EnableTwoFactorRequest request, CancellationToken ct = default);
     Task DisableTwoFactorAsync(Guid adminId, DisableTwoFactorRequest request, CancellationToken ct = default);
+    Task ChangePasswordAsync(Guid adminId, ChangeAdminPasswordRequest request, CancellationToken ct = default);
 }

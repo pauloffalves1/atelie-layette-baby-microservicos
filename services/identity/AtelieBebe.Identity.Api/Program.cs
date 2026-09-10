@@ -49,6 +49,7 @@ app.UseAuthorization();
 app.MapAuthEndpoints();
 app.MapCustomerEndpoints();
 app.MapCustomerAddressEndpoints();
+app.MapAdminManagementEndpoints();
 app.MapInternalEndpoints();
 app.MapHealthChecks("/health");
 

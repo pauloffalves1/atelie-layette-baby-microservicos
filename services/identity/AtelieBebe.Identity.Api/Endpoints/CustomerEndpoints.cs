@@ -1,4 +1,5 @@
 using AtelieBebe.Identity.Core.Application.Customers;
+using AtelieBebe.SharedKernel.Auth;
 using AtelieBebe.SharedKernel.Messaging;
 using AtelieBebe.SharedKernel.Web;
 
@@ -8,7 +9,8 @@ public static class CustomerEndpoints
 {
     public static void MapCustomerEndpoints(this WebApplication app)
     {
-        var adminGroup = app.MapGroup("/api/admin/customers").WithTags("Clientes (admin)").RequireAuthorization("AdminOnly");
+        var adminGroup = app.MapGroup("/api/admin/customers").WithTags("Clientes (admin)")
+            .RequireAuthorization(JwtAuthenticationExtensions.PermissionPolicyName(AdminPermission.Customers));
 
         adminGroup.MapGet("/", async (ICustomerAdminService service, CancellationToken ct) =>
             Results.Ok(await service.ListAsync(ct)));

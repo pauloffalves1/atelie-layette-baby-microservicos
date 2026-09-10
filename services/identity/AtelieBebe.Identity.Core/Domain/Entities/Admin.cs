@@ -1,3 +1,4 @@
+using AtelieBebe.SharedKernel.Auth;
 using AtelieBebe.SharedKernel.Common;
 using AtelieBebe.SharedKernel.Exceptions;
 using AtelieBebe.SharedKernel.ValueObjects;
@@ -11,26 +12,38 @@ public sealed class Admin : Entity, IAggregateRoot
     public string PasswordHash { get; private set; } = default!;
     public bool TwoFactorEnabled { get; private set; }
     public string? TwoFactorSecret { get; private set; }
+    public AdminPermission Permissions { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
     private Admin() { } // EF Core
 
-    private Admin(Guid id, string name, Email email, string passwordHash) : base(id)
+    private Admin(Guid id, string name, Email email, string passwordHash, AdminPermission permissions) : base(id)
     {
         Name = name;
         Email = email;
         PasswordHash = passwordHash;
+        Permissions = permissions;
         CreatedAt = DateTime.UtcNow;
     }
 
-    public static Admin Create(string name, Email email, string passwordHash)
+    public static Admin Create(string name, Email email, string passwordHash, AdminPermission permissions)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new DomainException("O nome é obrigatório.");
         if (string.IsNullOrWhiteSpace(passwordHash))
             throw new DomainException("A senha é obrigatória.");
 
-        return new Admin(Guid.NewGuid(), name.Trim(), email, passwordHash);
+        return new Admin(Guid.NewGuid(), name.Trim(), email, passwordHash, permissions);
+    }
+
+    public void UpdatePermissions(AdminPermission permissions) => Permissions = permissions;
+
+    public void ChangePassword(string newPasswordHash)
+    {
+        if (string.IsNullOrWhiteSpace(newPasswordHash))
+            throw new DomainException("A senha é obrigatória.");
+
+        PasswordHash = newPasswordHash;
     }
 
     /// <summary>Persists the secret and turns 2FA on — only called after the caller already verified a code against this same secret.</summary>

@@ -1,5 +1,6 @@
 using AtelieBebe.Identity.Core.Application.Abstractions;
 using AtelieBebe.Identity.Core.Application.Addresses;
+using AtelieBebe.Identity.Core.Application.Admins;
 using AtelieBebe.Identity.Core.Application.Auth;
 using AtelieBebe.Identity.Core.Application.Customers;
 using AtelieBebe.Identity.Core.Domain.Repositories;
@@ -46,6 +47,7 @@ public static class DependencyInjection
         services.AddScoped<ITotpService, TotpService>();
 
         services.AddScoped<IAdminAuthService, AdminAuthService>();
+        services.AddScoped<IAdminManagementService, AdminManagementService>();
         services.AddScoped<ICustomerAuthService, CustomerAuthService>();
         services.AddScoped<ICustomerAdminService, CustomerAdminService>();
         services.AddScoped<ICustomerAddressService, CustomerAddressService>();
