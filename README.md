@@ -526,15 +526,16 @@ Os Deployments já têm a anotação `newrelic.com/inject-dotnet: "true"` — o 
 push/PR que tocam `microservices/**`. Dois jobs: `unit-tests` (`dotnet test
 AtelieBebe.Microservices.slnx`, os 109 testes) e `e2e` (gera um par de chaves RS256 e um `.env` com
 valores dummy — suficientes porque os 3 specs não fazem login, pagamento nem disparam
-WhatsApp/e-mail/New Relic —, sobe o `docker compose`, espera o Gateway responder, e roda `npm run
-test:e2e`). Não roda os testes de carga (k6) nem o `server/`/`client/` do monólito antigo.
+WhatsApp/e-mail/New Relic —, sobe o `docker compose`, espera o Gateway responder, roda `npm run
+test:e2e` e, reaproveitando a mesma stack já de pé, o smoke de carga do k6 contra o Gateway via
+`docker run --network host`). Não roda o `server/`/`client/` do monólito antigo.
 
 ## Fora do escopo (deliberado)
 
 - Ingress Controller / TLS no cluster local (Kubernetes) — a VPS de produção usa Nginx/Certbot
   direto.
-- Testes de carga (k6) e o monólito antigo (`server/`/`client/`) rodarem no CI — só os testes
-  unitários e os e2e do `microservices/` (ver "CI" acima).
+- O monólito antigo (`server/`/`client/`) rodar no CI — só os testes unitários, e2e e de carga do
+  `microservices/` (ver "CI" acima).
 - Suíte de testes exaustiva (100% de cobertura) — a "Estratégia de testes" acima cobre uma fatia
   real e representativa de cada tipo; o padrão deve se expandir aos poucos.
 
@@ -595,8 +596,10 @@ test:e2e`). Não roda os testes de carga (k6) nem o `server/`/`client/` do monó
       listagem de produtos, limite era 500ms; 0% de erro).
 - [x] **`.slnx` único + CI** (2026-09) — `AtelieBebe.Microservices.slnx` na raiz de `microservices/`
       roda os 109 testes com um `dotnet test` só; `.github/workflows/microservices-ci.yml` faz o mesmo
-      em CI (job `unit-tests`) e sobe o `docker compose` pra rodar os 7 e2e (job `e2e`) a cada push/PR
-      em `microservices/**` — ver "CI" acima.
+      em CI (job `unit-tests`) e sobe o `docker compose` pra rodar os 7 e2e mais o smoke de carga do
+      k6 (job `e2e`) a cada push/PR em `microservices/**` — ver "CI" acima. Confirmado rodando de
+      verdade no GitHub Actions (não só o YAML escrito): ambos os jobs `success` na primeira
+      execução real.
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
       nos manifests; falta aplicar num cluster ativo e uma license key real. **Não avancei aqui** —
       exige um cluster de verdade e uma license key real da New Relic, que eu não tenho como
