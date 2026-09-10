@@ -1,4 +1,5 @@
 import { Component, HostListener, OnInit, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { GalleryImageService } from '@shared/core/services/gallery-image.service';
 import { SeoService } from '@shared/core/services/seo.service';
 import { resolveAssetUrl } from '@shared/core/utils/asset-url';
@@ -20,6 +21,7 @@ export class Gallery implements OnInit {
   constructor(
     private readonly galleryImageService: GalleryImageService,
     private readonly seo: SeoService,
+    private readonly route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
@@ -31,10 +33,26 @@ export class Gallery implements OnInit {
 
     this.galleryImageService.list().subscribe({
       next: (images) => {
-        if (images.length > 0) this.images.set(images.map((i) => resolveAssetUrl(i.url)));
+        if (images.length > 0) {
+          // Same ordered list the home's "Peças entregues com carinho" section shows (sliced to
+          // its first 6) — a click there links here with ?foto=<index> into THIS list, so the
+          // lightbox can only be pre-opened once these real images (not the fallback ones) load.
+          this.images.set(images.map((i) => resolveAssetUrl(i.url)));
+          this.openFromQueryParam();
+        }
       },
       error: () => {},
     });
+  }
+
+  private openFromQueryParam(): void {
+    const raw = this.route.snapshot.queryParamMap.get('foto');
+    if (raw === null) return;
+
+    const index = Number(raw);
+    if (Number.isInteger(index) && index >= 0 && index < this.images().length) {
+      this.open(index);
+    }
   }
 
   open(index: number): void {

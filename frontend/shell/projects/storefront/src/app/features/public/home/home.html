@@ -101,11 +101,14 @@
         <a routerLink="/dicas-para-o-casal" class="btn btn-sm btn-outline-secondary rounded-pill">Ver dicas para o casal <i class="bi bi-arrow-right ms-1"></i></a>
       </div>
       <div class="row g-3">
-        @for (image of showcaseImages(); track image) {
+        @for (image of showcaseImages(); track image; let i = $index) {
           <div class="col-6 col-md-4 col-lg-2">
-            <div class="ratio ratio-1x1 rounded-4 overflow-hidden shadow-sm">
+            <a
+              [routerLink]="['/dicas-para-o-casal']"
+              [queryParams]="{ foto: i }"
+              class="d-block ratio ratio-1x1 rounded-4 overflow-hidden shadow-sm gallery-thumb">
               <img [src]="image" alt="Fralda bordada entregue pelo Ateliê Layette Baby" class="w-100 h-100 object-fit-cover" loading="lazy">
-            </div>
+            </a>
           </div>
         }
       </div>
