@@ -1,0 +1,105 @@
+name: ci
+
+# Extracted from pauloffalves1/atelie-bebe's microservices/ subtree (2026-09-10) into this
+# standalone repo — see README.md for the full architecture/testing-strategy writeup.
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      # One command for all 5 *.Core.Tests projects (121 tests) via the solution added for this.
+      - run: dotnet test AtelieBebe.Microservices.slnx --nologo
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    steps:
+      - uses: actions/checkout@v4
+
+      # RS256 key pair Identity/Gateway/Catalog/Orders/Backoffice share (never committed) — see
+      # README's "Autenticação e Autorização". A fresh pair is fine for CI: nothing here persists
+      # past the job.
+      - run: |
+          mkdir -p keys
+          openssl genrsa -out keys/jwt-private.pem 2048
+          openssl rsa -in keys/jwt-private.pem -pubout -out keys/jwt-public.pem
+
+      # Dummy values are enough for these 3 specs: none of them log in, pay, or send
+      # WhatsApp/e-mail/New Relic traffic. Real deploys fill this from repo/environment secrets.
+      - run: |
+          cat > .env <<EOF
+          RABBITMQ_USER=ci
+          RABBITMQ_PASSWORD=ci_password_123
+          MSSQL_SA_PASSWORD=CiPassword_123!
+          ADMIN_SEED_EMAIL=admin@ateliebebe.com.br
+          ADMIN_SEED_PASSWORD=admin123
+          PAGBANK_TOKEN=
+          PAGBANK_SANDBOX=true
+          PUBLIC_URL=http://localhost:5100
+          WHATSAPP_ACCESS_TOKEN=
+          WHATSAPP_PHONE_NUMBER_ID=
+          ADMIN_NOTIFICATION_EMAIL=
+          ADMIN_NOTIFICATION_PHONE=
+          RESEND_API_KEY=
+          RESEND_FROM_EMAIL=
+          NEW_RELIC_LICENSE_KEY=
+          EOF
+
+      - run: docker compose build
+      - run: docker compose up -d
+
+      - name: Wait for the Gateway to serve seeded products
+        run: |
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:5100/api/products || true)
+            [ "$code" = "200" ] && exit 0
+            sleep 5
+          done
+          docker compose logs
+          exit 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.x"
+          cache: "npm"
+          cache-dependency-path: frontend/shell/package-lock.json
+
+      - working-directory: frontend/shell
+        run: npm ci
+
+      - working-directory: frontend/shell
+        run: npx playwright install --with-deps chromium
+
+      # Serialized on purpose (playwright.config.ts's workers: 1) — the 3 dev servers behind these
+      # specs compile chunks on demand, and parallel workers made the first navigation flaky.
+      - working-directory: frontend/shell
+        run: npm run test:e2e
+
+      # Same stack the e2e specs just used, still up — reuse it instead of paying for a second
+      # docker compose build/up. --network host works here because GitHub's ubuntu runners are the
+      # Docker host directly (no Docker Desktop VM layer), so localhost:5100 reaches the Gateway
+      # exactly like it does when someone runs this by hand.
+      - name: Run k6 load test (browsing scenario; login is skipped — no LOAD_TEST_CUSTOMER_* set)
+        run: |
+          docker run --rm --network host \
+            -v "${{ github.workspace }}/load-tests:/scripts" \
+            -e BASE_URL=http://localhost:5100 \
+            grafana/k6 run /scripts/gateway-smoke.js
+
+      - if: always()
+        run: docker compose down -v
+
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/shell/playwright-report/
+          retention-days: 7

@@ -1,9 +1,12 @@
 # Ateliê Layette Baby — arquitetura de microsserviços
 
 Esta é a arquitetura em produção: **`layettebaby.com.br` roda inteiramente sobre o que está
-documentado aqui** desde a migração de 2026-09-08 (ver "Status" no fim deste documento). O antigo
-monólito `server/`/`client/` (raiz do repositório) foi mantido parado por algumas semanas como
-rollback e não recebe mais mudanças — qualquer trabalho novo entra aqui, em `microservices/`.
+documentado aqui** desde a migração de 2026-09-08 (ver "Status" no fim deste documento). Este
+repositório foi extraído em 2026-09-10 do antigo monorepo
+[`pauloffalves1/atelie-bebe`](https://github.com/pauloffalves1/atelie-bebe) (que agora contém só o
+monólito `server/`/`client/`, mantido parado por algumas semanas como rollback, sem receber mais
+mudanças) — todo o histórico de commits que tocou a pasta `microservices/` de lá foi preservado
+aqui, na raiz deste repositório. Qualquer trabalho novo entra aqui.
 
 Este documento segue um estilo inspirado em Spec-Driven Development: além de arquitetura e "como
 rodar", cobre a visão de negócio, como o domínio foi descoberto (domain storytelling/event
@@ -404,8 +407,8 @@ em `server/test/AtelieBebe.Domain.Tests`):
 | [`services/backoffice/AtelieBebe.Backoffice.Core.Tests`](services/backoffice/AtelieBebe.Backoffice.Core.Tests) | `ContactMessage`, `NewsletterSubscriber` |
 
 Rodar todos os de um serviço: `cd services/orders/AtelieBebe.Orders.Core.Tests && dotnet test`
-(mesma ideia nos outros diretórios), ou os 109 de uma vez com
-[`AtelieBebe.Microservices.slnx`](AtelieBebe.Microservices.slnx) na raiz de `microservices/`:
+(mesma ideia nos outros diretórios), ou os 121 de uma vez com
+[`AtelieBebe.Microservices.slnx`](AtelieBebe.Microservices.slnx) na raiz deste repositório:
 `dotnet test AtelieBebe.Microservices.slnx` (usada também pelo job `unit-tests` do CI, abaixo).
 
 ### TDD (red-green-refactor)
@@ -564,20 +567,17 @@ Os Deployments já têm a anotação `newrelic.com/inject-dotnet: "true"` — o 
 
 ## CI
 
-[`.github/workflows/microservices-ci.yml`](../.github/workflows/microservices-ci.yml) — dispara em
-push/PR que tocam `microservices/**`. Dois jobs: `unit-tests` (`dotnet test
-AtelieBebe.Microservices.slnx`, os 121 testes) e `e2e` (gera um par de chaves RS256 e um `.env` com
-valores dummy — suficientes porque os 3 specs não fazem login, pagamento nem disparam
-WhatsApp/e-mail/New Relic —, sobe o `docker compose`, espera o Gateway responder, roda `npm run
-test:e2e` e, reaproveitando a mesma stack já de pé, o smoke de carga do k6 contra o Gateway via
-`docker run --network host`). Não roda o `server/`/`client/` do monólito antigo.
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) — dispara em todo push/PR neste repositório.
+Dois jobs: `unit-tests` (`dotnet test AtelieBebe.Microservices.slnx`, os 121 testes) e `e2e` (gera
+um par de chaves RS256 e um `.env` com valores dummy — suficientes porque os 3 specs não fazem
+login, pagamento nem disparam WhatsApp/e-mail/New Relic —, sobe o `docker compose`, espera o Gateway
+responder, roda `npm run test:e2e` e, reaproveitando a mesma stack já de pé, o smoke de carga do k6
+contra o Gateway via `docker run --network host`).
 
 ## Fora do escopo (deliberado)
 
 - Ingress Controller / TLS no cluster local (Kubernetes) — a VPS de produção usa Nginx/Certbot
   direto.
-- O monólito antigo (`server/`/`client/`) rodar no CI — só os testes unitários, e2e e de carga do
-  `microservices/` (ver "CI" acima).
 - Suíte de testes exaustiva (100% de cobertura) — a "Estratégia de testes" acima cobre uma fatia
   real e representativa de cada tipo; o padrão deve se expandir aos poucos.
 
@@ -636,12 +636,15 @@ test:e2e` e, reaproveitando a mesma stack já de pé, o smoke de carga do k6 con
       com k6 — ver "Estratégia de testes" acima. Todos rodados e verificados de ponta a ponta: 121/121
       testes unitários, 7/7 e2e, e o smoke de carga do k6 dentro de todos os thresholds (p95 de 57ms na
       listagem de produtos, limite era 500ms; 0% de erro).
-- [x] **`.slnx` único + CI** (2026-09) — `AtelieBebe.Microservices.slnx` na raiz de `microservices/`
-      roda os 121 testes com um `dotnet test` só; `.github/workflows/microservices-ci.yml` faz o mesmo
-      em CI (job `unit-tests`) e sobe o `docker compose` pra rodar os 7 e2e mais o smoke de carga do
-      k6 (job `e2e`) a cada push/PR em `microservices/**` — ver "CI" acima. Confirmado rodando de
-      verdade no GitHub Actions (não só o YAML escrito): ambos os jobs `success` na primeira
-      execução real.
+- [x] **`.slnx` único + CI** (2026-09) — `AtelieBebe.Microservices.slnx` na raiz do repositório
+      roda os 121 testes com um `dotnet test` só; `.github/workflows/ci.yml` faz o mesmo em CI (job
+      `unit-tests`) e sobe o `docker compose` pra rodar os 7 e2e mais o smoke de carga do k6 (job
+      `e2e`) a cada push/PR — ver "CI" acima. Confirmado rodando de verdade no GitHub Actions (não só
+      o YAML escrito): ambos os jobs `success` na primeira execução real.
+- [x] **Extraído para repositório próprio** (2026-09-10) — este repositório nasceu de um `git
+      subtree split --prefix=microservices` do monorepo `pauloffalves1/atelie-bebe`, preservando os
+      59 commits que já haviam tocado esta árvore. `atelie-bebe` agora contém só o monólito
+      `server/`/`client/` (rollback congelado); todo trabalho novo entra aqui.
 - [x] **Permissões granulares por administradora** (2026-09) — pode haver mais de uma conta
       administrativa, cada uma com um subconjunto de áreas liberadas (`AdminPermission`, um `[Flags]
       enum` por área); quem tem `AdminManagement` cadastra outras administradoras e edita permissões
