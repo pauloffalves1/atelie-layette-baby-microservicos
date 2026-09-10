@@ -13,6 +13,10 @@ obj/
 *.db-shm
 *.db-wal
 
+# Local dev uploads (Catalog's LocalFileStorageService, content-root-relative "uploads" path) —
+# real admin-uploaded images when restored from a production backup for local dev; never commit.
+services/catalog/AtelieBebe.Catalog.Api/uploads/
+
 # RSA key pair used to sign/validate JWTs — generated once locally (see README), never committed
 keys/
 

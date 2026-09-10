@@ -654,6 +654,22 @@ test:e2e` e, reaproveitando a mesma stack já de pé, o smoke de carga do k6 con
       e `System.Security.Cryptography.Xml` (GHSA-mmjf-rqrv-855v e correlatas) atualizados no monólito
       e no microservices; `SQLitePCLRaw.lib.e_sqlite3` fixado numa versão sem a CVE-2025-6965 na
       ferramenta `DataMigration`. `dotnet list package --vulnerable` limpo nos dois projetos.
+- [x] **Dev local com `dotnet run` corrigido + dados de produção restaurados localmente** (2026-09) —
+      os 4 `appsettings.Development.json` (Identity, Catalog, Orders, Backoffice) ainda apontavam
+      pro SQLite de antes da migração (`Data Source=identity.db` etc.) — desde que os `DbContext`
+      passaram a usar `UseSqlServer` incondicionalmente, isso quebrava silenciosamente `dotnet run`
+      fora do Docker; corrigido pra `Server=localhost;Database=<Nome>Db;Trusted_Connection=True`,
+      igual ao fallback já hardcoded em cada `DependencyInjection.cs`. Separadamente, restaurei um
+      backup real de produção (`.bak` nativo do SQL Server via `ops/backup-dbs.sh` + o tarball de
+      uploads) numa instância SQL Server local, pra desenvolvimento ter dados reais em vez de só o
+      seed de demonstração — confirmado rodando `dotnet run` do Identity contra esse banco: conecta,
+      aplica a migração `AddAdminPermissions` (backfill correto no admin real), aceita login (401
+      esperado com a senha de demo, já que a senha real de produção é outra). **Nada disso tocou o
+      banco de produção real** — confirmado via SSH direto no container `sqlserver` de produção que
+      seu `__EFMigrationsHistory` só tem `InitialCreate`, sem `AddAdminPermissions`. O `.bak`/tarball
+      baixados foram apagados do disco local depois de restaurados (dados reais de cliente); a pasta
+      `services/catalog/AtelieBebe.Catalog.Api/uploads/` (onde as imagens restauradas ficam) entrou
+      no `.gitignore` — não existia entrada pra ela antes.
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
       nos manifests; falta aplicar num cluster ativo e uma license key real. **Não avancei aqui** —
       exige um cluster de verdade e uma license key real da New Relic, que eu não tenho como
