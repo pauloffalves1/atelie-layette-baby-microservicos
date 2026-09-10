@@ -1,9 +1,15 @@
 import { Injectable } from '@angular/core';
 
 /**
- * Estimated PAC-style freight by state, relative to the atelier's origin (São Bernardo do
- * Campo/SP) — not a real Correios API quote (that requires a postage contract we don't have),
- * just a distance-based approximation so checkout can show a realistic total.
+ * Shipping origin — the ateliê's real address, used as the departure point this whole estimate is
+ * relative to (not sent to any API today; there's no postage-contract integration yet, see below).
+ */
+export const SHIPPING_ORIGIN_ADDRESS = 'Avenida Getúlio Vargas, 1730 - Baeta Neves, São Bernardo do Campo - SP, 09751-251';
+
+/**
+ * Estimated PAC-style freight by state, relative to the atelier's origin (SHIPPING_ORIGIN_ADDRESS,
+ * São Bernardo do Campo/SP) — not a real Correios API quote (that requires a postage contract we
+ * don't have), just a distance-based approximation so checkout can show a realistic total.
  */
 const BASE_RATE_BY_REGION: Record<string, number> = {
   SP: 12.9,

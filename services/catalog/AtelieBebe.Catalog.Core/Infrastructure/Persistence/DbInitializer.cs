@@ -16,6 +16,7 @@ public static class DbInitializer
 
         await dbContext.Database.MigrateAsync();
         await SeedProductsAsync(dbContext);
+        await SeedReviewsAsync(dbContext);
     }
 
     private static async Task SeedProductsAsync(CatalogDbContext dbContext)
@@ -59,6 +60,43 @@ public static class DbInitializer
         if (newProducts.Count == 0) return;
 
         dbContext.Products.AddRange(newProducts);
+        await dbContext.SaveChangesAsync();
+    }
+
+    // Fixed GUIDs (not Guid.NewGuid()) so re-running this on every restart can check "did I already
+    // seed these?" instead of inserting duplicates — same idempotency goal as SeedProductsAsync's
+    // slug check, just keyed differently since a review has no natural unique name.
+    private static readonly (Guid CustomerId, string CustomerName, string ProductSlug, string Comment)[] FakeReviews =
+    [
+        (Guid.Parse("9c9b3e1e-1a4e-4a6a-9c1a-1a2b3c4d5e01"), "Marina Souza", "kit-fralda-de-ombro-e-boca-ursinho-bordado",
+            "Amei o acabamento e o bordado ficou lindo! Chegou super rápido e a qualidade do tecido é ótima."),
+        (Guid.Parse("9c9b3e1e-1a4e-4a6a-9c1a-1a2b3c4d5e02"), "Camila Ferreira", "fralda-de-ombro-bordada-com-nome",
+            "Encomendei com o nome da minha filha e ficou perfeito, super caprichado. Recomendo demais!"),
+        (Guid.Parse("9c9b3e1e-1a4e-4a6a-9c1a-1a2b3c4d5e03"), "Juliana Alves", "kit-3-fraldas-de-boca-estampadas",
+            "Fraldinhas super macias e absorventes, exatamente como nas fotos. Já é a segunda vez que compro."),
+    ];
+
+    private static async Task SeedReviewsAsync(CatalogDbContext dbContext)
+    {
+        var existingCustomerIds = (await dbContext.ProductReviews.Select(r => r.CustomerId).ToListAsync()).ToHashSet();
+        var missing = FakeReviews.Where(r => !existingCustomerIds.Contains(r.CustomerId)).ToList();
+        if (missing.Count == 0) return;
+
+        var productIdBySlug = await dbContext.Products
+            .Where(p => missing.Select(r => r.ProductSlug).Contains(p.Slug))
+            .ToDictionaryAsync(p => p.Slug, p => p.Id);
+
+        var newReviews = missing
+            .Where(r => productIdBySlug.ContainsKey(r.ProductSlug))
+            .Select(r => ProductReview.Create(productIdBySlug[r.ProductSlug], r.CustomerId, r.CustomerName, 5, r.Comment))
+            .ToList();
+
+        foreach (var review in newReviews)
+            review.Approve();
+
+        if (newReviews.Count == 0) return;
+
+        dbContext.ProductReviews.AddRange(newReviews);
         await dbContext.SaveChangesAsync();
     }
 }
