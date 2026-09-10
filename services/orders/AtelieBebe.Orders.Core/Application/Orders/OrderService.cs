@@ -425,6 +425,26 @@ public sealed class OrderService : IOrderService
         }
     }
 
+    public async Task RemoveAsync(Guid orderId, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Entrando em {Method}", nameof(RemoveAsync));
+        try
+        {
+            var order = await _unitOfWork.Orders.GetByIdAsync(orderId, ct)
+                ?? throw new NotFoundException("Pedido", orderId);
+
+            _unitOfWork.Orders.Remove(order);
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            _logger.LogInformation("Saindo de {Method}", nameof(RemoveAsync));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro em {Method}", nameof(RemoveAsync));
+            throw;
+        }
+    }
+
     public async Task<OrderDto> SimulatePaymentAsync(Guid orderId, bool approved, CancellationToken ct = default)
     {
         _logger.LogInformation("Entrando em {Method}", nameof(SimulatePaymentAsync));

@@ -57,6 +57,16 @@ export class OrderService {
     return this.http.post<{ pixQrCodeText: string }>(`${this.adminUrl}/${orderId}/payment-link`, {});
   }
 
+  /** Permanent deletion — backend restricts this to AdminManagement regardless of what the caller sends. */
+  remove(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.adminUrl}/${id}`);
+  }
+
+  /** True while PagBank still only has a sandbox token — checkout shows an "em construção" notice instead of a real payment form while this is true. */
+  getPaymentStatus(): Observable<{ sandbox: boolean }> {
+    return this.http.get<{ sandbox: boolean }>(`${environment.apiUrl}/payments/pagbank/status`);
+  }
+
   getCardEncryptionPublicKey(): Observable<{ publicKey: string }> {
     return this.http.get<{ publicKey: string }>(`${environment.apiUrl}/payments/pagbank/public-key`);
   }

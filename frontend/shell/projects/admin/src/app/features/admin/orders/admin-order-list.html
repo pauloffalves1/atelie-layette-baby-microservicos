@@ -68,6 +68,16 @@
                 <td class="text-end fw-bold text-blush">{{ order.total | currency:'BRL' }}</td>
                 <td class="text-end">
                   <a [routerLink]="['/admin/encomendas', order.id]" class="btn btn-sm btn-outline-secondary rounded-pill">Detalhes</a>
+                  @if (auth.hasPermission('AdminManagement')) {
+                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill ms-1" [disabled]="removingId() === order.id"
+                      (click)="remove(order)">
+                      @if (removingId() === order.id) {
+                        <span class="spinner-border spinner-border-sm"></span>
+                      } @else {
+                        <i class="bi bi-trash3"></i>
+                      }
+                    </button>
+                  }
                 </td>
               </tr>
             }

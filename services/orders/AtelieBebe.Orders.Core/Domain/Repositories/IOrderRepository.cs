@@ -22,4 +22,5 @@ public interface IOrderRepository
     Task<bool> HasAnyOrderForProductAsync(Guid productId, CancellationToken ct = default);
 
     void Add(Order order);
+    void Remove(Order order);
 }

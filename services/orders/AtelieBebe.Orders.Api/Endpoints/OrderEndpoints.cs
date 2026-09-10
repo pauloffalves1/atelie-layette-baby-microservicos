@@ -70,6 +70,18 @@ public static class OrderEndpoints
             return Results.Ok(updated);
         });
 
+        // Permanent deletion — restricted to whoever holds AdminManagement (the "administradora
+        // geral"), on top of the group's own Orders requirement, since removing order history is
+        // irreversible and not a routine order-management action like changing status.
+        adminGroup.MapDelete("/{id:guid}", async (Guid id, HttpContext http, IOrderService service, AdminAuditPublisher auditPublisher, CancellationToken ct) =>
+        {
+            var before = await service.GetByIdAsync(id, ct);
+            await service.RemoveAsync(id, ct);
+            await auditPublisher.PublishAsync(http.User.GetUserId(), http.User.GetName(), "OrderRemoved", $"Pedido #{id.ToString()[..8]} ({before.CustomerName}) removido permanentemente", ct);
+            return Results.NoContent();
+        })
+        .RequireAuthorization(JwtAuthenticationExtensions.PermissionPolicyName(AdminPermission.AdminManagement));
+
         // Lets an admin (re)generate a PIX charge for an order — e.g. the customer abandoned checkout,
         // or the order was created before the gateway was configured. Returns the copy-paste code to
         // relay to the customer (over WhatsApp, say) since there's no card form on the admin side.

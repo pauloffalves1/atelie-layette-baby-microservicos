@@ -72,4 +72,5 @@ public sealed class OrderRepository : IOrderRepository
             .AnyAsync(i => i.ProductId == productId, ct);
 
     public void Add(Order order) => _dbContext.Orders.Add(order);
+    public void Remove(Order order) => _dbContext.Orders.Remove(order);
 }

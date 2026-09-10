@@ -31,4 +31,7 @@ public interface IOrderService
 
     /// <summary>Admin action: attaches/clears the shipping carrier's tracking code, shown to the customer on the order page.</summary>
     Task<OrderDto> SetTrackingCodeAsync(Guid orderId, SetTrackingCodeRequest request, CancellationToken ct = default);
+
+    /// <summary>Permanently removes an order — gated to AdminManagement at the endpoint, since deleting order history is irreversible and not a routine order-management action.</summary>
+    Task RemoveAsync(Guid orderId, CancellationToken ct = default);
 }

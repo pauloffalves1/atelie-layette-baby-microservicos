@@ -8,6 +8,7 @@ import {
   PAYMENT_STATUS_LABELS,
   PaymentStatus,
 } from '@shared/core/models/order.model';
+import { AdminAuthService } from '@shared/core/services/admin-auth.service';
 import { OrderService } from '@shared/core/services/order.service';
 import { Pagination } from '@shared/shared/components/pagination/pagination';
 
@@ -29,8 +30,12 @@ export class AdminOrderList implements OnInit {
   readonly statuses: OrderStatus[] = ['Recebido', 'EmProducao', 'Pronto', 'Enviado', 'Entregue', 'Cancelado'];
   readonly paymentStatuses: PaymentStatus[] = ['Pendente', 'Pago', 'Recusado'];
   readonly exporting = signal(false);
+  readonly removingId = signal<string | null>(null);
 
-  constructor(private readonly orderService: OrderService) {}
+  constructor(
+    private readonly orderService: OrderService,
+    readonly auth: AdminAuthService,
+  ) {}
 
   ngOnInit(): void {
     this.load();
@@ -66,6 +71,21 @@ export class AdminOrderList implements OnInit {
         URL.revokeObjectURL(url);
       },
       error: () => this.exporting.set(false),
+    });
+  }
+
+  remove(order: Order): void {
+    if (this.removingId()) return;
+    const confirmed = confirm(`Excluir permanentemente o pedido #${order.id.slice(0, 8)}? Essa ação não pode ser desfeita.`);
+    if (!confirmed) return;
+
+    this.removingId.set(order.id);
+    this.orderService.remove(order.id).subscribe({
+      next: () => {
+        this.removingId.set(null);
+        this.load();
+      },
+      error: () => this.removingId.set(null),
     });
   }
 
