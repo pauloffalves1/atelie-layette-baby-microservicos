@@ -18,6 +18,9 @@
   <ItemGroup>
     <!-- Only this tool still talks to SQLite — every service itself now uses SQL Server only. -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
+    <!-- Direct pin to override the vulnerable 2.1.11 pulled in transitively (GHSA-2m69-gcr7-jv3q,
+         memory corruption parsing certain aggregate queries) — no code changes needed. -->
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.53.3" />
   </ItemGroup>
 
   <ItemGroup>
