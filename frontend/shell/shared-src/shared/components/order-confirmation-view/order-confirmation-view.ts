@@ -1,8 +1,9 @@
 import { CurrencyPipe } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject, input, output, signal } from '@angular/core';
 import { jsPDF } from 'jspdf';
-import { SITE_NAME } from '../../../core/constants/site';
-import { Order, ORDER_STATUS_FLOW, ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS, ShippingAddress } from '../../../core/models/order.model';
+import { autoTable } from 'jspdf-autotable';
+import { SITE_ADDRESS, SITE_CNPJ, SITE_NAME } from '../../../core/constants/site';
+import { Order, OrderItem, ORDER_STATUS_FLOW, ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS, ShippingAddress } from '../../../core/models/order.model';
 import { OrderService } from '../../../core/services/order.service';
 import { PixQrCode } from '../pix-qr-code/pix-qr-code';
 
@@ -28,6 +29,7 @@ export class OrderConfirmationView implements OnInit, OnDestroy {
   readonly pixCodeCopied = signal(false);
   readonly canceling = signal(false);
   readonly cancelError = signal<string | null>(null);
+  readonly generatingReceipt = signal(false);
   readonly statusLabels = ORDER_STATUS_LABELS;
   readonly statusFlow = ORDER_STATUS_FLOW;
   readonly paymentStatusLabels = PAYMENT_STATUS_LABELS;
@@ -103,27 +105,63 @@ export class OrderConfirmationView implements OnInit, OnDestroy {
     return this.statusFlow.indexOf(status as never);
   }
 
-  downloadReceipt(): void {
+  async downloadReceipt(): Promise<void> {
     const o = this.order();
-    if (!o) return;
+    if (!o || this.generatingReceipt()) return;
+    this.generatingReceipt.set(true);
 
+    try {
+      await this.buildAndSaveReceipt(o);
+    } finally {
+      this.generatingReceipt.set(false);
+    }
+  }
+
+  private async buildAndSaveReceipt(o: Order): Promise<void> {
     const doc = new jsPDF();
     const marginX = 15;
-    let y = 20;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const rightX = pageWidth - marginX;
+    let y = 18;
 
-    doc.setFontSize(16);
-    doc.text(SITE_NAME, marginX, y);
-    y += 8;
-    doc.setFontSize(10);
+    const logo = await this.loadLogoDataUrl();
+    if (logo) {
+      // Real dimensions 818x420 — keep that ratio so it never looks stretched.
+      const logoWidth = 32;
+      const logoHeight = (420 / 818) * logoWidth;
+      doc.addImage(logo, 'PNG', marginX, y, logoWidth, logoHeight);
+    }
+
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text(SITE_NAME, rightX, y + 5, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(90);
+    doc.text(SITE_ADDRESS, rightX, y + 11, { align: 'right', maxWidth: 120 });
+    doc.text(`CNPJ ${SITE_CNPJ}`, rightX, y + 16, { align: 'right' });
+    doc.setTextColor(0);
+
+    y += 26;
+    doc.setDrawColor(200);
+    doc.line(marginX, y, rightX, y);
+    y += 10;
+
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
     doc.text(`Comprovante do pedido #${o.id.slice(0, 8)}`, marginX, y);
-    y += 6;
+    doc.setFont('helvetica', 'normal');
+    y += 7;
+    doc.setFontSize(10);
     doc.text(`Data: ${new Date(o.createdAt).toLocaleDateString('pt-BR')}`, marginX, y);
     y += 6;
     doc.text(`Status: ${this.statusLabels[o.status]} — Pagamento: ${this.paymentStatusLabels[o.paymentStatus]}`, marginX, y);
     y += 10;
 
-    doc.setFontSize(12);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
     doc.text('Cliente', marginX, y);
+    doc.setFont('helvetica', 'normal');
     y += 6;
     doc.setFontSize(10);
     doc.text(o.customerName, marginX, y);
@@ -138,8 +176,10 @@ export class OrderConfirmationView implements OnInit, OnDestroy {
     const address = this.parsedShippingAddress(o.shippingAddressJson);
     if (address) {
       y += 5;
-      doc.setFontSize(12);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
       doc.text('Endereço de entrega', marginX, y);
+      doc.setFont('helvetica', 'normal');
       y += 6;
       doc.setFontSize(10);
       const complement = address.complement ? ` — ${address.complement}` : '';
@@ -151,34 +191,76 @@ export class OrderConfirmationView implements OnInit, OnDestroy {
       y += 5;
     }
 
-    y += 5;
-    doc.setFontSize(12);
-    doc.text('Itens', marginX, y);
-    y += 6;
-    doc.setFontSize(10);
-    for (const item of o.items) {
-      doc.text(`${item.quantity}x ${item.productName}`, marginX, y);
-      doc.text(item.subtotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 195, y, { align: 'right' });
-      y += 6;
-    }
+    y += 8;
+    autoTable(doc, {
+      startY: y,
+      margin: { left: marginX, right: marginX },
+      head: [['Qtd', 'Item', 'Valor unit.', 'Subtotal']],
+      body: o.items.map((item) => [
+        String(item.quantity),
+        this.itemDescription(item),
+        item.unitPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+        item.subtotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+      ]),
+      headStyles: { fillColor: [212, 148, 170] },
+      columnStyles: { 0: { cellWidth: 14, halign: 'center' }, 2: { halign: 'right' }, 3: { halign: 'right' } },
+      styles: { fontSize: 9 },
+    });
 
-    y += 4;
-    doc.text('Subtotal', marginX, y);
-    doc.text(o.itemsTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 195, y, { align: 'right' });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    y = (doc as any).lastAutoTable.finalY + 8;
+
+    const totalsX = rightX - 45;
+    doc.setFontSize(10);
+    doc.text('Subtotal', totalsX, y, { align: 'right' });
+    doc.text(o.itemsTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), rightX, y, { align: 'right' });
     y += 6;
-    doc.text('Frete', marginX, y);
-    doc.text(o.shippingCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 195, y, { align: 'right' });
+    doc.text('Frete', totalsX, y, { align: 'right' });
+    doc.text(o.shippingCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), rightX, y, { align: 'right' });
     y += 6;
     if (o.couponDiscountAmount > 0) {
-      doc.text(`Cupom ${o.couponCode}`, marginX, y);
-      doc.text(`-${o.couponDiscountAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 195, y, { align: 'right' });
+      doc.text(`Cupom ${o.couponCode}`, totalsX, y, { align: 'right' });
+      doc.text(`-${o.couponDiscountAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, rightX, y, { align: 'right' });
       y += 6;
     }
     doc.setFontSize(12);
-    doc.text('Total', marginX, y);
-    doc.text(o.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 195, y, { align: 'right' });
+    doc.setFont('helvetica', 'bold');
+    doc.text('Total', totalsX, y, { align: 'right' });
+    doc.text(o.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), rightX, y, { align: 'right' });
+
+    const pageHeight = doc.internal.pageSize.getHeight();
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+    doc.text(`${SITE_NAME} — ${SITE_ADDRESS} — CNPJ ${SITE_CNPJ}`, pageWidth / 2, pageHeight - 10, { align: 'center', maxWidth: pageWidth - 2 * marginX });
 
     doc.save(`comprovante-pedido-${o.id.slice(0, 8)}.pdf`);
+  }
+
+  private itemDescription(item: OrderItem): string {
+    if (!item.optionsJson) return item.productName;
+    try {
+      const options = JSON.parse(item.optionsJson) as { embroideryText?: string; threadColor?: string };
+      const parts = [options.embroideryText, options.threadColor].filter(Boolean);
+      return parts.length > 0 ? `${item.productName}\nBordado: ${parts.join(' — ')}` : item.productName;
+    } catch {
+      return item.productName;
+    }
+  }
+
+  private async loadLogoDataUrl(): Promise<string | null> {
+    try {
+      const response = await fetch('/images/logo-atelie.png');
+      const blob = await response.blob();
+      return await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch {
+      return null;
+    }
   }
 
   private parsedShippingAddress(json: string | null): ShippingAddress | null {
