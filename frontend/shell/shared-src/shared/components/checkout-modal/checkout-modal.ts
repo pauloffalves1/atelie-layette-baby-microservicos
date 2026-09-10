@@ -307,10 +307,14 @@ export class CheckoutModal {
 
   private initDeliveryStepOnce(): void {
     if (this.addressesLoaded) return;
-    this.addressesLoaded = true;
 
+    // The modal opens for anyone (navbar cart icon, no auth check) — only latch the one-shot guard
+    // once we actually have a user to load data for. Otherwise the very first open, while still a
+    // visitor, permanently skips this block, and the customer's data never loads even after they
+    // register/log in and reopen the same modal instance later in the session.
     const user = this.auth.currentUser();
     if (!user) return;
+    this.addressesLoaded = true;
 
     this.form.patchValue({ customerName: user.name, customerEmail: user.email });
 
