@@ -195,31 +195,51 @@ export class Checkout implements OnInit {
           customerPhone: profile.phone ?? '',
           customerCpf: formatCpf(profile.cpf),
         });
-      });
 
-      this.addressService.list().subscribe((addresses) => {
-        this.savedAddresses.set(addresses);
+        this.addressService.list().subscribe((addresses) => {
+          this.savedAddresses.set(addresses);
 
-        const defaultAddress = addresses.find((a) => a.isDefault) ?? addresses[0];
-        if (defaultAddress) {
-          this.selectAddress(defaultAddress);
-          return;
-        }
+          const defaultAddress = addresses.find((a) => a.isDefault) ?? addresses[0];
+          if (defaultAddress) {
+            this.selectAddress(defaultAddress);
+            return;
+          }
 
-        // No saved addresses yet — fall back to whatever address was used on the last order.
-        this.orderService.listMine().subscribe((orders) => {
-          const lastWithAddress = orders.find((o) => o.shippingAddressJson);
-          if (!lastWithAddress?.shippingAddressJson) return;
+          // No saved addresses yet — fall back to whatever address was used on the last order.
+          this.orderService.listMine().subscribe((orders) => {
+            const lastWithAddress = orders.find((o) => o.shippingAddressJson);
+            if (lastWithAddress?.shippingAddressJson) {
+              const address = JSON.parse(lastWithAddress.shippingAddressJson) as ShippingAddress;
+              this.form.patchValue({
+                zipCode: address.zipCode,
+                street: address.street,
+                number: address.number,
+                complement: address.complement ?? '',
+                neighborhood: address.neighborhood,
+                city: address.city,
+                state: address.state,
+              });
+              return;
+            }
 
-          const address = JSON.parse(lastWithAddress.shippingAddressJson) as ShippingAddress;
-          this.form.patchValue({
-            zipCode: address.zipCode,
-            street: address.street,
-            number: address.number,
-            complement: address.complement ?? '',
-            neighborhood: address.neighborhood,
-            city: address.city,
-            state: address.state,
+            // Still nothing — last resort is the address given at signup itself. Accounts created
+            // before RegisterAsync started also saving it as a CustomerAddress (see that method's
+            // comment) only ever got it written to Customer's own AddressStreet/etc fields, which
+            // getProfile() already returns here alongside phone/cpf.
+            if (
+              profile.addressStreet && profile.addressNumber && profile.addressNeighborhood &&
+              profile.addressCity && profile.addressState && profile.addressZipCode
+            ) {
+              this.form.patchValue({
+                zipCode: profile.addressZipCode,
+                street: profile.addressStreet,
+                number: profile.addressNumber,
+                complement: profile.addressComplement ?? '',
+                neighborhood: profile.addressNeighborhood,
+                city: profile.addressCity,
+                state: profile.addressState,
+              });
+            }
           });
         });
       });
