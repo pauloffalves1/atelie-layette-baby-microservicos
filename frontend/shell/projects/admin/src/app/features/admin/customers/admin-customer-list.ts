@@ -49,7 +49,9 @@ export class AdminCustomerList implements OnInit {
   removeCustomer(customer: CustomerSummary): void {
     if (this.removingId()) return;
     const confirmed = confirm(
-      `Remover a conta de "${customer.name}"? Se houver pedidos associados, os dados pessoais serão anonimizados em vez de excluídos — o histórico de pedidos é sempre preservado.`,
+      customer.isAnonymized
+        ? `Excluir de vez a conta "${customer.name}"? Só funciona se ela não tiver nenhum pedido — caso ainda tenha, nada muda.`
+        : `Remover a conta de "${customer.name}"? Se houver pedidos associados, os dados pessoais serão anonimizados em vez de excluídos — o histórico de pedidos é sempre preservado.`,
     );
     if (!confirmed) return;
 

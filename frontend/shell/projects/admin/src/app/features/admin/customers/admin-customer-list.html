@@ -55,16 +55,20 @@
                       </button>
                     }
                     <a [routerLink]="['/admin/clientes', customer.id, 'editar']" class="btn btn-sm btn-outline-secondary rounded-pill me-2">Editar</a>
-                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill"
-                      [disabled]="removingId() === customer.id"
-                      (click)="removeCustomer(customer)">
-                      @if (removingId() === customer.id) {
-                        <span class="spinner-border spinner-border-sm"></span>
-                      } @else {
-                        Remover
-                      }
-                    </button>
                   }
+                  <!-- Shown even for an already-anonymized account: if it now has zero orders (e.g. its
+                       last order was deleted after the anonymization), this purges the leftover
+                       "Cliente removido" row instead of leaving it stuck forever — see
+                       CustomerAdminService.RemoveAsync. -->
+                  <button type="button" class="btn btn-sm btn-outline-danger rounded-pill"
+                    [disabled]="removingId() === customer.id"
+                    (click)="removeCustomer(customer)">
+                    @if (removingId() === customer.id) {
+                      <span class="spinner-border spinner-border-sm"></span>
+                    } @else {
+                      Remover
+                    }
+                  </button>
                 </td>
               </tr>
             }
