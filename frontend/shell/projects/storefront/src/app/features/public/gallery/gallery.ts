@@ -34,9 +34,6 @@ export class Gallery implements OnInit {
     this.galleryImageService.list().subscribe({
       next: (images) => {
         if (images.length > 0) {
-          // Same ordered list the home's "Peças entregues com carinho" section shows (sliced to
-          // its first 6) — a click there links here with ?foto=<index> into THIS list, so the
-          // lightbox can only be pre-opened once these real images (not the fallback ones) load.
           this.images.set(images.map((i) => resolveAssetUrl(i.url)));
           this.openFromQueryParam();
         }
