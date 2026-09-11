@@ -15,6 +15,7 @@ export interface Product {
   promotionEndsAt: string | null;
   isOnPromotion: boolean;
   effectivePrice: number;
+  productionLeadTimeDays: number | null;
 }
 
 export interface AdminProduct extends Product {
@@ -38,6 +39,7 @@ export interface CreateProductRequest {
   category: string;
   imageUrl: string | null;
   featured: boolean;
+  productionLeadTimeDays?: number | null;
 }
 
 export interface UpdateProductRequest {
@@ -47,4 +49,5 @@ export interface UpdateProductRequest {
   category: string;
   imageUrl: string | null;
   featured: boolean;
+  productionLeadTimeDays?: number | null;
 }

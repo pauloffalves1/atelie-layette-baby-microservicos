@@ -58,6 +58,7 @@ export class AdminProductForm implements OnInit {
     imageUrl: [''],
     description: [''],
     featured: [false],
+    productionLeadTimeDays: [null as number | null],
   });
 
   constructor(
@@ -86,6 +87,7 @@ export class AdminProductForm implements OnInit {
           imageUrl: product.imageUrl ?? '',
           description: product.description ?? '',
           featured: product.featured,
+          productionLeadTimeDays: product.productionLeadTimeDays,
         });
         this.selectedCustomerIds.set(product.allowedCustomerIds);
         this.galleryImages.set(product.imageUrls);
@@ -261,6 +263,7 @@ export class AdminProductForm implements OnInit {
       category: value.category,
       imageUrl: value.imageUrl || null,
       featured: value.featured,
+      productionLeadTimeDays: value.productionLeadTimeDays || null,
     };
 
     const onSuccess = () => this.router.navigate(['/admin/produtos']);

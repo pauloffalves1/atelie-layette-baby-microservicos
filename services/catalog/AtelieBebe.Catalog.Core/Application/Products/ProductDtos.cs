@@ -16,7 +16,8 @@ public sealed record ProductDto(
     DateTime? PromotionStartsAt,
     DateTime? PromotionEndsAt,
     bool IsOnPromotion,
-    decimal EffectivePrice);
+    decimal EffectivePrice,
+    int? ProductionLeadTimeDays);
 
 public sealed record AdminProductDto(
     Guid Id,
@@ -35,7 +36,8 @@ public sealed record AdminProductDto(
     DateTime? PromotionStartsAt,
     DateTime? PromotionEndsAt,
     bool IsOnPromotion,
-    decimal EffectivePrice);
+    decimal EffectivePrice,
+    int? ProductionLeadTimeDays);
 
 public sealed record SetPromotionRequest(decimal? DiscountPercentage, DateTime? StartsAt, DateTime? EndsAt);
 
@@ -51,7 +53,8 @@ public sealed record CreateProductRequest(
     decimal Price,
     string Category,
     string? ImageUrl,
-    bool Featured);
+    bool Featured,
+    int? ProductionLeadTimeDays = null);
 
 public sealed record UpdateProductRequest(
     string Name,
@@ -59,4 +62,5 @@ public sealed record UpdateProductRequest(
     decimal Price,
     string Category,
     string? ImageUrl,
-    bool Featured);
+    bool Featured,
+    int? ProductionLeadTimeDays = null);

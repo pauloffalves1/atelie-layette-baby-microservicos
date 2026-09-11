@@ -22,6 +22,9 @@ public sealed class Product : Entity, IAggregateRoot
     public DateTime? PromotionStartsAt { get; private set; }
     public DateTime? PromotionEndsAt { get; private set; }
 
+    /// <summary>Estimated business days to produce this made-to-order item, shown to the customer on the product page/checkout. Null means no estimate is configured.</summary>
+    public int? ProductionLeadTimeDays { get; private set; }
+
     private readonly List<ProductCustomerAccessEntry> _allowedCustomerAccess = new();
     private readonly List<ProductImage> _images = new();
 
@@ -47,7 +50,7 @@ public sealed class Product : Entity, IAggregateRoot
     private Product() { } // EF Core
 
     private Product(Guid id, string name, string slug, string? description, Money price,
-        string category, string? imageUrl, bool featured) : base(id)
+        string category, string? imageUrl, bool featured, int? productionLeadTimeDays) : base(id)
     {
         Name = name;
         Slug = slug;
@@ -57,12 +60,13 @@ public sealed class Product : Entity, IAggregateRoot
         ImageUrl = imageUrl;
         Active = true;
         Featured = featured;
+        ProductionLeadTimeDays = productionLeadTimeDays;
         CreatedAt = DateTime.UtcNow;
         UpdatedAt = CreatedAt;
     }
 
     public static Product Create(string name, string slug, string? description, Money price,
-        string category, string? imageUrl, bool featured = false)
+        string category, string? imageUrl, bool featured = false, int? productionLeadTimeDays = null)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new DomainException("O nome do produto é obrigatório.");
@@ -70,16 +74,20 @@ public sealed class Product : Entity, IAggregateRoot
             throw new DomainException("O slug do produto é obrigatório.");
         if (string.IsNullOrWhiteSpace(category))
             throw new DomainException("A categoria do produto é obrigatória.");
+        if (productionLeadTimeDays is < 0)
+            throw new DomainException("O prazo de produção não pode ser negativo.");
 
         return new Product(Guid.NewGuid(), name.Trim(), slug.Trim().ToLowerInvariant(),
-            description, price, category.Trim(), imageUrl, featured);
+            description, price, category.Trim(), imageUrl, featured, productionLeadTimeDays);
     }
 
     public void UpdateDetails(string name, string? description, Money price, string category,
-        string? imageUrl, bool featured)
+        string? imageUrl, bool featured, int? productionLeadTimeDays = null)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new DomainException("O nome do produto é obrigatório.");
+        if (productionLeadTimeDays is < 0)
+            throw new DomainException("O prazo de produção não pode ser negativo.");
 
         Name = name.Trim();
         Description = description;
@@ -87,6 +95,7 @@ public sealed class Product : Entity, IAggregateRoot
         Category = category.Trim();
         ImageUrl = imageUrl;
         Featured = featured;
+        ProductionLeadTimeDays = productionLeadTimeDays;
         UpdatedAt = DateTime.UtcNow;
     }
 

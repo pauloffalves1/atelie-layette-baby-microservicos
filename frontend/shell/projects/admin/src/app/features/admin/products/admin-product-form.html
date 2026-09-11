@@ -35,6 +35,10 @@
                 <div class="invalid-feedback">Informe um preço maior que zero.</div>
               }
             </div>
+            <div class="col-md-6">
+              <label for="product-lead-time" class="form-label small fw-semibold">Prazo de produção (dias úteis)</label>
+              <input type="number" min="0" step="1" id="product-lead-time" class="form-control" formControlName="productionLeadTimeDays" placeholder="Ex: 5">
+            </div>
             <div class="col-md-6 d-flex align-items-end">
               <div class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" role="switch" id="featured" formControlName="featured">
