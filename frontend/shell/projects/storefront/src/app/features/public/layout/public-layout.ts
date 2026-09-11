@@ -2,7 +2,7 @@ import { Component, HostListener, effect, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
-import { IDLE_TIMEOUT_MS } from '@shared/core/constants/site';
+import { IDLE_TIMEOUT_MS, SITE_CNPJ } from '@shared/core/constants/site';
 import { AnalyticsService } from '@shared/core/services/analytics.service';
 import { AuthService } from '@shared/core/services/auth.service';
 import { CartService } from '@shared/core/services/cart.service';
@@ -21,6 +21,7 @@ import { WhatsappButton } from '@shared/shared/components/whatsapp-button/whatsa
 })
 export class PublicLayout {
   readonly currentYear = new Date().getFullYear();
+  readonly siteCnpj = SITE_CNPJ;
 
   readonly newsletterEmail = signal('');
   readonly newsletterSubmitting = signal(false);
