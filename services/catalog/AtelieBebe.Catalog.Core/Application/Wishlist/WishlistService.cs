@@ -116,5 +116,5 @@ public sealed class WishlistService : IWishlistService
     private static ProductDto ToDto(Product p) => new(
         p.Id, p.Name, p.Slug, p.Description, p.Price.Amount, p.Category, p.ImageUrl,
         p.Active, p.Featured, p.IsExclusive, p.ImageUrls,
-        p.DiscountPercentage, p.PromotionStartsAt, p.PromotionEndsAt, p.IsOnPromotion, p.EffectivePrice.Amount);
+        p.DiscountPercentage, p.PromotionStartsAt, p.PromotionEndsAt, p.IsOnPromotion, p.EffectivePrice.Amount, p.ProductionLeadTimeDays);
 }

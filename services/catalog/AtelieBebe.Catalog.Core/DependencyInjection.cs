@@ -24,6 +24,8 @@ public static class DependencyInjection
     public static IServiceCollection AddCatalogServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton<DomainEventsToOutboxInterceptor>();
+        services.AddMemoryCache();
+        services.AddSingleton<Application.Products.ProductCacheInvalidator>();
 
         var connectionString = configuration.GetConnectionString("Default") ?? "Server=localhost;Database=CatalogDb;Trusted_Connection=True;TrustServerCertificate=True";
         services.AddDbContext<CatalogDbContext>((sp, options) =>

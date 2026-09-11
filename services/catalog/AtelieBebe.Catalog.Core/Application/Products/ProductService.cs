@@ -3,20 +3,37 @@ using AtelieBebe.SharedKernel.Common;
 using AtelieBebe.SharedKernel.Exceptions;
 using AtelieBebe.Catalog.Core.Domain.Entities;
 using AtelieBebe.SharedKernel.ValueObjects;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
 namespace AtelieBebe.Catalog.Core.Application.Products;
 
 public sealed class ProductService : IProductService
 {
+    // Public storefront browsing (category/search/featured/categories, no customerId) is the
+    // overwhelming majority of Catalog traffic and hits SQL Server on every request; a short TTL
+    // cache (backed by ProductCacheInvalidator so writes bust it immediately, not just after the
+    // TTL) trades a few seconds of staleness for a lot less load under normal browsing spikes.
+    // Personalized reads (customerId set, for exclusive-product access) always skip the cache.
+    private static readonly TimeSpan CacheDuration = TimeSpan.FromSeconds(45);
+
     private readonly ICatalogUnitOfWork _unitOfWork;
     private readonly IOrdersServiceClient _ordersServiceClient;
+    private readonly IMemoryCache _cache;
+    private readonly ProductCacheInvalidator _cacheInvalidator;
     private readonly ILogger<ProductService> _logger;
 
-    public ProductService(ICatalogUnitOfWork unitOfWork, IOrdersServiceClient ordersServiceClient, ILogger<ProductService> logger)
+    public ProductService(
+        ICatalogUnitOfWork unitOfWork,
+        IOrdersServiceClient ordersServiceClient,
+        IMemoryCache cache,
+        ProductCacheInvalidator cacheInvalidator,
+        ILogger<ProductService> logger)
     {
         _unitOfWork = unitOfWork;
         _ordersServiceClient = ordersServiceClient;
+        _cache = cache;
+        _cacheInvalidator = cacheInvalidator;
         _logger = logger;
     }
 
@@ -26,11 +43,20 @@ public sealed class ProductService : IProductService
         try
         {
             var (normalizedPage, normalizedPageSize) = Pagination.Normalize(page, pageSize);
-            var (products, totalItems) = await _unitOfWork.Products.ListAsync(category, onlyActive, normalizedPage, normalizedPageSize, customerId, search, ct);
-            var result = new PagedResult<ProductDto>(products.Select(ToDto).ToList(), normalizedPage, normalizedPageSize, totalItems);
+
+            if (customerId is not null)
+                return await ListUncachedAsync(category, onlyActive, normalizedPage, normalizedPageSize, customerId, search, ct);
+
+            var cacheKey = $"products:list:{category}:{onlyActive}:{normalizedPage}:{normalizedPageSize}:{search}";
+            var result = await _cache.GetOrCreateAsync(cacheKey, async entry =>
+            {
+                entry.SetOptions(new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = CacheDuration }
+                    .AddExpirationToken(_cacheInvalidator.GetToken()));
+                return await ListUncachedAsync(category, onlyActive, normalizedPage, normalizedPageSize, customerId, search, ct);
+            });
 
             _logger.LogInformation("Saindo de {Method}", nameof(ListAsync));
-            return result;
+            return result!;
         }
         catch (Exception ex)
         {
@@ -39,16 +65,30 @@ public sealed class ProductService : IProductService
         }
     }
 
+    private async Task<PagedResult<ProductDto>> ListUncachedAsync(string? category, bool onlyActive, int page, int pageSize, Guid? customerId, string? search, CancellationToken ct)
+    {
+        var (products, totalItems) = await _unitOfWork.Products.ListAsync(category, onlyActive, page, pageSize, customerId, search, ct);
+        return new PagedResult<ProductDto>(products.Select(ToDto).ToList(), page, pageSize, totalItems);
+    }
+
     public async Task<IReadOnlyList<ProductDto>> ListFeaturedAsync(Guid? customerId = null, CancellationToken ct = default)
     {
         _logger.LogInformation("Entrando em {Method}", nameof(ListFeaturedAsync));
         try
         {
-            var products = await _unitOfWork.Products.ListFeaturedAsync(customerId, ct);
-            var result = products.Select(ToDto).ToList();
+            if (customerId is not null)
+                return (await _unitOfWork.Products.ListFeaturedAsync(customerId, ct)).Select(ToDto).ToList();
+
+            var result = await _cache.GetOrCreateAsync("products:featured", async entry =>
+            {
+                entry.SetOptions(new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = CacheDuration }
+                    .AddExpirationToken(_cacheInvalidator.GetToken()));
+                var products = await _unitOfWork.Products.ListFeaturedAsync(customerId, ct);
+                return products.Select(ToDto).ToList();
+            });
 
             _logger.LogInformation("Saindo de {Method}", nameof(ListFeaturedAsync));
-            return result;
+            return result!;
         }
         catch (Exception ex)
         {
@@ -62,10 +102,18 @@ public sealed class ProductService : IProductService
         _logger.LogInformation("Entrando em {Method}", nameof(ListCategoriesAsync));
         try
         {
-            var result = await _unitOfWork.Products.ListCategoriesAsync(customerId, ct);
+            if (customerId is not null)
+                return await _unitOfWork.Products.ListCategoriesAsync(customerId, ct);
+
+            var result = await _cache.GetOrCreateAsync("products:categories", async entry =>
+            {
+                entry.SetOptions(new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = CacheDuration }
+                    .AddExpirationToken(_cacheInvalidator.GetToken()));
+                return await _unitOfWork.Products.ListCategoriesAsync(customerId, ct);
+            });
 
             _logger.LogInformation("Saindo de {Method}", nameof(ListCategoriesAsync));
-            return result;
+            return result!;
         }
         catch (Exception ex)
         {
@@ -144,10 +192,12 @@ public sealed class ProductService : IProductService
                 Money.FromReais(request.Price),
                 request.Category,
                 request.ImageUrl,
-                request.Featured);
+                request.Featured,
+                request.ProductionLeadTimeDays);
 
             _unitOfWork.Products.Add(product);
             await _unitOfWork.SaveChangesAsync(ct);
+            _cacheInvalidator.Invalidate();
 
             _logger.LogInformation("Saindo de {Method}", nameof(CreateAsync));
             return ToDto(product);
@@ -173,9 +223,11 @@ public sealed class ProductService : IProductService
                 Money.FromReais(request.Price),
                 request.Category,
                 request.ImageUrl,
-                request.Featured);
+                request.Featured,
+                request.ProductionLeadTimeDays);
 
             await _unitOfWork.SaveChangesAsync(ct);
+            _cacheInvalidator.Invalidate();
 
             _logger.LogInformation("Saindo de {Method}", nameof(UpdateAsync));
             return ToDto(product);
@@ -197,6 +249,7 @@ public sealed class ProductService : IProductService
 
             product.SetActive(active);
             await _unitOfWork.SaveChangesAsync(ct);
+            _cacheInvalidator.Invalidate();
 
             _logger.LogInformation("Saindo de {Method}", nameof(SetActiveAsync));
             return ToDto(product);
@@ -221,6 +274,7 @@ public sealed class ProductService : IProductService
 
             _unitOfWork.Products.Remove(product);
             await _unitOfWork.SaveChangesAsync(ct);
+            _cacheInvalidator.Invalidate();
 
             _logger.LogInformation("Saindo de {Method}", nameof(DeleteAsync));
         }
@@ -262,6 +316,7 @@ public sealed class ProductService : IProductService
 
             product.SetImages(request.ImageUrls);
             await _unitOfWork.SaveChangesAsync(ct);
+            _cacheInvalidator.Invalidate();
 
             _logger.LogInformation("Saindo de {Method}", nameof(SetImagesAsync));
             return ToAdminDto(product);
@@ -283,6 +338,7 @@ public sealed class ProductService : IProductService
 
             product.SetPromotion(request.DiscountPercentage, request.StartsAt, request.EndsAt);
             await _unitOfWork.SaveChangesAsync(ct);
+            _cacheInvalidator.Invalidate();
 
             _logger.LogInformation("Saindo de {Method}", nameof(SetPromotionAsync));
             return ToAdminDto(product);
@@ -305,6 +361,7 @@ public sealed class ProductService : IProductService
                 product.SetPromotion(request.DiscountPercentage, request.StartsAt, request.EndsAt);
 
             await _unitOfWork.SaveChangesAsync(ct);
+            _cacheInvalidator.Invalidate();
             var result = products.Select(ToAdminDto).ToList();
 
             _logger.LogInformation("Saindo de {Method}", nameof(ApplyPromotionToManyAsync));
@@ -319,9 +376,9 @@ public sealed class ProductService : IProductService
 
     private static ProductDto ToDto(Product p) => new(
         p.Id, p.Name, p.Slug, p.Description, p.Price.Amount, p.Category, p.ImageUrl, p.Active, p.Featured, p.IsExclusive, p.ImageUrls,
-        p.DiscountPercentage, p.PromotionStartsAt, p.PromotionEndsAt, p.IsOnPromotion, p.EffectivePrice.Amount);
+        p.DiscountPercentage, p.PromotionStartsAt, p.PromotionEndsAt, p.IsOnPromotion, p.EffectivePrice.Amount, p.ProductionLeadTimeDays);
 
     private static AdminProductDto ToAdminDto(Product p) => new(
         p.Id, p.Name, p.Slug, p.Description, p.Price.Amount, p.Category, p.ImageUrl, p.Active, p.Featured, p.IsExclusive, p.AllowedCustomerIds, p.ImageUrls,
-        p.DiscountPercentage, p.PromotionStartsAt, p.PromotionEndsAt, p.IsOnPromotion, p.EffectivePrice.Amount);
+        p.DiscountPercentage, p.PromotionStartsAt, p.PromotionEndsAt, p.IsOnPromotion, p.EffectivePrice.Amount, p.ProductionLeadTimeDays);
 }
