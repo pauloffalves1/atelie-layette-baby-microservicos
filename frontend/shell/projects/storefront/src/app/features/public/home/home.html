@@ -89,32 +89,6 @@
   </div>
 </section>
 
-@if (showcaseImages().length > 0) {
-  <section class="py-5 bg-white">
-    <div class="container">
-      <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-3">
-        <div>
-          <h2 class="section-title">Peças entregues com carinho</h2>
-          <p class="text-secondary small mb-0">Trabalhos reais, feitos sob encomenda para famílias de todo o Brasil.</p>
-        </div>
-        <a routerLink="/dicas-para-o-casal" class="btn btn-sm btn-outline-secondary rounded-pill">Ver dicas para o casal <i class="bi bi-arrow-right ms-1"></i></a>
-      </div>
-      <div class="row g-3">
-        @for (image of showcaseImages(); track image; let i = $index) {
-          <div class="col-6 col-md-4 col-lg-2">
-            <a
-              [routerLink]="['/dicas-para-o-casal']"
-              [queryParams]="{ foto: i }"
-              class="d-block ratio ratio-1x1 rounded-4 overflow-hidden shadow-sm gallery-thumb">
-              <img [src]="image" alt="Fralda bordada entregue pelo Ateliê Layette Baby" class="w-100 h-100 object-fit-cover" loading="lazy">
-            </a>
-          </div>
-        }
-      </div>
-    </div>
-  </section>
-}
-
 @if (featuredReviews().length > 0) {
   <section class="py-5">
     <div class="container">

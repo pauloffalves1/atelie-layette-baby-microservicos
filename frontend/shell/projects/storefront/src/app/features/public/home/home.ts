@@ -1,7 +1,6 @@
 import { CurrencyPipe } from '@angular/common';
 import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { GalleryImageService } from '@shared/core/services/gallery-image.service';
 import { ProductService } from '@shared/core/services/product.service';
 import { ReviewService } from '@shared/core/services/review.service';
 import { SeoService } from '@shared/core/services/seo.service';
@@ -11,7 +10,6 @@ import { Product } from '@shared/core/models/product.model';
 import { FeaturedReview } from '@shared/core/models/review.model';
 import { AssetUrlPipe } from '@shared/shared/pipes/asset-url.pipe';
 
-const SHOWCASE_LIMIT = 6;
 const AUTO_ADVANCE_MS = 6000;
 
 @Component({
@@ -26,13 +24,9 @@ export class Home implements OnInit, OnDestroy {
   // Null until the site-images lookup resolves, so the template renders nothing rather than a
   // default image that then gets swapped for the real one (a visible "flash" on every load).
   readonly heroImageUrl = signal<string | null>(null);
-  // Real delivered-work photos for the trust/social-proof section — empty until the admin has
-  // uploaded at least one (no fallback placeholders here, unlike the full /dicas-para-o-casal page,
-  // since a home section with obviously-fake stock photos would undermine the trust it's meant to build).
-  readonly showcaseImages = signal<string[]>([]);
 
-  // Empty until there's at least one approved review with a comment — same "no fake placeholders"
-  // rule as showcaseImages, hides the whole section rather than showing it half-empty.
+  // Empty until there's at least one approved review with a comment — hides the whole section
+  // rather than showing it half-empty.
   readonly featuredReviews = signal<FeaturedReview[]>([]);
   // Carousel is driven entirely from here (no Bootstrap JS in this app — see public-layout.ts's
   // native dropdown/collapse toggles for the same reason): only carousel's CSS partial is
@@ -43,7 +37,6 @@ export class Home implements OnInit, OnDestroy {
   constructor(
     private readonly productService: ProductService,
     private readonly siteImageService: SiteImageService,
-    private readonly galleryImageService: GalleryImageService,
     private readonly reviewService: ReviewService,
     private readonly seo: SeoService,
   ) {}
@@ -69,13 +62,6 @@ export class Home implements OnInit, OnDestroy {
         this.heroImageUrl.set(hero ? resolveAssetUrl(hero.url) : '/images/hero-fraldas.jpg');
       },
       error: () => this.heroImageUrl.set('/images/hero-fraldas.jpg'),
-    });
-
-    this.galleryImageService.list().subscribe({
-      next: (images) => {
-        this.showcaseImages.set(images.slice(0, SHOWCASE_LIMIT).map((i) => resolveAssetUrl(i.url)));
-      },
-      error: () => this.showcaseImages.set([]),
     });
 
     this.reviewService.listFeatured().subscribe({
