@@ -60,6 +60,23 @@ public sealed class CustomerAuthService : ICustomerAuthService
                 request.AddressZipCode);
 
             _unitOfWork.Customers.Add(customer);
+
+            // The address given at signup only lives on Customer's own AddressStreet/etc fields
+            // (see CustomerAddress's doc comment) — nothing customer-facing reads those, so without
+            // also saving it here as a proper CustomerAddress, "Meus endereços" stays empty and
+            // checkout has nothing to prefill from until they manually add one or complete a first
+            // order. Mirroring it here as the default address makes it show up in both right away.
+            if (!string.IsNullOrWhiteSpace(request.AddressStreet) && !string.IsNullOrWhiteSpace(request.AddressNumber) &&
+                !string.IsNullOrWhiteSpace(request.AddressNeighborhood) && !string.IsNullOrWhiteSpace(request.AddressCity) &&
+                !string.IsNullOrWhiteSpace(request.AddressState) && !string.IsNullOrWhiteSpace(request.AddressZipCode))
+            {
+                var address = CustomerAddress.Create(
+                    customer.Id, "Principal", request.AddressStreet, request.AddressNumber, request.AddressComplement,
+                    request.AddressNeighborhood, request.AddressCity, request.AddressState, request.AddressZipCode,
+                    isDefault: true);
+                _unitOfWork.CustomerAddresses.Add(address);
+            }
+
             IssueEmailVerification(customer);
             await _unitOfWork.SaveChangesAsync(ct);
 
