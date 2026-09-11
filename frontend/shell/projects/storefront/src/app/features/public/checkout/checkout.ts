@@ -12,6 +12,7 @@ import { OrderService } from '@shared/core/services/order.service';
 import { ShippingService } from '@shared/core/services/shipping.service';
 import { CustomerAddress } from '@shared/core/models/customer-address.model';
 import { ShippingAddress } from '@shared/core/models/order.model';
+import { formatCpf } from '@shared/core/utils/format-cpf';
 import { PhoneMaskDirective } from '@shared/shared/directives/phone-mask.directive';
 import { WHATSAPP_NUMBER } from '@shared/core/constants/site';
 
@@ -192,7 +193,7 @@ export class Checkout implements OnInit {
           customerName: profile.name,
           customerEmail: profile.email,
           customerPhone: profile.phone ?? '',
-          customerCpf: profile.cpf ?? '',
+          customerCpf: formatCpf(profile.cpf),
         });
       });
 

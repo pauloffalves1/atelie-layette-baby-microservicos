@@ -15,6 +15,7 @@ import { CheckoutModalService } from '../../../core/services/checkout-modal.serv
 import { CustomerAddress } from '../../../core/models/customer-address.model';
 import { Product } from '../../../core/models/product.model';
 import { ShippingAddress } from '../../../core/models/order.model';
+import { formatCpf } from '../../../core/utils/format-cpf';
 import { PhoneMaskDirective } from '../../directives/phone-mask.directive';
 import { AssetUrlPipe } from '../../pipes/asset-url.pipe';
 import { OrderConfirmationView } from '../order-confirmation-view/order-confirmation-view';
@@ -269,7 +270,10 @@ export class CheckoutModal {
 
     if (!this.auth.isAuthenticated()) {
       this.modal.close();
-      this.router.navigate(['/entrar'], { queryParams: { returnUrl: this.router.url } });
+      // resumeCheckout tells the login page to reopen this same modal straight at the delivery
+      // step once the customer is back — see login-page.ts — instead of leaving them to re-find
+      // the cart icon and start over after logging in.
+      this.router.navigate(['/entrar'], { queryParams: { returnUrl: this.router.url, resumeCheckout: 'delivery' } });
       return;
     }
 
@@ -324,7 +328,7 @@ export class CheckoutModal {
         customerName: profile.name,
         customerEmail: profile.email,
         customerPhone: profile.phone ?? '',
-        customerCpf: profile.cpf ?? '',
+        customerCpf: formatCpf(profile.cpf),
       });
     });
 
