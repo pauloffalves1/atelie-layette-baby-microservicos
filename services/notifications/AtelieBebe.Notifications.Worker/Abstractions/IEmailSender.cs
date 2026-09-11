@@ -2,6 +2,8 @@ namespace AtelieBebe.Notifications.Worker.Abstractions;
 
 public sealed record AbandonedCartItem(string ProductName, string ProductUrl, int Quantity);
 
+public sealed record ReviewRequestItem(string ProductName, string ProductUrl);
+
 /// <summary>
 /// Independent notification channel alongside INotificationSender (WhatsApp) — dispatched
 /// separately by the outbox processor so a failure/misconfiguration in one channel never blocks
@@ -32,4 +34,7 @@ public interface IEmailSender
 
     /// <summary>Sent once, a few days after a customer adds a product to their wishlist and hasn't purchased it yet.</summary>
     Task SendWishlistReminderAsync(string customerName, string customerEmail, string productName, string productUrl, CancellationToken ct = default);
+
+    /// <summary>Sent once per order, a few days after it's marked Entregue — invites the customer to review what they bought.</summary>
+    Task SendReviewRequestAsync(string customerName, string customerEmail, IReadOnlyList<ReviewRequestItem> items, CancellationToken ct = default);
 }

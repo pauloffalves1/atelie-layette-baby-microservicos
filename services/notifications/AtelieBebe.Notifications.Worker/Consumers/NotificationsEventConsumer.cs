@@ -30,6 +30,7 @@ public sealed class NotificationsEventConsumer : RabbitMqEventConsumerBase
                 "ProductBackInStockDomainEvent",
                 "AbandonedCartReminderDomainEvent",
                 "WishlistReminderDomainEvent",
+                "ReviewRequestDomainEvent",
             ])
     {
     }
@@ -116,6 +117,13 @@ public sealed class NotificationsEventConsumer : RabbitMqEventConsumerBase
                 await TrySendEmailAsync(() => emailSender.SendWishlistReminderAsync(e.CustomerName, e.CustomerEmail, e.ProductName, e.ProductUrl, ct), logger);
                 break;
             }
+            case "ReviewRequestDomainEvent":
+            {
+                var e = Deserialize<ReviewRequestEvent>(jsonContent);
+                await TrySendEmailAsync(() => emailSender.SendReviewRequestAsync(e.CustomerName, e.CustomerEmail,
+                    e.Items.Select(i => new ReviewRequestItem(i.ProductName, i.ProductUrl)).ToList(), ct), logger);
+                break;
+            }
             default:
                 logger.LogWarning("Nenhum handler registrado para o evento {EventType}.", eventType);
                 break;
@@ -147,4 +155,6 @@ public sealed class NotificationsEventConsumer : RabbitMqEventConsumerBase
     private sealed record AbandonedCartReminderItem(string ProductName, string ProductUrl, int Quantity);
     private sealed record AbandonedCartReminderEvent(string CustomerName, string CustomerEmail, IReadOnlyList<AbandonedCartReminderItem> Items, string ShopUrl);
     private sealed record WishlistReminderEvent(string CustomerName, string CustomerEmail, string ProductName, string ProductUrl);
+    private sealed record ReviewRequestEventItem(string ProductName, string ProductUrl);
+    private sealed record ReviewRequestEvent(string CustomerName, string CustomerEmail, IReadOnlyList<ReviewRequestEventItem> Items);
 }

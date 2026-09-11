@@ -7,6 +7,7 @@ using AtelieBebe.Orders.Core.Infrastructure;
 using AtelieBebe.Orders.Core.Infrastructure.Cart;
 using AtelieBebe.Orders.Core.Infrastructure.ExternalServices;
 using AtelieBebe.Orders.Core.Infrastructure.Payments;
+using AtelieBebe.Orders.Core.Infrastructure.Reviews;
 using AtelieBebe.Orders.Core.Infrastructure.Persistence;
 using AtelieBebe.Orders.Core.Infrastructure.Persistence.Repositories;
 using AtelieBebe.SharedKernel.Messaging;
@@ -65,6 +66,7 @@ public static class DependencyInjection
         }
 
         services.AddHostedService<AbandonedCartReminderProcessor>();
+        services.AddHostedService<ReviewRequestReminderProcessor>();
         services.AddOutboxPublishing(configuration);
 
         return services;

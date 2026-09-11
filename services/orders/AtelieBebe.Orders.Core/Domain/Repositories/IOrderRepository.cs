@@ -21,6 +21,9 @@ public interface IOrderRepository
     /// <summary>Used to block Catalog from deleting a product that appears in any order (any customer, any status) — preserves order history integrity.</summary>
     Task<bool> HasAnyOrderForProductAsync(Guid productId, CancellationToken ct = default);
 
+    /// <summary>Feeds ReviewRequestReminderProcessor — delivered orders, past the wait window, that haven't had the review-request e-mail sent yet.</summary>
+    Task<IReadOnlyList<Order>> ListDeliveredWithoutReviewReminderAsync(DateTime deliveredBefore, CancellationToken ct = default);
+
     void Add(Order order);
     void Remove(Order order);
 }

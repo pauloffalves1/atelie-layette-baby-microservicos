@@ -71,6 +71,12 @@ public sealed class OrderRepository : IOrderRepository
             .SelectMany(o => o.Items)
             .AnyAsync(i => i.ProductId == productId, ct);
 
+    public async Task<IReadOnlyList<Order>> ListDeliveredWithoutReviewReminderAsync(DateTime deliveredBefore, CancellationToken ct = default) =>
+        await _dbContext.Orders
+            .Include(o => o.Items)
+            .Where(o => o.Status == OrderStatus.Entregue && o.DeliveredAt != null && o.DeliveredAt <= deliveredBefore && o.ReviewReminderSentAt == null)
+            .ToListAsync(ct);
+
     public void Add(Order order) => _dbContext.Orders.Add(order);
     public void Remove(Order order) => _dbContext.Orders.Remove(order);
 }

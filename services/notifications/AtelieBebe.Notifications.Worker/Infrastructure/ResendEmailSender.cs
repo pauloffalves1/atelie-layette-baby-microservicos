@@ -153,6 +153,22 @@ public sealed class ResendEmailSender : IEmailSender
                 """),
             ct);
 
+    public Task SendReviewRequestAsync(string customerName, string customerEmail, IReadOnlyList<ReviewRequestItem> items, CancellationToken ct = default)
+    {
+        var itemsHtml = string.Join("", items.Select(i =>
+            $"""<li><a href="{i.ProductUrl}">{i.ProductName}</a></li>"""));
+
+        return SendAsync(
+            customerEmail,
+            "O que você achou da sua encomenda?",
+            Wrap($"""
+                <p>Olá, {customerName}!</p>
+                <p>Esperamos que tenha amado sua encomenda! Que tal contar pra outras famílias o que achou?</p>
+                <ul>{itemsHtml}</ul>
+                """),
+            ct);
+    }
+
     private async Task SendAsync(string toEmail, string subject, string html, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(_options.ApiKey))
