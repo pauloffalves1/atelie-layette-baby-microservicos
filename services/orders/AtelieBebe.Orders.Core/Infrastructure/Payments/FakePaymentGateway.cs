@@ -32,6 +32,12 @@ public sealed class FakePaymentGateway : IPaymentGateway
         CancellationToken ct = default) =>
         Task.FromResult<PixCharge?>(new PixCharge($"FAKE-{orderId}", "00020126FAKE-PIX-CODE-FOR-LOCAL-DEV-ONLY5204000053039865802BR", null));
 
+    public Task<BoletoCharge?> CreateBoletoChargeAsync(
+        Guid orderId, string description, decimal amount,
+        string customerName, string customerEmail, string customerTaxId, string? customerPhone,
+        BoletoAddress address, CancellationToken ct = default) =>
+        Task.FromResult<BoletoCharge?>(new BoletoCharge($"FAKE-{orderId}", "00000.00000 00000.000000 00000.000000 0 00000000000000", null));
+
     public Task<PaymentDetails?> GetPaymentAsync(string paymentId, CancellationToken ct = default) =>
         Task.FromResult<PaymentDetails?>(null);
 }

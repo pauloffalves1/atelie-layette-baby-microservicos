@@ -106,7 +106,7 @@ export class CheckoutModal {
   readonly destinationState = signal('');
   readonly destinationCity = signal('');
 
-  readonly paymentMethod = signal<'PIX' | 'CREDIT_CARD'>('PIX');
+  readonly paymentMethod = signal<'PIX' | 'CREDIT_CARD' | 'BOLETO'>('PIX');
   readonly cardPublicKey = signal<string | null>(null);
   readonly cardSdkReady = signal(false);
 
@@ -198,7 +198,8 @@ export class CheckoutModal {
         this.form.controls.city,
         this.form.controls.state,
       ];
-      const validators = this.deliveryMethod() === 'Entrega' ? [Validators.required] : [];
+      const validators =
+        this.deliveryMethod() === 'Entrega' || this.paymentMethod() === 'BOLETO' ? [Validators.required] : [];
       addressControls.forEach((control) => {
         control.setValidators(validators);
         control.updateValueAndValidity({ emitEvent: false });
@@ -463,7 +464,7 @@ export class CheckoutModal {
         // authentication step itself (not the challenge outcome) still lets checkout proceed.
         .catch(() => this.submitOrder(value, 'CREDIT_CARD', card.encryptedCard, Number(value.installments) || 1));
     } else {
-      this.submitOrder(value, 'PIX');
+      this.submitOrder(value, this.paymentMethod());
     }
   }
 
@@ -504,7 +505,7 @@ export class CheckoutModal {
 
   private submitOrder(
     value: ReturnType<typeof this.form.getRawValue>,
-    paymentMethod: 'PIX' | 'CREDIT_CARD',
+    paymentMethod: 'PIX' | 'CREDIT_CARD' | 'BOLETO',
     encryptedCard?: string,
     installments?: number,
     threeDsAuthenticationId?: string | null,
@@ -529,7 +530,8 @@ export class CheckoutModal {
         customerPhone: value.customerPhone || null,
         customerCpf: value.customerCpf,
         notes: value.notes || null,
-        shippingAddressJson: this.deliveryMethod() === 'Retirada' ? null : JSON.stringify(shippingAddress),
+        shippingAddressJson:
+          this.deliveryMethod() === 'Retirada' && paymentMethod !== 'BOLETO' ? null : JSON.stringify(shippingAddress),
         shippingCost: this.shippingCost(),
         deliveryMethod: this.deliveryMethod(),
         couponCode: this.appliedCouponCode(),

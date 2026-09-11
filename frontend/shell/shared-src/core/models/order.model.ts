@@ -41,6 +41,8 @@ export interface Order {
   paymentDeclineReason: string | null;
   pixQrCodeText: string | null;
   pixQrCodeImageUrl: string | null;
+  boletoBarcode: string | null;
+  boletoUrl: string | null;
 }
 
 export interface CreateOrderItemRequest {
@@ -51,7 +53,7 @@ export interface CreateOrderItemRequest {
   optionsJson: string | null;
 }
 
-export type PaymentMethod = 'CREDIT_CARD' | 'PIX';
+export type PaymentMethod = 'CREDIT_CARD' | 'PIX' | 'BOLETO';
 export type DeliveryMethod = 'Entrega' | 'Retirada';
 
 export interface CreateStoreOrderRequest {

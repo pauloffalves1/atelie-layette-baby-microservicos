@@ -165,12 +165,17 @@
                   </div>
                 </div>
 
-                @if (deliveryMethod() === 'Retirada') {
+                @if (deliveryMethod() === 'Retirada' && paymentMethod() !== 'BOLETO') {
                   <div class="alert alert-info small rounded-4 mb-0">
                     <i class="bi bi-geo-alt-fill me-1"></i>
                     Retirada em São Bernardo do Campo/SP — combinamos o endereço exato e o horário pelo WhatsApp. Sem custo de frete.
                   </div>
                 } @else {
+                  @if (deliveryMethod() === 'Retirada' && paymentMethod() === 'BOLETO') {
+                    <div class="alert alert-info small rounded-4 mb-3">
+                      <i class="bi bi-info-circle me-1"></i>O boleto exige um endereço de cobrança mesmo na retirada — preencha abaixo.
+                    </div>
+                  }
                   @if (savedAddresses().length > 0) {
                     <div class="mb-3">
                       <label class="form-label small fw-semibold">Endereço salvo</label>
@@ -267,11 +272,21 @@
                       [checked]="paymentMethod() === 'CREDIT_CARD'" (change)="paymentMethod.set('CREDIT_CARD')">
                     <label class="form-check-label" for="modal-payment-card"><i class="bi bi-credit-card-2-front me-1"></i>Cartão de crédito</label>
                   </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="paymentMethod" id="modal-payment-boleto"
+                      [checked]="paymentMethod() === 'BOLETO'" (change)="paymentMethod.set('BOLETO')">
+                    <label class="form-check-label" for="modal-payment-boleto"><i class="bi bi-upc-scan me-1"></i>Boleto</label>
+                  </div>
                 </div>
 
                 @if (paymentMethod() === 'PIX') {
                   <p class="small text-secondary mb-4">
                     Depois de confirmar o pedido, mostramos o QR Code/código PIX para você pagar — a confirmação é automática.
+                  </p>
+                } @else if (paymentMethod() === 'BOLETO') {
+                  <p class="small text-secondary mb-4">
+                    Depois de confirmar o pedido, geramos o boleto para você imprimir ou pagar pelo app do banco — a
+                    confirmação pode levar até 2 dias úteis após o pagamento.
                   </p>
                 } @else {
                   <div class="row g-3 mb-4">

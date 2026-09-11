@@ -110,6 +110,24 @@ public sealed class OrderService : IOrderService
 
                     declineReason = charge.DeclineReason;
                 }
+                else if (string.Equals(request.PaymentMethod, "BOLETO", StringComparison.OrdinalIgnoreCase))
+                {
+                    var address = ParseShippingAddress(order.ShippingAddressJson)
+                        ?? throw new ConflictException("Para pagar com boleto é preciso informar um endereço.");
+
+                    var boleto = await _paymentGateway.CreateBoletoChargeAsync(
+                        order.Id, "Pedido Ateliê Layette Baby", order.Total.Amount,
+                        order.CustomerName, order.CustomerEmail.Value, order.CustomerCpf!.Value, order.CustomerPhone, address, ct);
+
+                    if (boleto is null)
+                    {
+                        throw new ConflictException(
+                            "Não foi possível gerar o pagamento online agora. Tente novamente em instantes ou fale " +
+                            "conosco pelo WhatsApp para finalizar sua encomenda.");
+                    }
+
+                    order.SetBoletoCharge(boleto.ExternalId, boleto.BarcodeFormatted, boleto.PdfUrl);
+                }
                 else
                 {
                     var pix = await _paymentGateway.CreatePixChargeAsync(
@@ -520,5 +538,30 @@ public sealed class OrderService : IOrderService
         o.TrackingCode,
         o.CouponCode,
         o.CouponDiscountAmount.Amount,
-        PixQrCodeText: o.PixQrCodeText);
+        PixQrCodeText: o.PixQrCodeText,
+        BoletoBarcode: o.BoletoBarcode,
+        BoletoUrl: o.BoletoUrl);
+
+    /// <summary>Deserializes the same shape the storefront's checkout sends as ShippingAddressJson — needed structured (not as raw JSON) for the boleto holder's address PagBank requires. Returns null when absent or malformed, letting the caller decide that's a hard error for BOLETO specifically.</summary>
+    private static BoletoAddress? ParseShippingAddress(string? shippingAddressJson)
+    {
+        if (string.IsNullOrWhiteSpace(shippingAddressJson)) return null;
+
+        try
+        {
+            var parsed = System.Text.Json.JsonSerializer.Deserialize<ShippingAddressJsonDto>(
+                shippingAddressJson, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            if (parsed is null || string.IsNullOrWhiteSpace(parsed.Street) || string.IsNullOrWhiteSpace(parsed.ZipCode))
+                return null;
+
+            return new BoletoAddress(parsed.Street, parsed.Number, parsed.Complement, parsed.Neighborhood, parsed.City, parsed.State, parsed.ZipCode);
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return null;
+        }
+    }
+
+    private sealed record ShippingAddressJsonDto(string Street, string Number, string? Complement, string Neighborhood, string City, string State, string ZipCode);
 }

@@ -38,6 +38,13 @@ public sealed class Order : Entity, IAggregateRoot
     public string? ExternalPaymentId { get; private set; }
     /// <summary>PIX copy-paste code, persisted so it can still be shown if the customer reloads the confirmation page before scanning it.</summary>
     public string? PixQrCodeText { get; private set; }
+    /// <summary>Link to view/print the generated boleto (PagBank-hosted PDF), persisted for the same reload reason as PixQrCodeText.</summary>
+    public string? BoletoUrl { get; private set; }
+    public string? BoletoBarcode { get; private set; }
+    /// <summary>Set once, the moment Status transitions to Entregue — the anchor ReviewRequestReminderProcessor waits N days from, distinct from UpdatedAt (which also moves on unrelated edits like a tracking code).</summary>
+    public DateTime? DeliveredAt { get; private set; }
+    /// <summary>Non-null once the post-delivery "leave a review" e-mail has gone out — keeps ReviewRequestReminderProcessor from sending it twice.</summary>
+    public DateTime? ReviewReminderSentAt { get; private set; }
     public string? TrackingCode { get; private set; }
     public string? CouponCode { get; private set; }
     public Money CouponDiscountAmount { get; private set; } = Money.Zero();
@@ -138,6 +145,15 @@ public sealed class Order : Entity, IAggregateRoot
         UpdatedAt = DateTime.UtcNow;
     }
 
+    /// <summary>Records a freshly generated boleto so its link/barcode survive a page reload until the webhook confirms payment.</summary>
+    public void SetBoletoCharge(string externalPaymentId, string? barcode, string? url)
+    {
+        ExternalPaymentId = externalPaymentId;
+        BoletoBarcode = barcode;
+        BoletoUrl = url;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     /// <summary>Applies a coupon's discount to this order — the caller (Application layer) already validated the coupon and computed the discount amount from <see cref="ItemsTotal"/>.</summary>
     public void ApplyCoupon(string code, Money discountAmount)
     {
@@ -166,6 +182,16 @@ public sealed class Order : Entity, IAggregateRoot
         var oldStatus = Status;
         Status = newStatus;
         UpdatedAt = DateTime.UtcNow;
+        if (newStatus == OrderStatus.Entregue)
+            DeliveredAt = UpdatedAt;
         AddDomainEvent(new OrderStatusChangedDomainEvent(Id, CustomerName, CustomerEmail.Value, CustomerPhone!, oldStatus, newStatus));
+    }
+
+    /// <summary>Marks the post-delivery review-request e-mail as sent, so ReviewRequestReminderProcessor never sends it twice for this order.</summary>
+    public void MarkReviewReminderSent(IReadOnlyList<ReviewRequestItem> items)
+    {
+        ReviewReminderSentAt = DateTime.UtcNow;
+        if (items.Count > 0)
+            AddDomainEvent(new ReviewRequestDomainEvent(CustomerName, CustomerEmail.Value, items));
     }
 }

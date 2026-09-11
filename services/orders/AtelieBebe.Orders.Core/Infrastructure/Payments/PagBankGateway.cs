@@ -256,6 +256,101 @@ public sealed partial class PagBankGateway : IPaymentGateway
         return new PixCharge(orderExternalId, qrCodeText!, qrCodeImageUrl);
     }
 
+    public async Task<BoletoCharge?> CreateBoletoChargeAsync(
+        Guid orderId, string description, decimal amount,
+        string customerName, string customerEmail, string customerTaxId, string? customerPhone,
+        BoletoAddress address, CancellationToken ct = default)
+    {
+        if (!IsConfigured) return null;
+
+        var payload = new
+        {
+            reference_id = orderId.ToString(),
+            customer = BuildCustomer(customerName, customerEmail, customerTaxId, customerPhone),
+            items = new[] { new { reference_id = "item-1", name = description, quantity = 1, unit_amount = ToCents(amount) } },
+            notification_urls = new[] { $"{_appUrls.ApiPublicUrl}/api/payments/pagbank/webhook" },
+            charges = new[]
+            {
+                new
+                {
+                    reference_id = orderId.ToString(),
+                    description,
+                    amount = new { value = ToCents(amount), currency = "BRL" },
+                    payment_method = new
+                    {
+                        type = "BOLETO",
+                        boleto = new
+                        {
+                            // 3 business days is a conservative default that leaves time for the boleto
+                            // network's own settlement delay before it'd otherwise look overdue to us.
+                            due_date = DateTime.UtcNow.AddDays(3).ToString("yyyy-MM-dd"),
+                            holder = new
+                            {
+                                name = customerName,
+                                tax_id = OnlyDigits(customerTaxId),
+                                email = customerEmail,
+                                address = new
+                                {
+                                    street = address.Street,
+                                    number = address.Number,
+                                    complement = address.Complement,
+                                    locality = address.Neighborhood,
+                                    city = address.City,
+                                    region = address.State,
+                                    region_code = address.State,
+                                    country = "Brasil",
+                                    postal_code = OnlyDigits(address.ZipCode),
+                                },
+                            },
+                            instruction_lines = new
+                            {
+                                line_1 = "Pagamento até a data de vencimento",
+                                line_2 = description,
+                            },
+                        },
+                    },
+                },
+            },
+        };
+
+        var (order, error) = await PostOrderAsync(payload, ct);
+        if (order is null)
+        {
+            _logger.LogError("Falha ao gerar boleto no PagBank para o pedido {OrderId}: {Error}", orderId, error);
+            return null;
+        }
+
+        var orderExternalId = order.Value.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
+        if (orderExternalId is null || !order.Value.TryGetProperty("charges", out var charges) || charges.GetArrayLength() == 0)
+        {
+            _logger.LogError("Resposta do PagBank sem 'charges' ao gerar boleto para o pedido {OrderId}.", orderId);
+            return null;
+        }
+
+        var charge = charges[0];
+        string? barcodeFormatted = null;
+        if (charge.TryGetProperty("payment_method", out var paymentMethodEl) &&
+            paymentMethodEl.TryGetProperty("boleto", out var boletoEl) &&
+            boletoEl.TryGetProperty("formatted_barcode", out var barcodeEl))
+            barcodeFormatted = barcodeEl.GetString();
+
+        string? pdfUrl = null;
+        if (charge.TryGetProperty("links", out var links))
+        {
+            foreach (var link in links.EnumerateArray())
+            {
+                if (link.TryGetProperty("media", out var media) && media.GetString() == "application/pdf" &&
+                    link.TryGetProperty("href", out var href))
+                {
+                    pdfUrl = href.GetString();
+                    break;
+                }
+            }
+        }
+
+        return new BoletoCharge(orderExternalId, barcodeFormatted, pdfUrl);
+    }
+
     public async Task<PaymentDetails?> GetPaymentAsync(string paymentId, CancellationToken ct = default)
     {
         if (!IsConfigured) return null;

@@ -27,6 +27,7 @@ export class OrderConfirmationView implements OnInit, OnDestroy {
   readonly loading = signal(true);
   readonly notFound = signal(false);
   readonly pixCodeCopied = signal(false);
+  readonly boletoBarcodeCopied = signal(false);
   readonly canceling = signal(false);
   readonly cancelError = signal<string | null>(null);
   readonly generatingReceipt = signal(false);
@@ -51,7 +52,7 @@ export class OrderConfirmationView implements OnInit, OnDestroy {
         this.order.set(order);
         this.loading.set(false);
 
-        if (order.paymentStatus === 'Pendente' && order.pixQrCodeText) {
+        if (order.paymentStatus === 'Pendente' && (order.pixQrCodeText || order.boletoBarcode)) {
           this.pollHandle = setInterval(() => {
             this.orderService.getById(id).subscribe((refreshed) => {
               this.order.set(refreshed);
@@ -77,6 +78,16 @@ export class OrderConfirmationView implements OnInit, OnDestroy {
     navigator.clipboard.writeText(code).then(() => {
       this.pixCodeCopied.set(true);
       setTimeout(() => this.pixCodeCopied.set(false), 2000);
+    });
+  }
+
+  copyBoletoBarcode(): void {
+    const barcode = this.order()?.boletoBarcode;
+    if (!barcode) return;
+
+    navigator.clipboard.writeText(barcode).then(() => {
+      this.boletoBarcodeCopied.set(true);
+      setTimeout(() => this.boletoBarcodeCopied.set(false), 2000);
     });
   }
 

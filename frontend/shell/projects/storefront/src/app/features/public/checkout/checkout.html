@@ -88,7 +88,13 @@
             </div>
           }
 
-          <div class="row g-3" [class.d-none]="deliveryMethod() === 'Retirada'">
+          @if (deliveryMethod() === 'Retirada' && paymentMethod() === 'BOLETO') {
+            <div class="alert alert-info small rounded-4 mb-3">
+              <i class="bi bi-info-circle me-1"></i>O boleto exige um endereço de cobrança mesmo na retirada — preencha abaixo.
+            </div>
+          }
+
+          <div class="row g-3" [class.d-none]="deliveryMethod() === 'Retirada' && paymentMethod() !== 'BOLETO'">
             <div class="col-md-4">
               <label for="checkout-zipCode" class="form-label small fw-semibold">CEP</label>
               <div class="position-relative">
@@ -179,11 +185,21 @@
                 [checked]="paymentMethod() === 'CREDIT_CARD'" (change)="paymentMethod.set('CREDIT_CARD')">
               <label class="form-check-label" for="checkout-payment-card"><i class="bi bi-credit-card-2-front me-1"></i>Cartão de crédito</label>
             </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="paymentMethod" id="checkout-payment-boleto"
+                [checked]="paymentMethod() === 'BOLETO'" (change)="paymentMethod.set('BOLETO')">
+              <label class="form-check-label" for="checkout-payment-boleto"><i class="bi bi-upc-scan me-1"></i>Boleto</label>
+            </div>
           </div>
 
           @if (paymentMethod() === 'PIX') {
             <p class="small text-secondary mb-0">
               Depois de confirmar o pedido, mostramos o QR Code/código PIX para você pagar — a confirmação é automática.
+            </p>
+          } @else if (paymentMethod() === 'BOLETO') {
+            <p class="small text-secondary mb-0">
+              Depois de confirmar o pedido, geramos o boleto para você imprimir ou pagar pelo app do banco — a confirmação
+              pode levar até 2 dias úteis após o pagamento.
             </p>
           } @else {
             <div class="row g-3">

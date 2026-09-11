@@ -68,6 +68,23 @@
       </div>
       <p class="small text-secondary mb-0"><span class="spinner-border spinner-border-sm me-1"></span>Aguardando confirmação do pagamento — esta página atualiza sozinha.</p>
     </div>
+  } @else if (o.paymentStatus === 'Pendente' && o.boletoBarcode) {
+    <div class="stat-card mb-4 text-center">
+      <h5 class="mb-3"><i class="bi bi-upc-scan me-2"></i>Pague o boleto para confirmar seu pedido</h5>
+      <p class="small text-secondary mb-2">Copie o código de barras abaixo ou abra o boleto para imprimir:</p>
+      <div class="input-group input-group-sm mb-2">
+        <input type="text" class="form-control" [value]="o.boletoBarcode" readonly>
+        <button class="btn btn-outline-secondary" type="button" (click)="copyBoletoBarcode()">
+          {{ boletoBarcodeCopied() ? 'Copiado!' : 'Copiar' }}
+        </button>
+      </div>
+      @if (o.boletoUrl) {
+        <a [href]="o.boletoUrl" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm rounded-pill mb-2">
+          <i class="bi bi-file-earmark-pdf me-1"></i>Abrir boleto
+        </a>
+      }
+      <p class="small text-secondary mb-0"><span class="spinner-border spinner-border-sm me-1"></span>Aguardando confirmação do pagamento — pode levar até 2 dias úteis após o pagamento.</p>
+    </div>
   } @else if (o.paymentStatus === 'Recusado') {
     <div class="alert alert-danger rounded-4 mb-4">
       <i class="bi bi-x-circle me-1"></i>Pagamento recusado. Entre em contato pelo WhatsApp para finalizar sua encomenda.

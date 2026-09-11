@@ -4,6 +4,10 @@ public sealed record CardChargeResult(bool Approved, string Status, string? Exte
 
 public sealed record PixCharge(string ExternalId, string QrCodeText, string? QrCodeImageUrl);
 
+public sealed record BoletoAddress(string Street, string Number, string? Complement, string Neighborhood, string City, string State, string ZipCode);
+
+public sealed record BoletoCharge(string ExternalId, string? BarcodeFormatted, string? PdfUrl);
+
 public sealed record PaymentDetails(string Status, string? ExternalReference);
 
 /// <summary>Env is "SANDBOX" or "PROD" — the frontend's PagSeguro.setUp() needs to be told which, and it must match whichever base address this gateway is configured for.</summary>
@@ -37,6 +41,11 @@ public interface IPaymentGateway
         Guid orderId, string description, decimal amount,
         string customerName, string customerEmail, string customerTaxId, string? customerPhone,
         CancellationToken ct = default);
+
+    Task<BoletoCharge?> CreateBoletoChargeAsync(
+        Guid orderId, string description, decimal amount,
+        string customerName, string customerEmail, string customerTaxId, string? customerPhone,
+        BoletoAddress address, CancellationToken ct = default);
 
     /// <summary>Re-queries PagBank's Order resource — used to reconcile a PIX charge once the webhook (or a manual status check) reports it paid.</summary>
     Task<PaymentDetails?> GetPaymentAsync(string paymentId, CancellationToken ct = default);

@@ -37,11 +37,13 @@ public sealed record OrderDto(
     decimal CouponDiscountAmount,
     string? PaymentDeclineReason = null,
     string? PixQrCodeText = null,
-    string? PixQrCodeImageUrl = null);
+    string? PixQrCodeImageUrl = null,
+    string? BoletoBarcode = null,
+    string? BoletoUrl = null);
 
 public sealed record CreateOrderItemRequest(Guid? ProductId, string ProductName, decimal UnitPrice, int Quantity, string? OptionsJson);
 
-/// <summary>PaymentMethod is "CREDIT_CARD" or "PIX". EncryptedCard/Installments only apply to CREDIT_CARD — the card is encrypted client-side via PagBank's JS SDK before it ever reaches us.</summary>
+/// <summary>PaymentMethod is "CREDIT_CARD", "PIX" or "BOLETO". EncryptedCard/Installments only apply to CREDIT_CARD — the card is encrypted client-side via PagBank's JS SDK before it ever reaches us. BOLETO requires ShippingAddressJson (the holder's address is mandatory on PagBank's boleto API), regardless of DeliveryMethod.</summary>
 public sealed record CreateStoreOrderRequest(
     string CustomerName,
     string CustomerEmail,
