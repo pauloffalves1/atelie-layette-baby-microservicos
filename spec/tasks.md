@@ -134,6 +134,11 @@ substituição daquele relato.
 - [x] `GET /api/products/search/semantic` (Catalog) + checkbox "Busca inteligente" na loja.
 - [x] Fallback para filtro simples por palavras-chave se a chamada à IA falhar (rate limit, 5xx,
       exceção de I/O) — testado de ponta a ponta contra a API real da Anthropic.
+- [x] **Testes unitários** (2026-09-12) — `ProductServiceSemanticSearchTests` cobre a orquestração
+      em `ProductService.SearchAsync` (categorias conhecidas repassadas ao tradutor, filtros
+      aplicados ao repositório, página vazia sem exceção) com `ISemanticSearchTranslator` mockado via
+      NSubstitute; o comportamento de fallback em si (dentro do tradutor concreto) permanece coberto
+      só pela validação manual contra a API real.
 
 ## Requisito 20 — Pré-triagem de avaliações por IA (RF29)
 
@@ -142,6 +147,11 @@ substituição daquele relato.
       se a chamada falhar.
 - [x] `ModerationFlag` exposto só no DTO administrativo (`AdminProductReviewDto`), com badge na
       listagem de avaliações do painel.
+- [x] **Testes unitários** (2026-09-12) — `ReviewServiceModerationTests` cobre `ReviewService.CreateAsync`
+      com `IReviewModerationScreener` mockado: sinalização gravada na avaliação quando a triagem
+      encontra algo, `ModerationFlag` nulo quando não encontra ou quando o comentário é vazio (nesse
+      caso o screener nem é chamado), e uma checagem por reflexão de que `ProductReviewDto` (o DTO
+      público) nunca ganha uma propriedade `ModerationFlag`.
 
 ## Requisito 21 — Pré-triagem de texto de bordado por IA (RF30)
 
@@ -149,6 +159,11 @@ substituição daquele relato.
       em `OrderItem` a partir do texto de bordado informado no checkout; nunca bloqueia a criação do
       pedido se a chamada falhar.
 - [x] Badge de sinalização no detalhe do pedido no painel administrativo.
+- [x] **Testes unitários** (2026-09-12) — `OrderServiceEmbroideryModerationTests` cobre
+      `OrderService.CreateStoreOrderAsync` com `IEmbroideryModerationScreener` mockado: sinalização
+      gravada no item quando a triagem encontra algo, nula quando não encontra, e o screener nunca é
+      chamado quando não há `EmbroideryText` no `OptionsJson`, quando o JSON é malformado, ou quando
+      `OptionsJson` é nulo — o pedido é criado normalmente em todos os casos.
 
 ## Requisito 22 — Ferramentas administrativas assistidas por IA (RF31, RF32, RF33)
 

@@ -450,7 +450,7 @@ em `server/test/AtelieBebe.Domain.Tests`):
 | [`services/backoffice/AtelieBebe.Backoffice.Core.Tests`](services/backoffice/AtelieBebe.Backoffice.Core.Tests) | `ContactMessage`, `NewsletterSubscriber` |
 
 Rodar todos os de um serviço: `cd services/orders/AtelieBebe.Orders.Core.Tests && dotnet test`
-(mesma ideia nos outros diretórios), ou os 121 de uma vez com
+(mesma ideia nos outros diretórios), ou os 132 de uma vez com
 [`AtelieBebe.Microservices.slnx`](AtelieBebe.Microservices.slnx) na raiz deste repositório:
 `dotnet test AtelieBebe.Microservices.slnx` (usada também pelo job `unit-tests` do CI, abaixo).
 
@@ -611,7 +611,7 @@ Os Deployments já têm a anotação `newrelic.com/inject-dotnet: "true"` — o 
 ## CI
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) — dispara em todo push/PR neste repositório.
-Dois jobs: `unit-tests` (`dotnet test AtelieBebe.Microservices.slnx`, os 121 testes) e `e2e` (gera
+Dois jobs: `unit-tests` (`dotnet test AtelieBebe.Microservices.slnx`, os 132 testes) e `e2e` (gera
 um par de chaves RS256 e um `.env` com valores dummy — suficientes porque os 3 specs não fazem
 login, pagamento nem disparam WhatsApp/e-mail/New Relic —, sobe o `docker compose`, espera o Gateway
 responder, roda `npm run test:e2e` e, reaproveitando a mesma stack já de pé, o smoke de carga do k6
@@ -674,13 +674,13 @@ contra o Gateway via `docker run --network host`).
       Orders, Backoffice) rodam sobre uma única instância de SQL Server compartilhada (um banco por
       serviço), com backup automatizado via `ops/backup-dbs.sh` (`BACKUP DATABASE` nativo + sync
       para Google Drive).
-- [x] **Estratégia de testes** (2026-09) — testes unitários (5 projetos xUnit, 121 testes), um
+- [x] **Estratégia de testes** (2026-09) — testes unitários (5 projetos xUnit, 132 testes), um
       exemplo real de TDD, BDD com Reqnroll, testes de UI/e2e com Playwright e um script de carga
-      com k6 — ver "Estratégia de testes" acima. Todos rodados e verificados de ponta a ponta: 121/121
+      com k6 — ver "Estratégia de testes" acima. Todos rodados e verificados de ponta a ponta: 132/132
       testes unitários, 7/7 e2e, e o smoke de carga do k6 dentro de todos os thresholds (p95 de 57ms na
       listagem de produtos, limite era 500ms; 0% de erro).
 - [x] **`.slnx` único + CI** (2026-09) — `AtelieBebe.Microservices.slnx` na raiz do repositório
-      roda os 121 testes com um `dotnet test` só; `.github/workflows/ci.yml` faz o mesmo em CI (job
+      roda os 132 testes com um `dotnet test` só; `.github/workflows/ci.yml` faz o mesmo em CI (job
       `unit-tests`) e sobe o `docker compose` pra rodar os 7 e2e mais o smoke de carga do k6 (job
       `e2e`) a cada push/PR — ver "CI" acima. Confirmado rodando de verdade no GitHub Actions (não só
       o YAML escrito): ambos os jobs `success` na primeira execução real.
@@ -747,11 +747,22 @@ contra o Gateway via `docker run --network host`).
       Requisitos 19–23 do `spec/`, RF28–RF33 e RNF07). Testado de ponta a ponta contra a API real da
       Anthropic (não só com mocks). Redesenho visual completo do storefront/admin (paleta dourada no
       lugar do marrom, logo em destaque, layout 100% de largura, responsivo) feito na mesma leva de
-      trabalho, revisado em dev antes de qualquer deploy. **Pendências conhecidas:** os 121 testes
-      unitários não cresceram — a integração com a Anthropic não tem cobertura automatizada, só
-      validação manual; `ops/test-restore.sh` foi escrito mas nunca executado de fato; e a política
-      de rate limiting `ai-cost` cobre hoje só a rota pública de busca semântica, não as rotas
-      administrativas de IA.
+      trabalho, revisado em dev antes de qualquer deploy. **Pendências conhecidas:**
+      `ops/test-restore.sh` foi escrito mas nunca executado de fato; e a política de rate limiting
+      `ai-cost` cobre hoje só a rota pública de busca semântica, não as rotas administrativas de IA
+      (resposta de contato, descrição de produto, resumo do dashboard).
+- [x] **Testes unitários para as features de IA** (2026-09-12) — 11 novos testes (121 → 132) usando
+      NSubstitute para mockar `ISemanticSearchTranslator`, `IReviewModerationScreener` e
+      `IEmbroideryModerationScreener` nos serviços de aplicação que os consomem
+      (`ProductServiceSemanticSearchTests`, `ReviewServiceModerationTests`,
+      `OrderServiceEmbroideryModerationTests`) — cobrindo orquestração, sinalização e os casos em que
+      o screener não deve nem ser chamado. As classes concretas `Anthropic*` (que fazem a chamada real
+      à API) continuam sem teste automatizado — mockar `AnthropicClient` exigiria testar o SDK em vez
+      da lógica do serviço, e o comportamento de fallback já foi validado manualmente contra a API
+      real. `IContactReplyDrafter`/`IProductDescriptionGenerator`/`IDashboardSummaryGenerator`
+      (RF31-33) ficaram de fora porque são chamados direto dos endpoints do Backoffice/Catalog, sem
+      uma camada de serviço para testar isoladamente — cobri-los exigiria um teste de integração com
+      `WebApplicationFactory`, fora do padrão atual (`Core.Tests` cobre só domínio/aplicação).
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
       nos manifests; falta aplicar num cluster ativo e uma license key real. **Não avancei aqui** —
       exige um cluster de verdade e uma license key real da New Relic, que eu não tenho como
