@@ -34,9 +34,10 @@ for db in IdentityDb CatalogDb OrdersDb BackofficeDb; do
   docker cp "$LATEST_BAK" "$CONTAINER:${CONTAINER_BACKUP_DIR}/${BAK_NAME}" > /dev/null
   # docker cp preserves the host file's ownership (root), but sqlservr runs as the unprivileged
   # "mssql" user inside the container and can't read a root-owned file — RESTORE DATABASE then fails
-  # with "Cannot open backup device ... Access is denied." chmod instead of chown so this works
-  # regardless of which user `docker exec` defaults to.
-  docker exec "$CONTAINER" chmod 644 "${CONTAINER_BACKUP_DIR}/${BAK_NAME}"
+  # with "Cannot open backup device ... Access is denied." `docker exec` on this image defaults to
+  # the mssql user too (confirmed against the real container), which can't chmod a file it doesn't
+  # own, so this needs an explicit -u root to have permission to fix it.
+  docker exec -u root "$CONTAINER" chmod 644 "${CONTAINER_BACKUP_DIR}/${BAK_NAME}"
 
   # Restore with MOVE so it doesn't collide with the live database's own data/log files, and WITH
   # REPLACE in case a previous run's test database was left behind by a failure.
