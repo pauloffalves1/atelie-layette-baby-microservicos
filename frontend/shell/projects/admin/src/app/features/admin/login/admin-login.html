@@ -1,4 +1,4 @@
-<div class="min-vh-100 d-flex align-items-center justify-content-center bg-dark py-5">
+<div class="min-vh-100 d-flex align-items-center justify-content-center admin-login-bg py-5">
   <div class="stat-card" style="width: 100%; max-width: 420px;">
     <div class="text-center mb-4">
       <span class="fw-script fs-2 text-blush brand-embroidered">Ateliê Layette Baby</span>
@@ -28,7 +28,7 @@
           <div class="alert alert-danger small rounded-4">{{ errorMessage() }}</div>
         }
 
-        <button type="submit" class="btn btn-dark btn-lg w-100 rounded-pill mt-3" [disabled]="submitting()">
+        <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill mt-3" [disabled]="submitting()">
           @if (submitting()) {
             <span class="spinner-border spinner-border-sm me-2"></span>
           }
@@ -48,7 +48,7 @@
           <div class="alert alert-danger small rounded-4">{{ errorMessage() }}</div>
         }
 
-        <button type="submit" class="btn btn-dark btn-lg w-100 rounded-pill mt-3" [disabled]="submitting()">
+        <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill mt-3" [disabled]="submitting()">
           @if (submitting()) {
             <span class="spinner-border spinner-border-sm me-2"></span>
           }

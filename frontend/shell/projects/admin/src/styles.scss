@@ -6,9 +6,9 @@ $info:          #a7c7e7;
 $warning:       #f3c98b;
 $danger:        #e2777a;
 $light:         #fffaf5;
-$dark:          #4a3f3a;
+$dark:          #3a3238; // charcoal com leve nuance de ameixa — substitui o castanho antigo
 
-$body-color:    #4a3f3a;
+$body-color:    #3a3238;
 $body-bg:       #fffaf5;
 
 $font-family-sans-serif: "Quicksand", "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -26,9 +26,9 @@ $btn-border-radius-sm: 50rem;
 $btn-border-radius-lg: 50rem;
 $input-border-radius: 0.75rem;
 
-$box-shadow-sm: 0 .25rem .75rem rgba(74, 63, 58, .06);
-$box-shadow:    0 .5rem 1.5rem rgba(74, 63, 58, .09);
-$box-shadow-lg: 0 1rem 3rem rgba(74, 63, 58, .12);
+$box-shadow-sm: 0 .25rem .75rem rgba(58, 50, 56, .06);
+$box-shadow:    0 .5rem 1.5rem rgba(58, 50, 56, .09);
+$box-shadow-lg: 0 1rem 3rem rgba(58, 50, 56, .12);
 
 // Import only the Bootstrap 5 partials this app actually uses (instead of the full
 // ~230KB bundle) — grid/utilities/forms/buttons/navbar/card/badge/alert/progress/
@@ -77,7 +77,17 @@ $box-shadow-lg: 0 1rem 3rem rgba(74, 63, 58, .12);
   --atelie-sage: #9cb89a;
   --atelie-sage-light: #e4ede3;
   --atelie-gold: #d9a441;
-  --atelie-text: #4a3f3a;
+  --atelie-gold-light: #fbf0d9;
+  --atelie-text: #3a3238;
+}
+
+// Full-bleed layout: Bootstrap's .container normally caps at ~1140-1320px with big side
+// gutters on wide screens — this app should use the full viewport width instead, with just a
+// small, consistent edge margin that scales down gracefully on mobile.
+.container, .container-sm, .container-md, .container-lg, .container-xl, .container-xxl {
+  max-width: 100%;
+  padding-left: clamp(1rem, 4vw, 3rem);
+  padding-right: clamp(1rem, 4vw, 3rem);
 }
 
 html, body {
@@ -111,10 +121,30 @@ a {
 .bg-blush { background-color: var(--atelie-blush) !important; }
 .bg-sage { background-color: var(--atelie-sage) !important; }
 .bg-sage-light { background-color: var(--atelie-sage-light) !important; }
+.bg-gold-light { background-color: var(--atelie-gold-light) !important; }
 
 .fw-script {
   font-family: "Playfair Display", "Poppins", serif;
   font-style: italic;
+}
+
+// Logo is the site's strongest brand asset — given real visual weight in the navbar (bigger than
+// a typical navbar-brand) with a soft gold glow on hover, scaling down on small screens so it
+// never crowds the toggler button.
+.brand-logo img {
+  height: 108px;
+  width: auto;
+  transition: filter .2s ease;
+}
+
+.brand-logo:hover img {
+  filter: drop-shadow(0 0 .5rem rgba(217, 164, 65, .45));
+}
+
+@media (max-width: 991.98px) {
+  .brand-logo img {
+    height: 72px;
+  }
 }
 
 // Embroidered-wreath frame around the atelier's name (navbar, footer, login screens):
@@ -143,8 +173,20 @@ a {
   letter-spacing: .01em;
 }
 
+// Caps line length for running text (legal pages, FAQ, long-form copy) so paragraphs stay
+// comfortable to read on very wide screens, even though the page itself is full-bleed.
+.prose {
+  max-width: 760px;
+}
+
+.nav-links-lg .nav-link {
+  font-size: 1.25rem;
+  font-weight: 600;
+  padding-inline: .6rem;
+}
+
 .btn-primary {
-  color: #4a2530;
+  color: #3a3238;
 }
 
 .section-title {
@@ -186,6 +228,11 @@ a {
   object-fit: cover;
 }
 
+// Home's "Destaques do ateliê" grid — a shorter aspect ratio than the shop's full product cards.
+.card-product-compact .card-img-top {
+  aspect-ratio: 4 / 3;
+}
+
 // Soft framed-photo border, consistent across every photo on the public site: product cards
 // (above), the hero/about/product-detail feature image, the gallery grid, and cart thumbnails.
 .ratio.rounded-5,
@@ -203,7 +250,7 @@ img.rounded-4 {
 
 .badge-soft {
   background: var(--atelie-blush);
-  color: #8a4753;
+  color: #8a6a1f;
   font-weight: 600;
   border-radius: 50rem;
   padding: .35em .75em;
@@ -212,6 +259,10 @@ img.rounded-4 {
 .hero-section {
   background: linear-gradient(135deg, var(--atelie-blush) 0%, var(--atelie-cream) 55%, var(--atelie-sage-light) 100%);
   border-radius: 0 0 3rem 3rem;
+}
+
+.admin-login-bg {
+  background: linear-gradient(135deg, var(--atelie-blush) 0%, var(--atelie-cream) 50%, var(--atelie-gold-light) 100%);
 }
 
 .status-pill {
@@ -239,12 +290,13 @@ img.rounded-4 {
 .admin-sidebar {
   width: 260px;
   flex-shrink: 0;
-  background: linear-gradient(180deg, #4a3f3a 0%, #3a3230 100%);
-  color: #f4ece7;
+  background: linear-gradient(180deg, #fffaf5 0%, var(--atelie-gold-light) 100%);
+  color: var(--atelie-text);
+  border-right: 1px solid rgba(217, 164, 65, .25);
 }
 
 .admin-sidebar .nav-link {
-  color: #e6d9d2;
+  color: rgba(58, 50, 56, .65);
   border-radius: .75rem;
   padding: .65rem 1rem;
   font-weight: 500;
@@ -252,8 +304,8 @@ img.rounded-4 {
 
 .admin-sidebar .nav-link.active,
 .admin-sidebar .nav-link:hover {
-  background: rgba(255, 255, 255, .1);
-  color: #fff;
+  background: rgba(217, 164, 65, .18);
+  color: var(--atelie-text);
 }
 
 .admin-content {
@@ -320,7 +372,7 @@ img.rounded-4 {
 
 .gallery-thumb:hover {
   transform: scale(1.03);
-  box-shadow: 0 .5rem 1.25rem rgba(74, 63, 58, .18) !important;
+  box-shadow: 0 .5rem 1.25rem rgba(58, 50, 56, .18) !important;
 }
 
 .lightbox-overlay {
@@ -330,7 +382,7 @@ img.rounded-4 {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(74, 63, 58, .92);
+  background: rgba(58, 50, 56, .92);
   padding: 2rem;
 }
 

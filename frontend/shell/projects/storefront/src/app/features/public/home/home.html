@@ -1,14 +1,14 @@
 <section class="hero-section py-5">
   <div class="container py-5">
     <div class="row align-items-center gy-5">
-      <div class="col-lg-6">
+      <div class="col-lg-6 text-center">
         <span class="badge-soft mb-3 d-inline-block"><i class="bi bi-stars me-1"></i>Feito com muito amor</span>
-        <h1 class="display-4 fw-bold mb-3">Especialistas em fraldas de ombro e boca personalizados</h1>
-        <p class="lead text-secondary-emphasis mb-4">
+        <h1 class="display-3 fw-bold mb-3" style="text-align: left;">Especialistas em fraldas de ombro e boca personalizados</h1>
+        <p class="lead text-secondary-emphasis mb-4 fs-4" style="text-align: justify;">
           Fraldas de ombro, fraldas de boca e kits combinando as duas, em algodão macio e bordado
           — pensadas nos mínimos detalhes para o dia a dia do seu bebê.
         </p>
-        <div class="d-flex flex-wrap gap-3">
+        <div class="d-flex flex-wrap justify-content-center gap-3">
           <a routerLink="/loja" class="btn btn-primary btn-lg px-4">
             <i class="bi bi-bag-heart me-2"></i>Ver a loja
           </a>
@@ -18,7 +18,7 @@
         </div>
       </div>
       <div class="col-lg-6">
-        <div class="ratio ratio-1x1 rounded-5 overflow-hidden shadow-lg">
+        <div class="ratio ratio-1x1 rounded-5 overflow-hidden shadow-lg ms-auto" style="max-width: 680px;">
           @if (heroImageUrl(); as url) {
             <img [src]="url" alt="Fraldas de ombro e boca bordadas com monograma" class="w-100 h-100 object-fit-cover">
           }
@@ -59,10 +59,10 @@
     @if (loading()) {
       <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
     } @else {
-      <div class="row g-4">
+      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5 g-4">
         @for (product of featured(); track product.id) {
-          <div class="col-6 col-md-4 col-lg-3">
-            <div class="card card-product h-100">
+          <div class="col">
+            <div class="card card-product card-product-compact h-100">
               <a [routerLink]="['/produto', product.slug]">
                 <img [src]="product.imageUrl | assetUrl" class="card-img-top" [alt]="product.name" loading="lazy">
               </a>

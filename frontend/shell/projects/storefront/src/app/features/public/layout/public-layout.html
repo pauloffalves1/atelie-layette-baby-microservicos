@@ -1,8 +1,8 @@
 <div class="app-shell">
   <nav class="navbar navbar-expand-lg sticky-top bg-white shadow-sm py-3">
     <div class="container">
-      <a class="navbar-brand py-0" routerLink="/">
-        <img src="/images/logo-atelie.png" alt="Ateliê Layette Baby" height="92" style="width: auto;">
+      <a class="navbar-brand py-0 brand-logo" routerLink="/">
+        <img src="/images/logo-atelie-crop.png" alt="Ateliê Layette Baby">
       </a>
 
       <button class="navbar-toggler border-0" type="button" (click)="toggleMobileMenu()" aria-label="Alternar navegação">
@@ -10,7 +10,7 @@
       </button>
 
       <div class="collapse navbar-collapse" [class.show]="mobileMenuOpen()" id="mainNav">
-        <ul class="navbar-nav mx-auto gap-lg-2">
+        <ul class="navbar-nav mx-auto gap-lg-5 nav-links-lg" style="column-gap: 4.5rem;">
           <li class="nav-item">
             <a class="nav-link" routerLink="/" routerLinkActive="active fw-bold text-blush" [routerLinkActiveOptions]="{ exact: true }">Início</a>
           </li>
@@ -28,10 +28,10 @@
           </li>
         </ul>
 
-        <div class="d-flex align-items-center gap-2 mt-3 mt-lg-0">
+        <div class="d-flex align-items-center gap-4 mt-3 mt-lg-0" style="column-gap: 1.5rem;">
           @if (auth.isAuthenticated()) {
             <div class="dropdown account-dropdown">
-              <button class="btn btn-sm btn-outline-secondary dropdown-toggle rounded-pill" type="button" (click)="toggleAccountMenu()">
+              <button class="btn btn-lg btn-outline-secondary dropdown-toggle rounded-pill" type="button" (click)="toggleAccountMenu()">
                 <i class="bi bi-person-circle me-1"></i>{{ auth.currentUser()?.name?.split(' ')?.[0] }}
               </button>
               <ul class="dropdown-menu dropdown-menu-end shadow-sm" [class.show]="accountMenuOpen()">
@@ -42,10 +42,10 @@
               </ul>
             </div>
           } @else {
-            <a routerLink="/entrar" class="btn btn-sm btn-outline-secondary rounded-pill">Entrar</a>
+            <a routerLink="/entrar" class="btn btn-lg btn-primary rounded-pill">Entrar</a>
           }
 
-          <button type="button" class="btn btn-sm btn-primary rounded-pill position-relative" (click)="checkoutModal.open('cart')">
+          <button type="button" class="btn btn-lg btn-primary rounded-pill position-relative" (click)="checkoutModal.open('cart')">
             <i class="bi bi-bag-heart"></i>
             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-sage">
               {{ cart.totalItems() }}
@@ -60,39 +60,43 @@
     <router-outlet />
   </main>
 
-  <footer class="bg-dark text-light pt-5 pb-4 mt-5">
+  <footer class="bg-gold-light pt-5 pb-4 mt-5">
     <div class="container">
       <div class="row gy-4">
         <div class="col-md-3">
-          <h5 class="fw-script text-blush fs-5 mb-3 brand-embroidered text-nowrap">Ateliê Layette Baby</h5>
-          <p class="text-white-50 small">
+          <h5 class="fw-script text-blush fs-2 mb-3 brand-embroidered text-nowrap">Ateliê Layette Baby</h5>
+          <p class="text-secondary small">
             Fraldas de ombro e boca bordadas com muito carinho para os primeiros dias do seu bebê.
           </p>
         </div>
         <div class="col-md-3">
           <h6 class="text-uppercase small fw-bold mb-3">Navegação</h6>
           <ul class="list-unstyled small">
-            <li class="mb-2"><a routerLink="/loja" class="text-white-50">Loja</a></li>
-            <li class="mb-2"><a routerLink="/contato" class="text-white-50">Contato e encomendas</a></li>
-            <li class="mb-2"><a routerLink="/sobre" class="text-white-50">Sobre o ateliê</a></li>
-            <li class="mb-2"><a routerLink="/rastrear-pedido" class="text-white-50">Rastrear pedido</a></li>
-            <li class="mb-2"><a routerLink="/politica-de-envio" class="text-white-50">Produção e envio</a></li>
-            <li class="mb-2"><a routerLink="/perguntas-frequentes" class="text-white-50">Perguntas frequentes</a></li>
+            <li class="mb-2"><a routerLink="/loja" class="text-secondary">Loja</a></li>
+            <li class="mb-2"><a routerLink="/contato" class="text-secondary">Contato e encomendas</a></li>
+            <li class="mb-2"><a routerLink="/sobre" class="text-secondary">Sobre o ateliê</a></li>
+            <li class="mb-2"><a routerLink="/rastrear-pedido" class="text-secondary">Rastrear pedido</a></li>
+            <li class="mb-2"><a routerLink="/politica-de-envio" class="text-secondary">Produção e envio</a></li>
+            <li class="mb-2"><a routerLink="/perguntas-frequentes" class="text-secondary">Perguntas frequentes</a></li>
           </ul>
         </div>
         <div class="col-md-3">
           <h6 class="text-uppercase small fw-bold mb-3">Fale conosco</h6>
-          <ul class="list-unstyled small text-white-50">
-            <li class="mb-2"><i class="bi bi-whatsapp me-2"></i>(11) 91313-0481</li>
+          <ul class="list-unstyled small text-secondary">
+            <li class="mb-2">
+              <a href="https://wa.me/5511913130481" target="_blank" rel="noopener" class="text-secondary text-decoration-none">
+                <i class="bi bi-whatsapp me-2"></i>(11) 91313-0481
+              </a>
+            </li>
             <li class="mb-2"><i class="bi bi-geo-alt me-2"></i>São Bernardo do Campo · SP</li>
           </ul>
         </div>
         <div class="col-md-3">
           <h6 class="text-uppercase small fw-bold mb-3">Novidades por e-mail</h6>
           @if (newsletterSubscribed()) {
-            <p class="small text-white-50 mb-0"><i class="bi bi-check-circle me-1"></i>Inscrição confirmada!</p>
+            <p class="small text-secondary mb-0"><i class="bi bi-check-circle me-1"></i>Inscrição confirmada!</p>
           } @else {
-            <p class="small text-white-50">Receba avisos de novidades e promoções.</p>
+            <p class="small text-secondary">Receba avisos de novidades e promoções.</p>
             <div class="input-group input-group-sm">
               <input
                 type="email"
@@ -111,16 +115,16 @@
           }
         </div>
       </div>
-      <hr class="border-secondary my-4">
-      <p class="text-center small text-white-50 mb-2">
-        <a routerLink="/termos-de-uso" class="text-white-50">Termos de Uso</a>
+      <hr class="border-secondary-subtle my-4">
+      <p class="text-center small text-secondary mb-2">
+        <a routerLink="/termos-de-uso" class="text-secondary">Termos de Uso</a>
         <span class="mx-2">·</span>
-        <a routerLink="/politica-de-privacidade" class="text-white-50">Política de Privacidade</a>
+        <a routerLink="/politica-de-privacidade" class="text-secondary">Política de Privacidade</a>
         <span class="mx-2">·</span>
-        <a routerLink="/politica-de-envio" class="text-white-50">Política de Envio</a>
+        <a routerLink="/politica-de-envio" class="text-secondary">Política de Envio</a>
       </p>
-      <p class="text-center small text-white-50 mb-0">&copy; {{ currentYear }} Ateliê Layette Baby. Feito à mão, com amor.</p>
-      <p class="text-center small text-white-50 mb-0">CNPJ {{ siteCnpj }}</p>
+      <p class="text-center small text-secondary mb-0">&copy; {{ currentYear }} Ateliê Layette Baby. Feito à mão, com amor.</p>
+      <p class="text-center small text-secondary mb-0">CNPJ {{ siteCnpj }}</p>
     </div>
   </footer>
 

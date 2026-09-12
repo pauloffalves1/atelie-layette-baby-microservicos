@@ -24,6 +24,11 @@ export class Shop implements OnInit {
   readonly page = signal(1);
   readonly totalPages = signal(0);
   readonly loading = signal(true);
+  readonly smartSearchEnabled = signal(false);
+
+  // Set only while showing results from a semantic-search call, so goToPage() knows to re-run
+  // that search instead of the regular category/name listing.
+  private activeSemanticQuery: string | null = null;
 
   private readonly searchInput$ = new Subject<string>();
 
@@ -64,10 +69,19 @@ export class Shop implements OnInit {
   }
 
   onSearchInput(value: string): void {
+    this.activeSemanticQuery = null;
     this.searchInput$.next(value);
   }
 
+  // Busca inteligente é disparada só ao confirmar (Enter), nunca a cada tecla — cada chamada
+  // custa uma requisição à API da Claude, diferente da busca simples (grátis, por substring).
+  onSearchSubmit(): void {
+    if (!this.smartSearchEnabled() || !this.searchTerm().trim()) return;
+    this.runSemanticSearch(this.searchTerm(), 1);
+  }
+
   selectCategory(category: string | null): void {
+    this.activeSemanticQuery = null;
     const queryParams: Record<string, string> = {};
     if (category) queryParams['categoria'] = category;
     if (this.searchTerm()) queryParams['busca'] = this.searchTerm();
@@ -75,6 +89,11 @@ export class Shop implements OnInit {
   }
 
   goToPage(page: number): void {
+    if (this.activeSemanticQuery) {
+      this.runSemanticSearch(this.activeSemanticQuery, page);
+      return;
+    }
+
     const queryParams: Record<string, string | number> = { pagina: page };
     if (this.activeCategory()) queryParams['categoria'] = this.activeCategory()!;
     if (this.searchTerm()) queryParams['busca'] = this.searchTerm();
@@ -87,6 +106,20 @@ export class Shop implements OnInit {
       next: (result) => {
         this.products.set(result.items);
         this.totalPages.set(result.totalPages);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false),
+    });
+  }
+
+  private runSemanticSearch(query: string, page: number): void {
+    this.activeSemanticQuery = query;
+    this.loading.set(true);
+    this.productService.semanticSearch(query, page, 12).subscribe({
+      next: (result) => {
+        this.products.set(result.items);
+        this.totalPages.set(result.totalPages);
+        this.page.set(page);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
