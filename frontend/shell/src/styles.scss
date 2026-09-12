@@ -335,6 +335,41 @@ img.rounded-4 {
   box-shadow: $box-shadow-lg;
 }
 
+// FAQ-style <details>/<summary> disclosure: replaces the browser's own triangle marker (tiny,
+// inconsistent across browsers) with a chevron that rotates on open, plus a hover tint so it
+// reads clearly as an expandable row rather than plain static text.
+.faq-summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  cursor: pointer;
+  padding: .5rem;
+  margin: -.5rem;
+  border-radius: $border-radius;
+  transition: background-color .2s ease;
+}
+
+.faq-summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-summary:hover {
+  background-color: var(--atelie-blush);
+}
+
+.faq-chevron {
+  flex-shrink: 0;
+  font-size: 1rem;
+  color: var(--atelie-text);
+  transition: transform .2s ease;
+}
+
+details[open] .faq-chevron {
+  transform: rotate(180deg);
+}
+
 .avatar-icon {
   width: 2.75rem;
   height: 2.75rem;
