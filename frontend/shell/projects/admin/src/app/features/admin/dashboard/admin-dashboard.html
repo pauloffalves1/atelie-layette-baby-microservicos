@@ -16,6 +16,9 @@
       @if (narrativeSummary()) {
         <div class="stat-card mt-2 small">{{ narrativeSummary() }}</div>
       }
+      @if (summaryError()) {
+        <div class="mt-2 small text-danger">{{ summaryError() }}</div>
+      }
     </div>
     <div class="row g-4 mb-4">
       <div class="col-md-6 col-xl-3">

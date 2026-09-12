@@ -35,6 +35,9 @@
                 {{ draftedReplies()[message.id] }}
               </div>
             }
+            @if (replyErrorId() === message.id) {
+              <div class="mt-2 small text-danger">Não foi possível gerar a resposta agora. Tente de novo em instantes.</div>
+            }
           </div>
         </div>
       }

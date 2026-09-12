@@ -18,6 +18,7 @@ export class AdminDashboard implements OnInit {
 
   readonly generatingSummary = signal(false);
   readonly narrativeSummary = signal<string | null>(null);
+  readonly summaryError = signal<string | null>(null);
 
   constructor(private readonly dashboardService: DashboardService) {}
 
@@ -36,12 +37,16 @@ export class AdminDashboard implements OnInit {
     if (!dashboard) return;
 
     this.generatingSummary.set(true);
+    this.summaryError.set(null);
     this.dashboardService.generateNarrativeSummary(dashboard).subscribe({
       next: ({ summary }) => {
         this.narrativeSummary.set(summary);
         this.generatingSummary.set(false);
       },
-      error: () => this.generatingSummary.set(false),
+      error: () => {
+        this.generatingSummary.set(false);
+        this.summaryError.set('Não foi possível gerar o resumo agora. Tente de novo em instantes.');
+      },
     });
   }
 

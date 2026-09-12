@@ -17,6 +17,7 @@ export class AdminContactMessages implements OnInit {
 
   readonly draftingReplyId = signal<string | null>(null);
   readonly draftedReplies = signal<Record<string, string>>({});
+  readonly replyErrorId = signal<string | null>(null);
 
   constructor(private readonly contactService: ContactService) {}
 
@@ -31,12 +32,16 @@ export class AdminContactMessages implements OnInit {
 
   suggestReply(message: ContactMessage): void {
     this.draftingReplyId.set(message.id);
+    this.replyErrorId.set(null);
     this.contactService.suggestReply(message.name, message.message).subscribe({
       next: ({ reply }) => {
         this.draftedReplies.update((current) => ({ ...current, [message.id]: reply }));
         this.draftingReplyId.set(null);
       },
-      error: () => this.draftingReplyId.set(null),
+      error: () => {
+        this.draftingReplyId.set(null);
+        this.replyErrorId.set(message.id);
+      },
     });
   }
 
