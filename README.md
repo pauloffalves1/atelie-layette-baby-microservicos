@@ -803,6 +803,23 @@ contra o Gateway via `docker run --network host`).
       crossfade, setas e indicadores quando há mais de uma imagem; com zero ou uma, cai de volta no
       comportamento antigo (foto única, sem controles). Testado ao vivo: upload de 2 fotos,
       reordenar, navegar entre as duas, excluir uma, excluir a última (volta pro fallback padrão).
+- [x] **Segunda leva de polimento visual do storefront** (2026-09-12) — depois do redesenho da
+      paleta (dourado no lugar do marrom), uma rodada de ajustes ponto a ponto pedidos ao vivo em
+      dev: badge acima do título ("selo") em Home/Sobre/Loja/Contato, para o mesmo padrão visual
+      em todas as páginas públicas; cards de destaque (ícones da home, valores do Sobre, etapas e
+      regiões de frete da página de Produção e Envio) ganharam descrição, sombra e leve elevação
+      no hover (`.hover-lift`, classe nova e reutilizável); seção de CTA de fechamento
+      (Home/Sobre/Loja/FAQ) para nenhuma página terminar abruptamente logo após o conteúdo
+      principal; FAQ trocou o triângulo padrão do navegador em cada `<summary>` por um chevron que
+      gira ao abrir. Não gera requisito novo (mesma categoria de "ajustes visuais pontuais" já
+      registrada no `spec/tasks.md`), mas documentado aqui pelo volume de páginas tocadas.
+- [x] **Tudo isso em produção** (2026-09-12) — as duas levas de trabalho desta sessão (features de
+      IA + redesenho visual + carrossel da home + correções de UX) foram implantadas em
+      `layettebaby.com.br` em dois deploys: backend (rebuild + recreate dos serviços alterados,
+      migrations aplicadas automaticamente na subida) e frontend (build de produção gerado na
+      própria VPS — ela já tem Node/npm — com backup das pastas antigas antes de sobrescrever as
+      servidas pelo Nginx). Confirmado ao vivo via `curl` (200 nas rotas principais, arquivos com
+      timestamp fresco) e no navegador (home com o redesenho e o carrossel funcionando).
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
       nos manifests; falta aplicar num cluster ativo e uma license key real. **Não avancei aqui** —
       exige um cluster de verdade e uma license key real da New Relic, que eu não tenho como

@@ -227,3 +227,5 @@ substituição daquele relato.
 - Renomeação "Galeria" → "Dicas para o casal" (2026-09-10) — mudança de rótulo/URL sem alterar
   comportamento; não gera um requisito novo, ver README → Status.
 - Ajustes visuais pontuais (rodapé, FAQ, tooltips) sem regra de negócio associada.
+- Segunda leva de polimento visual (2026-09-12) — badges, cards com hover, CTAs de fechamento e
+  chevrons do FAQ em Home/Sobre/Loja/Contato/Produção e Envio/FAQ; ver README → Status.
