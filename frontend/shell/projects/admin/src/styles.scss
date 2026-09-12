@@ -321,6 +321,18 @@ img.rounded-4 {
   padding: 1.25rem 1.5rem;
 }
 
+// Reusable lift-on-hover, for public-facing cards where a little interactivity feels inviting
+// (feature highlights, testimonials) — kept separate from .stat-card itself since that class is
+// also used for static admin dashboard/metric boxes where a hover animation would feel out of place.
+.hover-lift {
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: $box-shadow-lg;
+}
+
 .avatar-icon {
   width: 2.75rem;
   height: 2.75rem;

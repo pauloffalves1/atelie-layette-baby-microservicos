@@ -28,22 +28,29 @@
   </div>
 </section>
 
-<section class="py-5">
+<section class="py-5 bg-gold-light">
   <div class="container">
     <div class="row text-center g-4">
       <div class="col-md-4">
-        <div class="avatar-icon bg-blush text-blush mx-auto mb-3"><i class="bi bi-flower1"></i></div>
-        <h5>100% algodão</h5>
+        <div class="stat-card hover-lift h-100">
+          <div class="avatar-icon bg-blush text-blush mx-auto mb-3"><i class="bi bi-flower1"></i></div>
+          <h5>100% algodão</h5>
+          <p class="text-secondary small mb-0">Tecidos macios e selecionados a dedo, pensados na pele sensível do bebê.</p>
+        </div>
       </div>
       <div class="col-md-4">
-        <div class="avatar-icon bg-sage-light text-sage mx-auto mb-3"><i class="bi bi-scissors"></i></div>
-        <h5>Costura artesanal</h5>
-        <p class="text-secondary small">Cada peça é costurada com acabamento cuidadoso e exclusivo.</p>
+        <div class="stat-card hover-lift h-100">
+          <div class="avatar-icon bg-sage-light text-sage mx-auto mb-3"><i class="bi bi-scissors"></i></div>
+          <h5>Costura artesanal</h5>
+          <p class="text-secondary small mb-0">Cada peça é costurada com acabamento cuidadoso e exclusivo.</p>
+        </div>
       </div>
       <div class="col-md-4">
-        <div class="avatar-icon bg-blush text-blush mx-auto mb-3"><i class="bi bi-truck"></i></div>
-        <h5>Entrega para todo o Brasil</h5>
-        <p class="text-secondary small">Embalagem especial e acompanhamento do pedido do início ao fim.</p>
+        <div class="stat-card hover-lift h-100">
+          <div class="avatar-icon bg-blush text-blush mx-auto mb-3"><i class="bi bi-truck"></i></div>
+          <h5>Entrega para todo o Brasil</h5>
+          <p class="text-secondary small mb-0">Embalagem especial e acompanhamento do pedido do início ao fim.</p>
+        </div>
       </div>
     </div>
   </div>
@@ -52,7 +59,10 @@
 <section class="py-5 bg-white">
   <div class="container">
     <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-3">
-      <h2 class="section-title">Destaques do ateliê</h2>
+      <div>
+        <span class="badge-soft mb-2 d-block" style="width: fit-content;"><i class="bi bi-stars me-1"></i>Selecionados a dedo</span>
+        <h2 class="section-title">Destaques do ateliê</h2>
+      </div>
       <a routerLink="/loja" class="btn btn-sm btn-outline-secondary rounded-pill">Ver tudo <i class="bi bi-arrow-right ms-1"></i></a>
     </div>
 
@@ -97,7 +107,7 @@
         <div class="carousel-inner">
           @for (review of featuredReviews(); track review.id; let i = $index) {
             <div class="carousel-item" [class.active]="i === activeReviewIndex()">
-              <div class="stat-card text-center mx-2">
+              <div class="stat-card hover-lift text-center mx-2">
                 <span class="text-warning d-block mb-2">
                   @for (star of [1, 2, 3, 4, 5]; track star) {
                     <i class="bi" [class.bi-star-fill]="star <= review.rating" [class.bi-star]="star > review.rating"></i>
