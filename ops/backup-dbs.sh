@@ -8,7 +8,7 @@ set -euo pipefail
 BACKUP_DIR="/var/backups/atelie-bebe-microservices"
 KEEP_COUNT=10
 CONTAINER="microservices-sqlserver-1"
-ENV_FILE="/var/www/atelie-bebe-microservices/microservices/.env"
+ENV_FILE="/var/www/atelie-layette-baby-microservicos/.env"
 CONTAINER_BACKUP_DIR="/backup"
 
 SA_PASSWORD="$(grep -m1 '^MSSQL_SA_PASSWORD=' "$ENV_FILE" | cut -d= -f2-)"
