@@ -123,6 +123,12 @@ substituição daquele relato.
 - [x] Rate limiting no Gateway nas rotas de autenticação.
 - [x] Outbox com retry (máx. 5 tentativas) isolando falha de publicação de operação síncrona.
 - [x] Backup automatizado diário (`ops/backup-dbs.sh`) com retenção de 10 cópias + sync externo.
+- [x] `ops/test-restore.sh` executado de verdade contra a VPS (2026-09-12) — não só escrito e lido,
+      rodado de ponta a ponta duas vezes: a primeira encontrou três bugs reais (permissão do `.bak`
+      copiado para dentro do container, `sqlcmd` sem `-b` mascarando a falha de restore, e a checagem
+      de linhas tratando uma mensagem de erro como sucesso), todos corrigidos; a segunda rodada
+      restaurou os 4 bancos de verdade, com contagens de linha plausíveis em cada um. Ver README →
+      Status para o relato completo.
 - [x] Interface e dados semeados 100% em pt-BR.
 - [x] Segredos só via `.env`/variáveis de ambiente, nunca commitados.
 

@@ -747,10 +747,9 @@ contra o Gateway via `docker run --network host`).
       Requisitos 19–23 do `spec/`, RF28–RF33 e RNF07). Testado de ponta a ponta contra a API real da
       Anthropic (não só com mocks). Redesenho visual completo do storefront/admin (paleta dourada no
       lugar do marrom, logo em destaque, layout 100% de largura, responsivo) feito na mesma leva de
-      trabalho, revisado em dev antes de qualquer deploy. **Pendências conhecidas:**
-      `ops/test-restore.sh` foi escrito mas nunca executado de fato; e a política de rate limiting
-      `ai-cost` cobre hoje só a rota pública de busca semântica, não as rotas administrativas de IA
-      (resposta de contato, descrição de produto, resumo do dashboard).
+      trabalho, revisado em dev antes de qualquer deploy. **Pendência conhecida:** a política de rate
+      limiting `ai-cost` cobre hoje só a rota pública de busca semântica, não as rotas
+      administrativas de IA (resposta de contato, descrição de produto, resumo do dashboard).
 - [x] **Testes unitários para as features de IA** (2026-09-12) — 11 novos testes (121 → 132) usando
       NSubstitute para mockar `ISemanticSearchTranslator`, `IReviewModerationScreener` e
       `IEmbroideryModerationScreener` nos serviços de aplicação que os consomem
@@ -763,6 +762,20 @@ contra o Gateway via `docker run --network host`).
       (RF31-33) ficaram de fora porque são chamados direto dos endpoints do Backoffice/Catalog, sem
       uma camada de serviço para testar isoladamente — cobri-los exigiria um teste de integração com
       `WebApplicationFactory`, fora do padrão atual (`Core.Tests` cobre só domínio/aplicação).
+- [x] **`ops/test-restore.sh` executado de verdade contra a VPS de produção** (2026-09-12) — a
+      primeira execução real (não só leitura de código) encontrou três bugs, todos corrigidos e
+      confirmados numa segunda rodada: (1) `docker cp` deixa o `.bak` copiado com dono `root`, mas o
+      `sqlservr` roda como o usuário `mssql` dentro do container e não conseguia ler o arquivo
+      (`RESTORE DATABASE` falhava com "Access is denied"); (2) o `sqlcmd` do `RESTORE DATABASE`
+      rodava sem `-b` (abort on error), então essa falha não virava um código de saída != 0 e passava
+      batido pela checagem do script; (3) a query de conferência de linhas, ao falhar por causa dos
+      dois problemas acima, devolvia uma mensagem de erro do SQL Server em vez de um número — e o
+      script tratava isso como sucesso (`[ "$ROW_COUNT" -le 0 ]` numa string não numérica não é falso,
+      é um erro de comparação que o bash engolia). Corrigido com `docker exec -u root ... chmod 644`
+      antes do restore, `-b` no `sqlcmd`, e uma checagem de formato (regex) antes de comparar
+      `ROW_COUNT` numericamente. Segunda rodada, pós-correção: os 4 bancos restauraram de verdade,
+      com 30/29/37/137 linhas respectivamente — a suíte de backup está confirmada funcional de ponta
+      a ponta, não só no papel.
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
       nos manifests; falta aplicar num cluster ativo e uma license key real. **Não avancei aqui** —
       exige um cluster de verdade e uma license key real da New Relic, que eu não tenho como
