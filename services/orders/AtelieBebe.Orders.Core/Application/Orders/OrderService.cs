@@ -13,13 +13,20 @@ public sealed class OrderService : IOrderService
     private readonly IOrdersUnitOfWork _unitOfWork;
     private readonly IPaymentGateway _paymentGateway;
     private readonly ICatalogServiceClient _catalogServiceClient;
+    private readonly IEmbroideryModerationScreener _embroideryModerationScreener;
     private readonly ILogger<OrderService> _logger;
 
-    public OrderService(IOrdersUnitOfWork unitOfWork, IPaymentGateway paymentGateway, ICatalogServiceClient catalogServiceClient, ILogger<OrderService> logger)
+    public OrderService(
+        IOrdersUnitOfWork unitOfWork,
+        IPaymentGateway paymentGateway,
+        ICatalogServiceClient catalogServiceClient,
+        IEmbroideryModerationScreener embroideryModerationScreener,
+        ILogger<OrderService> logger)
     {
         _unitOfWork = unitOfWork;
         _paymentGateway = paymentGateway;
         _catalogServiceClient = catalogServiceClient;
+        _embroideryModerationScreener = embroideryModerationScreener;
         _logger = logger;
     }
 
@@ -51,16 +58,21 @@ public sealed class OrderService : IOrderService
 
             foreach (var itemRequest in request.Items)
             {
+                var embroideryText = ParseEmbroideryText(itemRequest.OptionsJson);
+                var moderationFlag = embroideryText is null
+                    ? null
+                    : await _embroideryModerationScreener.ScreenAsync(embroideryText, ct);
+
                 if (itemRequest.ProductId is Guid productId)
                 {
                     var product = await _catalogServiceClient.GetProductAsync(productId, ct)
                         ?? throw new NotFoundException("Produto", productId);
 
-                    order.AddItem(product.Id, product.Name, Money.FromReais(product.EffectivePrice), itemRequest.Quantity, itemRequest.OptionsJson);
+                    order.AddItem(product.Id, product.Name, Money.FromReais(product.EffectivePrice), itemRequest.Quantity, itemRequest.OptionsJson, moderationFlag);
                 }
                 else
                 {
-                    order.AddItem(null, itemRequest.ProductName, Money.FromReais(itemRequest.UnitPrice), itemRequest.Quantity, itemRequest.OptionsJson);
+                    order.AddItem(null, itemRequest.ProductName, Money.FromReais(itemRequest.UnitPrice), itemRequest.Quantity, itemRequest.OptionsJson, moderationFlag);
                 }
             }
 
@@ -532,7 +544,7 @@ public sealed class OrderService : IOrderService
         o.DeliveryMethod,
         o.CreatedAt,
         o.UpdatedAt,
-        o.Items.Select(i => new OrderItemDto(i.Id, i.ProductId, i.ProductName, i.UnitPrice.Amount, i.Quantity, i.Subtotal.Amount, i.OptionsJson)).ToList(),
+        o.Items.Select(i => new OrderItemDto(i.Id, i.ProductId, i.ProductName, i.UnitPrice.Amount, i.Quantity, i.Subtotal.Amount, i.OptionsJson, i.ModerationFlag)).ToList(),
         o.PaymentStatus.ToString(),
         o.ExternalPaymentId,
         o.TrackingCode,
@@ -564,4 +576,25 @@ public sealed class OrderService : IOrderService
     }
 
     private sealed record ShippingAddressJsonDto(string Street, string Number, string? Complement, string Neighborhood, string City, string State, string ZipCode);
+
+    /// <summary>Extracts the embroidery text from an item's OptionsJson (the same shape the storefront's
+    /// personalization step sends), for the moderation screen. Returns null when absent/empty/malformed.</summary>
+    private static string? ParseEmbroideryText(string? optionsJson)
+    {
+        if (string.IsNullOrWhiteSpace(optionsJson)) return null;
+
+        try
+        {
+            var parsed = System.Text.Json.JsonSerializer.Deserialize<EmbroideryOptionsJsonDto>(
+                optionsJson, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            return string.IsNullOrWhiteSpace(parsed?.EmbroideryText) ? null : parsed.EmbroideryText;
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return null;
+        }
+    }
+
+    private sealed record EmbroideryOptionsJsonDto(string? EmbroideryText, string? ThreadColor);
 }

@@ -21,7 +21,20 @@
               </div>
               <span class="small text-secondary">{{ message.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
             </div>
-            <p class="mb-0 small">{{ message.message }}</p>
+            <p class="mb-2 small">{{ message.message }}</p>
+            <button type="button" class="btn btn-sm btn-outline-secondary" [disabled]="draftingReplyId() === message.id" (click)="suggestReply(message)">
+              @if (draftingReplyId() === message.id) {
+                <span class="spinner-border spinner-border-sm me-1"></span> Gerando...
+              } @else {
+                <i class="bi bi-stars me-1"></i>Sugerir resposta
+              }
+            </button>
+            @if (draftedReplies()[message.id]) {
+              <div class="mt-2 p-2 bg-body-secondary rounded-3 small">
+                <strong class="d-block mb-1">Rascunho sugerido:</strong>
+                {{ draftedReplies()[message.id] }}
+              </div>
+            }
           </div>
         </div>
       }

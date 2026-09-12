@@ -45,6 +45,7 @@ public static class DependencyInjection
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<ICartSyncService, CartSyncService>();
         services.AddScoped<ICouponService, CouponService>();
+        services.AddSingleton<IEmbroideryModerationScreener, AnthropicEmbroideryModerationScreener>();
 
         services.AddHttpClient<ICatalogServiceClient, CatalogServiceClient>((sp, client) =>
             client.BaseAddress = new Uri(configuration["Services:Catalog"] ?? "http://catalog:8080"));

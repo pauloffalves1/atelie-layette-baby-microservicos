@@ -56,6 +56,10 @@ public sealed record CreateProductRequest(
     bool Featured,
     int? ProductionLeadTimeDays = null);
 
+public sealed record GenerateProductDescriptionRequest(string Name, string Category);
+
+public sealed record GenerateProductDescriptionResponse(string Description);
+
 public sealed record UpdateProductRequest(
     string Name,
     string? Description,

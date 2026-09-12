@@ -5,6 +5,9 @@ namespace AtelieBebe.Catalog.Core.Application.Products;
 public interface IProductService
 {
     Task<PagedResult<ProductDto>> ListAsync(string? category, bool onlyActive, int page, int pageSize, Guid? customerId = null, string? search = null, CancellationToken ct = default);
+
+    /// <summary>Runs a free-text query through the semantic search translator before querying the catalog.</summary>
+    Task<PagedResult<ProductDto>> SearchAsync(string naturalLanguageQuery, int page, int pageSize, Guid? customerId = null, CancellationToken ct = default);
     Task<IReadOnlyList<ProductDto>> ListFeaturedAsync(Guid? customerId = null, CancellationToken ct = default);
     Task<IReadOnlyList<string>> ListCategoriesAsync(Guid? customerId = null, CancellationToken ct = default);
     Task<ProductDto> GetBySlugAsync(string slug, Guid? customerId = null, CancellationToken ct = default);

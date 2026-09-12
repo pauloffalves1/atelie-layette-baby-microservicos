@@ -14,6 +14,7 @@ public sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
 
         builder.Property(i => i.ProductName).IsRequired().HasMaxLength(200);
         builder.Property(i => i.OptionsJson);
+        builder.Property(i => i.ModerationFlag).HasMaxLength(50);
         builder.Property(i => i.Quantity).IsRequired();
 
         builder.Property(i => i.UnitPrice)

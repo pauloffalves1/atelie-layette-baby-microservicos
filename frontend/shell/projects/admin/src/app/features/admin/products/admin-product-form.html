@@ -64,8 +64,20 @@
               }
             </div>
             <div class="col-12">
-              <label for="product-description" class="form-label small fw-semibold">Descrição</label>
+              <div class="d-flex justify-content-between align-items-center">
+                <label for="product-description" class="form-label small fw-semibold">Descrição</label>
+                <button type="button" class="btn btn-sm btn-outline-secondary" [disabled]="generatingDescription()" (click)="generateDescription()">
+                  @if (generatingDescription()) {
+                    <span class="spinner-border spinner-border-sm me-1"></span> Gerando...
+                  } @else {
+                    <i class="bi bi-stars me-1"></i>Gerar com IA
+                  }
+                </button>
+              </div>
               <textarea id="product-description" class="form-control" rows="4" formControlName="description"></textarea>
+              @if (generateDescriptionError()) {
+                <div class="text-danger small mt-1">{{ generateDescriptionError() }}</div>
+              }
             </div>
           </div>
         </div>

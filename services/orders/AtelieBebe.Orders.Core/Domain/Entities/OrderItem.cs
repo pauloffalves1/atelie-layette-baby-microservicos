@@ -14,11 +14,16 @@ public sealed class OrderItem : Entity
     public int Quantity { get; private set; }
     public string? OptionsJson { get; private set; }
 
+    /// <summary>Set by an automated pre-screen of the embroidery text in <see cref="OptionsJson"/>
+    /// ("ofensivo", "dado_pessoal") to flag the item for manual review before production starts.
+    /// Never blocks the order — production staff still decide.</summary>
+    public string? ModerationFlag { get; private set; }
+
     public Money Subtotal => UnitPrice.Multiply(Quantity);
 
     private OrderItem() { } // EF Core
 
-    internal OrderItem(Guid? productId, string productName, Money unitPrice, int quantity, string? optionsJson)
+    internal OrderItem(Guid? productId, string productName, Money unitPrice, int quantity, string? optionsJson, string? moderationFlag = null)
         : base(Guid.NewGuid())
     {
         if (string.IsNullOrWhiteSpace(productName))
@@ -31,6 +36,7 @@ public sealed class OrderItem : Entity
         UnitPrice = unitPrice;
         Quantity = quantity;
         OptionsJson = optionsJson;
+        ModerationFlag = moderationFlag;
     }
 
     internal void AttachToOrder(Guid orderId) => OrderId = orderId;

@@ -33,6 +33,11 @@
                 <span class="badge rounded-pill" [class.bg-success]="review.approved" [class.bg-warning]="!review.approved" [class.text-dark]="!review.approved">
                   {{ review.approved ? 'Aprovada' : 'Pendente' }}
                 </span>
+                @if (review.moderationFlag) {
+                  <span class="badge rounded-pill bg-danger" title="Sinalizado automaticamente para atenção">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ review.moderationFlag }}
+                  </span>
+                }
                 <span class="text-warning">
                   @for (star of [1, 2, 3, 4, 5]; track star) {
                     <i class="bi" [class.bi-star-fill]="star <= review.rating" [class.bi-star]="star > review.rating"></i>

@@ -17,6 +17,11 @@ public sealed class ProductReview : Entity, IAggregateRoot
     /// <summary>Pending admin approval until set — new reviews never show on the storefront right away.</summary>
     public bool Approved { get; private set; }
 
+    /// <summary>Set by an automated pre-screen of <see cref="Comment"/> ("spam", "agressivo", "dado_pessoal")
+    /// to help the admin triage the moderation queue faster. Null means the comment looked fine, was empty,
+    /// or the screen couldn't run — it never blocks submission, only prioritizes review.</summary>
+    public string? ModerationFlag { get; private set; }
+
     private ProductReview() { } // EF Core
 
     private ProductReview(Guid id, Guid productId, Guid customerId, string customerName, int rating, string? comment, string? photoUrl) : base(id)
@@ -32,6 +37,14 @@ public sealed class ProductReview : Entity, IAggregateRoot
     }
 
     public void Approve() => Approved = true;
+
+    public void FlagForModeration(string flag)
+    {
+        if (string.IsNullOrWhiteSpace(flag))
+            throw new DomainException("A sinalização de moderação não pode ser vazia.");
+
+        ModerationFlag = flag.Trim();
+    }
 
     public static ProductReview Create(Guid productId, Guid customerId, string customerName, int rating, string? comment, string? photoUrl = null)
     {

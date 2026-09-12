@@ -18,6 +18,9 @@ public static class ProductEndpoints
         group.MapGet("/", async (string? category, string? search, HttpContext http, IProductService service, CancellationToken ct, int page = 1, int pageSize = 12) =>
             Results.Ok(await service.ListAsync(category, onlyActive: true, page, pageSize, http.User.GetUserIdOrNull(), search, ct)));
 
+        group.MapGet("/search/semantic", async (string q, HttpContext http, IProductService service, CancellationToken ct, int page = 1, int pageSize = 12) =>
+            Results.Ok(await service.SearchAsync(q, page, pageSize, http.User.GetUserIdOrNull(), ct)));
+
         group.MapGet("/featured", async (HttpContext http, IProductService service, CancellationToken ct) =>
             Results.Ok(await service.ListFeaturedAsync(http.User.GetUserIdOrNull(), ct)));
 
@@ -35,6 +38,9 @@ public static class ProductEndpoints
 
         adminGroup.MapGet("/{id:guid}", async (Guid id, IProductService service, CancellationToken ct) =>
             Results.Ok(await service.GetForAdminAsync(id, ct)));
+
+        adminGroup.MapPost("/generate-description", async (GenerateProductDescriptionRequest request, IProductDescriptionGenerator generator, CancellationToken ct) =>
+            Results.Ok(new GenerateProductDescriptionResponse(await generator.GenerateAsync(request.Name, request.Category, ct))));
 
         adminGroup.MapPost("/", async (CreateProductRequest request, HttpContext http, IProductService service, AdminAuditPublisher auditPublisher, CancellationToken ct) =>
         {

@@ -5,6 +5,18 @@
   @if (loading()) {
     <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
   } @else if (dashboard(); as d) {
+    <div class="mb-4">
+      <button type="button" class="btn btn-sm btn-outline-secondary" [disabled]="generatingSummary()" (click)="generateSummary()">
+        @if (generatingSummary()) {
+          <span class="spinner-border spinner-border-sm me-1"></span> Gerando resumo...
+        } @else {
+          <i class="bi bi-stars me-1"></i>Gerar resumo da semana
+        }
+      </button>
+      @if (narrativeSummary()) {
+        <div class="stat-card mt-2 small">{{ narrativeSummary() }}</div>
+      }
+    </div>
     <div class="row g-4 mb-4">
       <div class="col-md-6 col-xl-3">
         <div class="stat-card">

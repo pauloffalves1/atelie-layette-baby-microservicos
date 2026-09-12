@@ -39,5 +39,6 @@ export interface AdminProductReview {
   comment: string | null;
   photoUrl: string | null;
   approved: boolean;
+  moderationFlag: string | null;
   createdAt: string;
 }

@@ -32,6 +32,7 @@ public sealed record AdminProductReviewDto(
     string? Comment,
     string? PhotoUrl,
     bool Approved,
+    string? ModerationFlag,
     DateTime CreatedAt);
 
 /// <summary>Tells the frontend whether to show "write a review" for the current customer/product pair.</summary>

@@ -98,12 +98,12 @@ public sealed class Order : Entity, IAggregateRoot
             customerCpf, type, notes, customDetailsJson, shippingAddressJson, shippingCost ?? Money.Zero(), giftMessage, deliveryMethod, recipientName);
     }
 
-    public void AddItem(Guid? productId, string productName, Money unitPrice, int quantity, string? optionsJson = null)
+    public void AddItem(Guid? productId, string productName, Money unitPrice, int quantity, string? optionsJson = null, string? moderationFlag = null)
     {
         if (Status != OrderStatus.Recebido)
             throw new DomainException("Não é possível alterar itens de um pedido que já está em processamento.");
 
-        var item = new OrderItem(productId, productName, unitPrice, quantity, optionsJson);
+        var item = new OrderItem(productId, productName, unitPrice, quantity, optionsJson, moderationFlag);
         item.AttachToOrder(Id);
         _items.Add(item);
         UpdatedAt = DateTime.UtcNow;

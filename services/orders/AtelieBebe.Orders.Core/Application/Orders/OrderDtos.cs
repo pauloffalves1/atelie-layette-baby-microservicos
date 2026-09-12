@@ -7,7 +7,8 @@ public sealed record OrderItemDto(
     decimal UnitPrice,
     int Quantity,
     decimal Subtotal,
-    string? OptionsJson);
+    string? OptionsJson,
+    string? ModerationFlag);
 
 public sealed record OrderDto(
     Guid Id,

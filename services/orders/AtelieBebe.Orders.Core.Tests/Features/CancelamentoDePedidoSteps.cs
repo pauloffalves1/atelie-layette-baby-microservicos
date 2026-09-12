@@ -30,6 +30,7 @@ public class CancelamentoDePedidoSteps
         _unitOfWork,
         Substitute.For<IPaymentGateway>(),
         Substitute.For<ICatalogServiceClient>(),
+        Substitute.For<IEmbroideryModerationScreener>(),
         Substitute.For<ILogger<OrderService>>());
 
     [Given("que existe um pedido feito por {string} com status {string}")]

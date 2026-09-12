@@ -46,6 +46,11 @@
                       <span class="d-block small text-secondary"><i class="bi bi-palette me-1"></i>Cor da linha: {{ options.threadColor }}</span>
                     }
                   }
+                  @if (item.moderationFlag) {
+                    <span class="badge bg-danger d-block mt-1" style="width: fit-content;" title="Sinalizado automaticamente para revisão antes de produzir">
+                      <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ item.moderationFlag }}
+                    </span>
+                  }
                 </span>
                 <span>{{ item.subtotal | currency:'BRL' }}</span>
               </li>

@@ -15,6 +15,9 @@ export class AdminContactMessages implements OnInit {
   readonly page = signal(1);
   readonly totalPages = signal(0);
 
+  readonly draftingReplyId = signal<string | null>(null);
+  readonly draftedReplies = signal<Record<string, string>>({});
+
   constructor(private readonly contactService: ContactService) {}
 
   ngOnInit(): void {
@@ -24,6 +27,17 @@ export class AdminContactMessages implements OnInit {
   goToPage(page: number): void {
     this.page.set(page);
     this.load();
+  }
+
+  suggestReply(message: ContactMessage): void {
+    this.draftingReplyId.set(message.id);
+    this.contactService.suggestReply(message.name, message.message).subscribe({
+      next: ({ reply }) => {
+        this.draftedReplies.update((current) => ({ ...current, [message.id]: reply }));
+        this.draftingReplyId.set(null);
+      },
+      error: () => this.draftingReplyId.set(null),
+    });
   }
 
   private load(): void {

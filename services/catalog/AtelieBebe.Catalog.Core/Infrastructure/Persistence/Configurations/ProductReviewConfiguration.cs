@@ -14,6 +14,7 @@ public sealed class ProductReviewConfiguration : IEntityTypeConfiguration<Produc
         builder.Property(r => r.CustomerName).IsRequired().HasMaxLength(200);
         builder.Property(r => r.Comment).HasMaxLength(1000);
         builder.Property(r => r.PhotoUrl).HasMaxLength(500);
+        builder.Property(r => r.ModerationFlag).HasMaxLength(50);
         // Existing reviews (created before moderation existed) are grandfathered in as approved —
         // new ones always pass an explicit false from ProductReview's constructor, overriding this.
         builder.Property(r => r.Approved).HasDefaultValue(true);

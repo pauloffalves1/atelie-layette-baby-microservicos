@@ -57,6 +57,9 @@ public static class DependencyInjection
             client.BaseAddress = new Uri(configuration["Services:Orders"] ?? "http://orders:8080"));
         services.AddHttpClient<IIdentityServiceClient, IdentityServiceClient>((sp, client) =>
             client.BaseAddress = new Uri(configuration["Services:Identity"] ?? "http://identity:8080"));
+        services.AddSingleton<ISemanticSearchTranslator, AnthropicSemanticSearchTranslator>();
+        services.AddSingleton<IReviewModerationScreener, AnthropicReviewModerationScreener>();
+        services.AddSingleton<IProductDescriptionGenerator, AnthropicProductDescriptionGenerator>();
 
         services.AddHostedService<WishlistReminderProcessor>();
         services.AddOutboxPublishing(configuration);

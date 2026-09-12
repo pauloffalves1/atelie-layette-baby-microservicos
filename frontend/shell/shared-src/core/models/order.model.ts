@@ -10,6 +10,7 @@ export interface OrderItem {
   quantity: number;
   subtotal: number;
   optionsJson: string | null;
+  moderationFlag: string | null;
 }
 
 export interface Order {

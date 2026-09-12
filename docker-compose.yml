@@ -84,6 +84,7 @@ services:
       RabbitMq__Password: ${RABBITMQ_PASSWORD}
       App__PublicUrl: ${PUBLIC_URL}
       ConnectionStrings__Default: "Server=sqlserver;Database=CatalogDb;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True"
+      Anthropic__ApiKey: ${ANTHROPIC_API_KEY}
       NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
       NEW_RELIC_APP_NAME: AtelieLayetteBaby-Catalog
     volumes:
@@ -109,6 +110,7 @@ services:
       PagBank__Sandbox: ${PAGBANK_SANDBOX:-false}
       App__PublicUrl: ${PUBLIC_URL}
       App__ApiPublicUrl: ${PUBLIC_URL}
+      Anthropic__ApiKey: ${ANTHROPIC_API_KEY}
       ConnectionStrings__Default: "Server=sqlserver;Database=OrdersDb;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True"
       NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
       NEW_RELIC_APP_NAME: AtelieLayetteBaby-Orders
@@ -130,6 +132,7 @@ services:
       RabbitMq__UserName: ${RABBITMQ_USER}
       RabbitMq__Password: ${RABBITMQ_PASSWORD}
       App__PublicUrl: ${PUBLIC_URL}
+      Anthropic__ApiKey: ${ANTHROPIC_API_KEY}
       ConnectionStrings__Default: "Server=sqlserver;Database=BackofficeDb;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True"
       NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
       NEW_RELIC_APP_NAME: AtelieLayetteBaby-Backoffice

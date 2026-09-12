@@ -1,3 +1,4 @@
+using AtelieBebe.Catalog.Core.Application.Products;
 using AtelieBebe.Catalog.Core.Domain.Entities;
 using AtelieBebe.Catalog.Core.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -36,8 +37,11 @@ public sealed class ProductRepository : IProductRepository
         if (!string.IsNullOrWhiteSpace(category))
             query = query.Where(p => p.Category == category);
 
+        // Substring match on Name and Description. Not a real full-text index (ranking, stemming) —
+        // this SQL Server instance doesn't have Full-Text Search installed (IsFullTextInstalled = 0),
+        // and enabling it means changing the deployed image, out of scope for a plain query fix.
         if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(p => EF.Functions.Like(p.Name, $"%{search}%"));
+            query = query.Where(p => EF.Functions.Like(p.Name, $"%{search}%") || EF.Functions.Like(p.Description, $"%{search}%"));
 
         // Admin listings (onlyActive: false) show every product regardless of exclusivity;
         // only the customer-facing catalog (onlyActive: true) is restricted by access grants.
@@ -48,6 +52,39 @@ public sealed class ProductRepository : IProductRepository
 
         var totalItems = await query.CountAsync(ct);
         var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+
+        return (items, totalItems);
+    }
+
+    public async Task<(IReadOnlyList<Product> Items, int TotalItems)> SearchAsync(ProductSearchFilters filters, int page, int pageSize, Guid? customerId = null, CancellationToken ct = default)
+    {
+        var query = ApplyVisibility(ProductsWithAccess.Where(p => p.Active), customerId);
+
+        if (!string.IsNullOrWhiteSpace(filters.Category))
+            query = query.Where(p => p.Category == filters.Category);
+
+        if (!string.IsNullOrWhiteSpace(filters.Keywords))
+            query = query.Where(p => EF.Functions.Like(p.Name, $"%{filters.Keywords}%") || EF.Functions.Like(p.Description, $"%{filters.Keywords}%"));
+
+        query = query.OrderBy(p => p.Name);
+
+        // Price/promotion filters read Money.Amount and the IsOnPromotion computed property,
+        // which EF Core's value-converted Price column can't translate to SQL — applied
+        // client-side, after category/keyword filtering has already narrowed the candidate set.
+        IEnumerable<Product> candidates = await query.ToListAsync(ct);
+
+        if (filters.MinPrice is { } minPrice)
+            candidates = candidates.Where(p => p.EffectivePrice.Amount >= minPrice);
+
+        if (filters.MaxPrice is { } maxPrice)
+            candidates = candidates.Where(p => p.EffectivePrice.Amount <= maxPrice);
+
+        if (filters.OnlyOnPromotion)
+            candidates = candidates.Where(p => p.IsOnPromotion);
+
+        var matched = candidates.ToList();
+        var totalItems = matched.Count;
+        var items = matched.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
         return (items, totalItems);
     }

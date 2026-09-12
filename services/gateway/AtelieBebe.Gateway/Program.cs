@@ -33,6 +33,17 @@ builder.Services.AddRateLimiter(options =>
             Window = TimeSpan.FromMinutes(1),
             QueueLimit = 0,
         }));
+
+    // Routes that call out to the Anthropic API per request — a real per-call cost, unlike the
+    // rest of the catalog's read endpoints. Looser than "auth" (this guards spend, not brute force).
+    options.AddPolicy("ai-cost", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        $"{httpContext.Connection.RemoteIpAddress}:{httpContext.Request.Path}",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 20,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        }));
 });
 
 builder.Services.AddHealthChecks();

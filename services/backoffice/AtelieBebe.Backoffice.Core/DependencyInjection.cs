@@ -43,6 +43,8 @@ public static class DependencyInjection
         services.AddScoped<INewsletterService, NewsletterService>();
         services.AddScoped<IAuditLogService, AuditLogService>();
         services.AddScoped<IDashboardService, DashboardService>();
+        services.AddSingleton<IContactReplyDrafter, AnthropicContactReplyDrafter>();
+        services.AddSingleton<IDashboardSummaryGenerator, AnthropicDashboardSummaryGenerator>();
 
         services.AddHttpClient<IOrdersServiceClient, OrdersServiceClient>((sp, client) =>
             client.BaseAddress = new Uri(configuration["Services:Orders"] ?? "http://orders:8080"));

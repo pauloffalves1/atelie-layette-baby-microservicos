@@ -19,6 +19,7 @@ public sealed class ProductService : IProductService
 
     private readonly ICatalogUnitOfWork _unitOfWork;
     private readonly IOrdersServiceClient _ordersServiceClient;
+    private readonly ISemanticSearchTranslator _semanticSearchTranslator;
     private readonly IMemoryCache _cache;
     private readonly ProductCacheInvalidator _cacheInvalidator;
     private readonly ILogger<ProductService> _logger;
@@ -26,12 +27,14 @@ public sealed class ProductService : IProductService
     public ProductService(
         ICatalogUnitOfWork unitOfWork,
         IOrdersServiceClient ordersServiceClient,
+        ISemanticSearchTranslator semanticSearchTranslator,
         IMemoryCache cache,
         ProductCacheInvalidator cacheInvalidator,
         ILogger<ProductService> logger)
     {
         _unitOfWork = unitOfWork;
         _ordersServiceClient = ordersServiceClient;
+        _semanticSearchTranslator = semanticSearchTranslator;
         _cache = cache;
         _cacheInvalidator = cacheInvalidator;
         _logger = logger;
@@ -69,6 +72,27 @@ public sealed class ProductService : IProductService
     {
         var (products, totalItems) = await _unitOfWork.Products.ListAsync(category, onlyActive, page, pageSize, customerId, search, ct);
         return new PagedResult<ProductDto>(products.Select(ToDto).ToList(), page, pageSize, totalItems);
+    }
+
+    public async Task<PagedResult<ProductDto>> SearchAsync(string naturalLanguageQuery, int page, int pageSize, Guid? customerId = null, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Entrando em {Method}", nameof(SearchAsync));
+        try
+        {
+            var (normalizedPage, normalizedPageSize) = Pagination.Normalize(page, pageSize);
+
+            var categories = await ListCategoriesAsync(customerId, ct);
+            var filters = await _semanticSearchTranslator.TranslateAsync(naturalLanguageQuery, categories, ct);
+            var (products, totalItems) = await _unitOfWork.Products.SearchAsync(filters, normalizedPage, normalizedPageSize, customerId, ct);
+
+            _logger.LogInformation("Saindo de {Method}", nameof(SearchAsync));
+            return new PagedResult<ProductDto>(products.Select(ToDto).ToList(), normalizedPage, normalizedPageSize, totalItems);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro em {Method}", nameof(SearchAsync));
+            throw;
+        }
     }
 
     public async Task<IReadOnlyList<ProductDto>> ListFeaturedAsync(Guid? customerId = null, CancellationToken ct = default)

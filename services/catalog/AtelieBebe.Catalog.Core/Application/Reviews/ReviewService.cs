@@ -10,12 +10,18 @@ public sealed class ReviewService : IReviewService
 {
     private readonly ICatalogUnitOfWork _unitOfWork;
     private readonly IOrdersServiceClient _ordersServiceClient;
+    private readonly IReviewModerationScreener _moderationScreener;
     private readonly ILogger<ReviewService> _logger;
 
-    public ReviewService(ICatalogUnitOfWork unitOfWork, IOrdersServiceClient ordersServiceClient, ILogger<ReviewService> logger)
+    public ReviewService(
+        ICatalogUnitOfWork unitOfWork,
+        IOrdersServiceClient ordersServiceClient,
+        IReviewModerationScreener moderationScreener,
+        ILogger<ReviewService> logger)
     {
         _unitOfWork = unitOfWork;
         _ordersServiceClient = ordersServiceClient;
+        _moderationScreener = moderationScreener;
         _logger = logger;
     }
 
@@ -75,6 +81,14 @@ public sealed class ReviewService : IReviewService
                 throw new ConflictException("Você já avaliou este produto.");
 
             var review = ProductReview.Create(product.Id, customerId, customerName, request.Rating, request.Comment, request.PhotoUrl);
+
+            if (!string.IsNullOrWhiteSpace(request.Comment))
+            {
+                var flag = await _moderationScreener.ScreenAsync(request.Comment, ct);
+                if (flag is not null)
+                    review.FlagForModeration(flag);
+            }
+
             _unitOfWork.ProductReviews.Add(review);
             await _unitOfWork.SaveChangesAsync(ct);
 
@@ -192,5 +206,5 @@ public sealed class ReviewService : IReviewService
         new(r.Id, r.ProductId, r.CustomerName, r.Rating, r.Comment, r.PhotoUrl, r.CreatedAt);
 
     private static AdminProductReviewDto ToAdminDto(ProductReview r, string productName) =>
-        new(r.Id, r.ProductId, productName, r.CustomerName, r.Rating, r.Comment, r.PhotoUrl, r.Approved, r.CreatedAt);
+        new(r.Id, r.ProductId, productName, r.CustomerName, r.Rating, r.Comment, r.PhotoUrl, r.Approved, r.ModerationFlag, r.CreatedAt);
 }

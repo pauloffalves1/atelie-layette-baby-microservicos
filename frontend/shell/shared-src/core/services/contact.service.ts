@@ -33,4 +33,11 @@ export class ContactService {
       params: { page, pageSize },
     });
   }
+
+  suggestReply(customerName: string, message: string): Observable<{ reply: string }> {
+    return this.http.post<{ reply: string }>(`${environment.apiUrl}/admin/contact-messages/suggest-reply`, {
+      customerName,
+      message,
+    });
+  }
 }

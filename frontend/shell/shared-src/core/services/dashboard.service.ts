@@ -11,4 +11,8 @@ export class DashboardService {
   getSummary(): Observable<Dashboard> {
     return this.http.get<Dashboard>(`${environment.apiUrl}/admin/dashboard`);
   }
+
+  generateNarrativeSummary(dashboard: Dashboard): Observable<{ summary: string }> {
+    return this.http.post<{ summary: string }>(`${environment.apiUrl}/admin/dashboard/summary`, dashboard);
+  }
 }

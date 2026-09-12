@@ -26,6 +26,10 @@ export class ProductService {
     return this.http.get<PagedResult<Product>>(this.baseUrl, { params });
   }
 
+  semanticSearch(query: string, page = 1, pageSize = 12): Observable<PagedResult<Product>> {
+    return this.http.get<PagedResult<Product>>(`${this.baseUrl}/search/semantic`, { params: { q: query, page, pageSize } });
+  }
+
   listFeatured(): Observable<Product[]> {
     return this.http.get<Product[]>(`${this.baseUrl}/featured`);
   }
@@ -62,6 +66,10 @@ export class ProductService {
 
   applyPromotionToMany(request: BulkApplyPromotionRequest): Observable<AdminProduct[]> {
     return this.http.post<AdminProduct[]>(`${this.adminUrl}/promotions/bulk`, request);
+  }
+
+  generateDescription(name: string, category: string): Observable<{ description: string }> {
+    return this.http.post<{ description: string }>(`${this.adminUrl}/generate-description`, { name, category });
   }
 
   create(request: CreateProductRequest): Observable<Product> {

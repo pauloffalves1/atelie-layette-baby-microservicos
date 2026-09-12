@@ -332,7 +332,11 @@ aceite em EARS por requisito, mesmo padrão usado no `spec/` do monólito) vive 
   após 5 tentativas).
 - **RNF04** — Os bancos de dados devem ter backup automatizado diário (`ops/backup-dbs.sh`, `BACKUP
   DATABASE` nativo do SQL Server) com sincronização para armazenamento externo (Google Drive via
-  rclone) e retenção das 10 cópias mais recentes.
+  rclone) e retenção das 10 cópias mais recentes. `ops/test-restore.sh` testa periodicamente (cron
+  semanal sugerido) que o backup mais recente de cada banco realmente restaura — restaura num banco
+  descartável `_RestoreTest` na mesma instância, confere que o schema de migrations e as tabelas têm
+  linhas, e derruba o banco de teste em seguida — para pegar corrupção silenciosa antes de precisar
+  dele de verdade.
 - **RNF05** — Toda a interface, mensagens de erro e dados semeados devem estar em português do
   Brasil (`pt-BR`).
 - **RNF06** — Nenhum serviço deve ler segredos (senha do banco, credenciais do RabbitMQ, tokens de

@@ -34,6 +34,8 @@ export class AdminProductForm implements OnInit {
   readonly customersSaved = signal(false);
   readonly uploadingImage = signal(false);
   readonly imageUploadError = signal<string | null>(null);
+  readonly generatingDescription = signal(false);
+  readonly generateDescriptionError = signal<string | null>(null);
 
   readonly galleryImages = signal<string[]>([]);
   readonly uploadingGalleryImage = signal(false);
@@ -125,6 +127,28 @@ export class AdminProductForm implements OnInit {
     });
 
     input.value = '';
+  }
+
+  generateDescription(): void {
+    const { name, category } = this.form.getRawValue();
+    if (!name || !category) {
+      this.generateDescriptionError.set('Preencha nome e categoria antes de gerar a descrição.');
+      return;
+    }
+
+    this.generatingDescription.set(true);
+    this.generateDescriptionError.set(null);
+
+    this.productService.generateDescription(name, category).subscribe({
+      next: ({ description }) => {
+        this.form.patchValue({ description });
+        this.generatingDescription.set(false);
+      },
+      error: () => {
+        this.generatingDescription.set(false);
+        this.generateDescriptionError.set('Não foi possível gerar a descrição agora. Tente de novo em instantes.');
+      },
+    });
   }
 
   toggleCustomer(customerId: string, checked: boolean): void {

@@ -16,6 +16,9 @@ export class AdminDashboard implements OnInit {
   readonly loading = signal(true);
   readonly statusLabels = ORDER_STATUS_LABELS;
 
+  readonly generatingSummary = signal(false);
+  readonly narrativeSummary = signal<string | null>(null);
+
   constructor(private readonly dashboardService: DashboardService) {}
 
   ngOnInit(): void {
@@ -25,6 +28,20 @@ export class AdminDashboard implements OnInit {
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
+    });
+  }
+
+  generateSummary(): void {
+    const dashboard = this.dashboard();
+    if (!dashboard) return;
+
+    this.generatingSummary.set(true);
+    this.dashboardService.generateNarrativeSummary(dashboard).subscribe({
+      next: ({ summary }) => {
+        this.narrativeSummary.set(summary);
+        this.generatingSummary.set(false);
+      },
+      error: () => this.generatingSummary.set(false),
     });
   }
 
