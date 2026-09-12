@@ -407,3 +407,22 @@ ter uma conta de API inflada por abuso ou tráfego anômalo.
 **Acceptance Criteria**
 1. O Gateway DEVE aplicar uma política de rate limiting dedicada (`ai-cost`) às rotas que acionam
    chamadas pagas à API da Anthropic, independente do rate limiting geral aplicado às demais rotas.
+
+---
+
+## Requisito 24: Carrossel de imagens na home
+
+**User Story:** Como ateliê, quero cadastrar mais de uma foto para a imagem principal da página
+inicial, para que ela alterne automaticamente em vez de ficar travada numa única imagem.
+
+**Rastreamento:** RF34
+
+**Acceptance Criteria**
+1. QUANDO uma administradora cadastra mais de uma imagem para a chave `home-hero`, O SISTEMA
+   (frontend da home) DEVE exibi-las como um carrossel com troca automática, setas de
+   navegação e indicadores de posição.
+2. QUANDO há zero ou uma imagem cadastrada para `home-hero`, O SISTEMA DEVE se comportar como antes
+   (uma foto fixa, sem nenhum controle de carrossel visível) — zero imagens cai no fallback padrão
+   embutido no frontend.
+3. Uma administradora DEVE poder adicionar, remover e reordenar (mover para cima/para baixo) as
+   imagens de `home-hero` pelo painel administrativo, sem precisar mexer no código.

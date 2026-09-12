@@ -18,9 +18,28 @@
         </div>
       </div>
       <div class="col-lg-6">
-        <div class="ratio ratio-1x1 rounded-5 overflow-hidden shadow-lg ms-auto" style="max-width: 680px;">
-          @if (heroImageUrl(); as url) {
-            <img [src]="url" alt="Fraldas de ombro e boca bordadas com monograma" class="w-100 h-100 object-fit-cover">
+        <div class="hero-carousel position-relative rounded-5 overflow-hidden shadow-lg ms-auto" style="max-width: 680px;">
+          <div class="ratio ratio-1x1">
+            @for (url of heroImages(); track url; let i = $index) {
+              <img [src]="url" alt="Fraldas de ombro e boca bordadas com monograma"
+                class="w-100 h-100 object-fit-cover hero-carousel-slide"
+                [class.active]="i === activeHeroIndex()">
+            }
+          </div>
+
+          @if (heroImages().length > 1) {
+            <button class="hero-carousel-control hero-carousel-control-prev" type="button" aria-label="Foto anterior" (click)="previousHeroImage()">
+              <i class="bi bi-chevron-left"></i>
+            </button>
+            <button class="hero-carousel-control hero-carousel-control-next" type="button" aria-label="Próxima foto" (click)="nextHeroImage()">
+              <i class="bi bi-chevron-right"></i>
+            </button>
+            <div class="hero-carousel-indicators">
+              @for (url of heroImages(); track url; let i = $index) {
+                <button type="button" class="hero-carousel-dot" [class.active]="i === activeHeroIndex()"
+                  [attr.aria-label]="'Ir para foto ' + (i + 1)" (click)="goToHeroImage(i)"></button>
+              }
+            </div>
           }
         </div>
       </div>

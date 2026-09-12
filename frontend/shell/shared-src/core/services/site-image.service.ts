@@ -20,4 +20,19 @@ export class SiteImageService {
     formData.append('file', file);
     return this.http.post<SiteImage>(`${this.adminUrl}/${key}`, formData);
   }
+
+  /** Multi-image slots (e.g. "home-hero"): appends instead of replacing. */
+  addItem(key: string, file: File): Observable<SiteImage> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<SiteImage>(`${this.adminUrl}/${key}/items`, formData);
+  }
+
+  deleteItem(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.adminUrl}/items/${id}`);
+  }
+
+  moveItem(id: string, direction: 'Up' | 'Down'): Observable<void> {
+    return this.http.post<void>(`${this.adminUrl}/items/${id}/move`, { direction });
+  }
 }

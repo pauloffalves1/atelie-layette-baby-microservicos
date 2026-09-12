@@ -205,6 +205,23 @@ substituição daquele relato.
       mesmo padrão usado em `catalog-admin-products-route` etc.). Confirmado ao vivo: 404 → 401 depois
       do rebuild do container do Gateway.
 
+## Requisito 24 — Carrossel de imagens na home (RF34)
+
+- [x] `SiteImage` ganhou `SortOrder` e o índice em `Key` deixou de ser único (migration
+      `AddSiteImageSortOrder`) — uma chave como `home-hero` agora pode ter 0..N linhas ordenadas.
+- [x] Endpoints admin novos: `POST .../{key}/items` (adiciona sem substituir), `DELETE
+      .../items/{id}`, `POST .../items/{id}/move` (troca `SortOrder` com o vizinho na direção
+      pedida). O upsert antigo (`POST .../{key}`) continua intocado para chaves de imagem única
+      (`about`).
+- [x] Painel "Imagens do site": chaves marcadas como `multi` (só `home-hero` por enquanto) ganham
+      uma lista com miniatura + mover para cima/baixo + excluir + "adicionar foto ao carrossel";
+      chaves de imagem única mantêm o botão simples de "trocar imagem".
+- [x] Home renderiza um carrossel próprio (crossfade via CSS, sem JS do Bootstrap — mesmo padrão do
+      carrossel de avaliações) quando há mais de uma imagem; cai para foto única sem controles com
+      zero ou uma imagem.
+- [x] Testado ao vivo: upload de 2 fotos, reordenar (miniaturas trocam de posição), navegar entre
+      as duas no carrossel da home, excluir uma, excluir a última (volta ao fallback padrão).
+
 ## Fora do escopo deste `spec/` (documentado apenas no `README.md`)
 
 - Renomeação "Galeria" → "Dicas para o casal" (2026-09-10) — mudança de rótulo/URL sem alterar

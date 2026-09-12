@@ -21,9 +21,12 @@ const AUTO_ADVANCE_MS = 6000;
 export class Home implements OnInit, OnDestroy {
   readonly featured = signal<Product[]>([]);
   readonly loading = signal(true);
-  // Null until the site-images lookup resolves, so the template renders nothing rather than a
+  // Empty until the site-images lookup resolves, so the template renders nothing rather than a
   // default image that then gets swapped for the real one (a visible "flash" on every load).
-  readonly heroImageUrl = signal<string | null>(null);
+  // Admin can register one or several "home-hero" images — several render as a carousel.
+  readonly heroImages = signal<string[]>([]);
+  readonly activeHeroIndex = signal(0);
+  private heroAutoAdvanceHandle: ReturnType<typeof setInterval> | null = null;
 
   // Empty until there's at least one approved review with a comment — hides the whole section
   // rather than showing it half-empty.
@@ -58,10 +61,14 @@ export class Home implements OnInit, OnDestroy {
 
     this.siteImageService.list().subscribe({
       next: (images) => {
-        const hero = images.find((i) => i.key === 'home-hero');
-        this.heroImageUrl.set(hero ? resolveAssetUrl(hero.url) : '/images/hero-fraldas.jpg');
+        const heroImages = images
+          .filter((i) => i.key === 'home-hero')
+          .sort((a, b) => a.sortOrder - b.sortOrder)
+          .map((i) => resolveAssetUrl(i.url));
+        this.heroImages.set(heroImages.length > 0 ? heroImages : ['/images/hero-fraldas.jpg']);
+        if (heroImages.length > 1) this.startHeroAutoAdvance();
       },
-      error: () => this.heroImageUrl.set('/images/hero-fraldas.jpg'),
+      error: () => this.heroImages.set(['/images/hero-fraldas.jpg']),
     });
 
     this.reviewService.listFeatured().subscribe({
@@ -75,6 +82,41 @@ export class Home implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.stopAutoAdvance();
+    this.stopHeroAutoAdvance();
+  }
+
+  nextHeroImage(): void {
+    this.advanceHero(1);
+    this.restartHeroAutoAdvance();
+  }
+
+  previousHeroImage(): void {
+    this.advanceHero(-1);
+    this.restartHeroAutoAdvance();
+  }
+
+  goToHeroImage(index: number): void {
+    this.activeHeroIndex.set(index);
+    this.restartHeroAutoAdvance();
+  }
+
+  private advanceHero(step: 1 | -1): void {
+    const count = this.heroImages().length;
+    this.activeHeroIndex.set((this.activeHeroIndex() + step + count) % count);
+  }
+
+  private startHeroAutoAdvance(): void {
+    this.heroAutoAdvanceHandle = setInterval(() => this.advanceHero(1), AUTO_ADVANCE_MS);
+  }
+
+  private stopHeroAutoAdvance(): void {
+    if (this.heroAutoAdvanceHandle) clearInterval(this.heroAutoAdvanceHandle);
+    this.heroAutoAdvanceHandle = null;
+  }
+
+  private restartHeroAutoAdvance(): void {
+    this.stopHeroAutoAdvance();
+    if (this.heroImages().length > 1) this.startHeroAutoAdvance();
   }
 
   nextReview(): void {

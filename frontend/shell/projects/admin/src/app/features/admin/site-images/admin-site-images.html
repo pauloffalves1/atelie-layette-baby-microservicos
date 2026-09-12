@@ -7,23 +7,67 @@
       <div class="col-md-6 col-lg-4">
         <div class="stat-card h-100">
           <h6 class="mb-3">{{ row.label }}</h6>
-          <div class="ratio ratio-1x1 rounded-4 overflow-hidden mb-3" style="max-width: 260px;">
-            <img [src]="row.url" [alt]="row.label" class="w-100 h-100 object-fit-cover">
-          </div>
 
-          <label class="btn btn-outline-secondary rounded-pill btn-sm" [class.disabled]="row.uploading">
-            @if (row.uploading) {
-              <span class="spinner-border spinner-border-sm me-2"></span>Enviando...
-            } @else {
-              <i class="bi bi-upload me-1"></i>Trocar imagem
+          @if (!row.multi) {
+            <div class="ratio ratio-1x1 rounded-4 overflow-hidden mb-3" style="max-width: 260px;">
+              <img [src]="row.url" [alt]="row.label" class="w-100 h-100 object-fit-cover">
+            </div>
+
+            <label class="btn btn-outline-secondary rounded-pill btn-sm" [class.disabled]="row.uploading">
+              @if (row.uploading) {
+                <span class="spinner-border spinner-border-sm me-2"></span>Enviando...
+              } @else {
+                <i class="bi bi-upload me-1"></i>Trocar imagem
+              }
+              <input type="file" accept="image/jpeg,image/png,image/webp" class="d-none"
+                [disabled]="row.uploading" (change)="onFileSelected(row.key, $event)">
+            </label>
+
+            @if (row.saved) {
+              <div class="small text-success mt-2"><i class="bi bi-check-circle-fill me-1"></i>Imagem atualizada!</div>
             }
-            <input type="file" accept="image/jpeg,image/png,image/webp" class="d-none"
-              [disabled]="row.uploading" (change)="onFileSelected(row.key, $event)">
-          </label>
+          } @else {
+            @if (row.items.length === 0) {
+              <div class="ratio ratio-1x1 rounded-4 overflow-hidden mb-3" style="max-width: 260px;">
+                <img [src]="row.url" [alt]="row.label" class="w-100 h-100 object-fit-cover">
+              </div>
+              <p class="small text-secondary mb-3">Nenhuma imagem cadastrada ainda — usando a imagem padrão acima.</p>
+            } @else {
+              <div class="d-flex flex-column gap-2 mb-3">
+                @for (item of row.items; track item.id; let i = $index) {
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="ratio ratio-1x1 rounded-3 overflow-hidden flex-shrink-0" style="width: 64px;">
+                      <img [src]="item.url" alt="" class="w-100 h-100 object-fit-cover">
+                    </div>
+                    <span class="small text-secondary flex-grow-1">Foto {{ i + 1 }}</span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" title="Mover para cima"
+                      [disabled]="item.moving || i === 0" (click)="moveItem(row.key, item.id, 'Up')">
+                      <i class="bi bi-arrow-up"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" title="Mover para baixo"
+                      [disabled]="item.moving || i === row.items.length - 1" (click)="moveItem(row.key, item.id, 'Down')">
+                      <i class="bi bi-arrow-down"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" title="Remover"
+                      [disabled]="item.moving" (click)="deleteItem(row.key, item.id)">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                }
+              </div>
+            }
 
-          @if (row.saved) {
-            <div class="small text-success mt-2"><i class="bi bi-check-circle-fill me-1"></i>Imagem atualizada!</div>
+            <label class="btn btn-outline-secondary rounded-pill btn-sm" [class.disabled]="row.uploading">
+              @if (row.uploading) {
+                <span class="spinner-border spinner-border-sm me-2"></span>Enviando...
+              } @else {
+                <i class="bi bi-plus-lg me-1"></i>Adicionar foto ao carrossel
+              }
+              <input type="file" accept="image/jpeg,image/png,image/webp" class="d-none"
+                [disabled]="row.uploading" (change)="onItemFileSelected(row.key, $event)">
+            </label>
           }
+
           @if (row.error) {
             <div class="small text-danger mt-2">{{ row.error }}</div>
           }

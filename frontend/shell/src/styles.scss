@@ -263,6 +263,72 @@ img.rounded-4 {
   border-radius: 0 0 3rem 3rem;
 }
 
+// Home hero: admin can register one or several images for this slot — several fade-crossfade as a
+// lightweight carousel (no Bootstrap JS in this app, same reasoning as the reviews carousel).
+.hero-carousel {
+  border: 2px solid var(--atelie-blush);
+}
+
+.hero-carousel-slide {
+  opacity: 0;
+  transition: opacity .6s ease;
+}
+
+.hero-carousel-slide.active {
+  opacity: 1;
+  z-index: 1;
+}
+
+.hero-carousel-control {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .85);
+  color: var(--atelie-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  transition: background-color .2s ease;
+}
+
+.hero-carousel-control:hover {
+  background: #fff;
+}
+
+.hero-carousel-control-prev { left: 1rem; }
+.hero-carousel-control-next { right: 1rem; }
+
+.hero-carousel-indicators {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: flex;
+  gap: .4rem;
+}
+
+.hero-carousel-dot {
+  width: .55rem;
+  height: .55rem;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, .6);
+  padding: 0;
+  transition: background-color .2s ease, transform .2s ease;
+}
+
+.hero-carousel-dot.active {
+  background: #fff;
+  transform: scale(1.3);
+}
+
 .admin-login-bg {
   background: linear-gradient(135deg, var(--atelie-blush) 0%, var(--atelie-cream) 50%, var(--atelie-gold-light) 100%);
 }

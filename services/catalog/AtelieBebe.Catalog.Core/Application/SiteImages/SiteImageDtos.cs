@@ -1,3 +1,5 @@
 namespace AtelieBebe.Catalog.Core.Application.SiteImages;
 
-public sealed record SiteImageDto(string Key, string Url, DateTime UpdatedAt);
+public sealed record SiteImageDto(Guid Id, string Key, string Url, int SortOrder, DateTime UpdatedAt);
+
+public enum MoveDirection { Up, Down }

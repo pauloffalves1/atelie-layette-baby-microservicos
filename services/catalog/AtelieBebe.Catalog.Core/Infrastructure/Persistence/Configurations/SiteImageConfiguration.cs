@@ -13,7 +13,10 @@ public sealed class SiteImageConfiguration : IEntityTypeConfiguration<SiteImage>
 
         builder.Property(s => s.Key).IsRequired().HasMaxLength(100);
         builder.Property(s => s.Url).IsRequired().HasMaxLength(500);
+        builder.Property(s => s.SortOrder).IsRequired();
 
-        builder.HasIndex(s => s.Key).IsUnique();
+        // No longer unique: a key like "home-hero" can hold several images rendered as a
+        // carousel. Single-image keys (e.g. "about") just happen to only ever have one row.
+        builder.HasIndex(s => s.Key);
     }
 }

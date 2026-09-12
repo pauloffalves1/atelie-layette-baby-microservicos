@@ -338,6 +338,9 @@ aceite em EARS por requisito, mesmo padrão usado no `spec/` do monólito) vive 
 - **RF33** — Quando uma administradora solicita no dashboard, o sistema deve gerar, via IA, um
   resumo narrativo em português dos indicadores da semana (pedidos, receita, produtos mais
   vendidos).
+- **RF34** — Uma administradora deve poder cadastrar uma ou mais imagens para a foto principal da
+  página inicial; quando houver mais de uma, o sistema deve exibi-las como um carrossel (com setas
+  e indicadores) em vez de uma foto fixa.
 
 ### Não funcionais
 
@@ -788,6 +791,18 @@ contra o Gateway via `docker run --network host`).
       (`generate-description`, `suggest-reply`, `dashboard/summary`), cada uma antes do catch-all
       genérico do mesmo recurso para não afetar as outras operações admin. Confirmado ao vivo: 20
       requisições passam, a 21ª vem `429`.
+- [x] **Carrossel de imagens na home** (2026-09-12) — `SiteImage` ganhou `SortOrder` e deixou de ter
+      `Key` único (migration `AddSiteImageSortOrder`), então uma mesma chave (`home-hero`) pode
+      segurar várias imagens em vez de uma só. Endpoints novos: `POST
+      /api/admin/site-images/{key}/items` (adiciona sem substituir), `DELETE
+      /api/admin/site-images/items/{id}`, `POST /api/admin/site-images/items/{id}/move`
+      (reordena trocando `SortOrder` com o vizinho). A tela "Imagens do site" do admin ganhou um
+      modo de lista com miniaturas + setas de mover + excluir para essa chave, mantendo o fluxo de
+      substituição simples de antes para chaves de imagem única (`about`). A home renderiza um
+      carrossel próprio (sem JS do Bootstrap, mesmo raciocínio do carrossel de avaliações) com
+      crossfade, setas e indicadores quando há mais de uma imagem; com zero ou uma, cai de volta no
+      comportamento antigo (foto única, sem controles). Testado ao vivo: upload de 2 fotos,
+      reordenar, navegar entre as duas, excluir uma, excluir a última (volta pro fallback padrão).
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
       nos manifests; falta aplicar num cluster ativo e uma license key real. **Não avancei aqui** —
       exige um cluster de verdade e uma license key real da New Relic, que eu não tenho como
