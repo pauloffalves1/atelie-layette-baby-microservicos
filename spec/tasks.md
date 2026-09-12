@@ -187,13 +187,15 @@ substituição daquele relato.
 
 - [x] Política `ai-cost` no Gateway (`RateLimitPartition.GetFixedWindowLimiter`, 20 requisições/min
       por IP+rota) aplicada só à rota `catalog-semantic-search-route`.
-- [ ] Cobrir as demais rotas que chamam a IA (moderação, geração de descrição/resposta/resumo) com a
-      mesma política — hoje só a busca semântica do storefront (rota pública, sem autenticação) tem
-      rate limiting dedicado; as rotas administrativas de IA exigem login mas não têm um limite de
-      taxa específico ainda. **Confirmado ao vivo em 2026-09-12** (curl direto contra o Gateway local):
-      `/api/admin/products/generate-description`, `/api/admin/contact-messages/suggest-reply` e
-      `/api/admin/dashboard/summary` respondem 401 (roteiam e exigem login) mas sem nenhuma política
-      de rate limiting aplicada — zero cobertura, não parcial.
+- [x] **Cobertas as demais rotas que chamam a IA** (2026-09-12) — três novas rotas específicas no
+      Gateway, cada uma antes do catch-all genérico do mesmo recurso para não afetar as demais
+      operações admin: `catalog-admin-generate-description-route`
+      (`/api/admin/products/generate-description`), `backoffice-admin-suggest-reply-route`
+      (`/api/admin/contact-messages/suggest-reply`) e `backoffice-dashboard-summary-route`
+      (`/api/admin/dashboard/summary`), todas com `RateLimiterPolicy: ai-cost`. Confirmado ao vivo
+      contra o Gateway local: 20 requisições passam, a partir da 21ª vem `429`; as rotas irmãs sem IA
+      (`/api/admin/products`, `/api/admin/contact-messages`, `/api/admin/dashboard`) continuam sem
+      limite específico, só a política geral do Gateway.
 - [x] **Bug encontrado durante essa checagem, corrigido** (2026-09-12) — a rota
       `backoffice-dashboard-route` só casava com o caminho exato `/api/admin/dashboard` (sem
       `{**catch-all}`, diferente de todas as outras rotas admin do Gateway), então

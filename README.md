@@ -747,9 +747,7 @@ contra o Gateway via `docker run --network host`).
       Requisitos 19–23 do `spec/`, RF28–RF33 e RNF07). Testado de ponta a ponta contra a API real da
       Anthropic (não só com mocks). Redesenho visual completo do storefront/admin (paleta dourada no
       lugar do marrom, logo em destaque, layout 100% de largura, responsivo) feito na mesma leva de
-      trabalho, revisado em dev antes de qualquer deploy. **Pendência conhecida:** a política de rate
-      limiting `ai-cost` cobre hoje só a rota pública de busca semântica, não as rotas
-      administrativas de IA (resposta de contato, descrição de produto, resumo do dashboard).
+      trabalho, revisado em dev antes de qualquer deploy.
 - [x] **Testes unitários para as features de IA** (2026-09-12) — 11 novos testes (121 → 132) usando
       NSubstitute para mockar `ISemanticSearchTranslator`, `IReviewModerationScreener` e
       `IEmbroideryModerationScreener` nos serviços de aplicação que os consomem
@@ -786,6 +784,10 @@ contra o Gateway via `docker run --network host`).
       (chega ao Backoffice, só falta autenticação). Não está claro se o teste manual anterior desse
       botão passou pelo Gateway (nesse caso o bug é novo e passou despercebido) ou por outro caminho
       — de qualquer forma, o comportamento correto pelo Gateway só está confirmado a partir de agora.
+- [x] **`ai-cost` estendido às rotas administrativas de IA** (2026-09-12) — três rotas dedicadas
+      (`generate-description`, `suggest-reply`, `dashboard/summary`), cada uma antes do catch-all
+      genérico do mesmo recurso para não afetar as outras operações admin. Confirmado ao vivo: 20
+      requisições passam, a 21ª vem `429`.
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
       nos manifests; falta aplicar num cluster ativo e uma license key real. **Não avancei aqui** —
       exige um cluster de verdade e uma license key real da New Relic, que eu não tenho como
