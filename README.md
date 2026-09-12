@@ -776,6 +776,16 @@ contra o Gateway via `docker run --network host`).
       `ROW_COUNT` numericamente. Segunda rodada, pós-correção: os 4 bancos restauraram de verdade,
       com 30/29/37/137 linhas respectivamente — a suíte de backup está confirmada funcional de ponta
       a ponta, não só no papel.
+- [x] **Rota do resumo de IA do dashboard estava quebrada no Gateway** (2026-09-12) — ao conferir se a
+      política `ai-cost` cobria as rotas administrativas de IA (não cobre nenhuma delas — só a busca
+      semântica pública, confirmado ao vivo com `curl`), achei que `POST
+      /api/admin/dashboard/summary` respondia 404 *antes* de chegar a autenticação ou rate limiting:
+      a rota `backoffice-dashboard-route` só casava com o caminho exato `/api/admin/dashboard`, sem
+      `{**catch-all}` como todas as outras rotas admin. Corrigido no `appsettings.json` do Gateway;
+      confirmado ao vivo (rebuild + recreate do container local) que a rota passou de 404 para 401
+      (chega ao Backoffice, só falta autenticação). Não está claro se o teste manual anterior desse
+      botão passou pelo Gateway (nesse caso o bug é novo e passou despercebido) ou por outro caminho
+      — de qualquer forma, o comportamento correto pelo Gateway só está confirmado a partir de agora.
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
       nos manifests; falta aplicar num cluster ativo e uma license key real. **Não avancei aqui** —
       exige um cluster de verdade e uma license key real da New Relic, que eu não tenho como

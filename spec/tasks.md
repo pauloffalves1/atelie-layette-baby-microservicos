@@ -190,7 +190,18 @@ substituição daquele relato.
 - [ ] Cobrir as demais rotas que chamam a IA (moderação, geração de descrição/resposta/resumo) com a
       mesma política — hoje só a busca semântica do storefront (rota pública, sem autenticação) tem
       rate limiting dedicado; as rotas administrativas de IA exigem login mas não têm um limite de
-      taxa específico ainda.
+      taxa específico ainda. **Confirmado ao vivo em 2026-09-12** (curl direto contra o Gateway local):
+      `/api/admin/products/generate-description`, `/api/admin/contact-messages/suggest-reply` e
+      `/api/admin/dashboard/summary` respondem 401 (roteiam e exigem login) mas sem nenhuma política
+      de rate limiting aplicada — zero cobertura, não parcial.
+- [x] **Bug encontrado durante essa checagem, corrigido** (2026-09-12) — a rota
+      `backoffice-dashboard-route` só casava com o caminho exato `/api/admin/dashboard` (sem
+      `{**catch-all}`, diferente de todas as outras rotas admin do Gateway), então
+      `POST /api/admin/dashboard/summary` nunca chegava ao Backoffice: o Gateway respondia 404 antes
+      mesmo de aplicar autenticação ou rate limiting. Corrigido trocando o `Match.Path` para
+      `/api/admin/dashboard/{**catch-all}` (confirmado que isso ainda casa com o caminho vazio,
+      mesmo padrão usado em `catalog-admin-products-route` etc.). Confirmado ao vivo: 404 → 401 depois
+      do rebuild do container do Gateway.
 
 ## Fora do escopo deste `spec/` (documentado apenas no `README.md`)
 
