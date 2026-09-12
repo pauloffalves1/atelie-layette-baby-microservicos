@@ -319,6 +319,25 @@ aceite em EARS por requisito, mesmo padrão usado no `spec/` do monólito) vive 
 - **RF27** — Quando uma cliente ou administradora fica 15 minutos sem interagir com a página (sem
   mouse/teclado/toque), o sistema deve encerrar a sessão e redirecionar para a tela de login
   correspondente.
+- **RF28** — Quando uma visitante usa a busca inteligente (texto livre) na loja, o sistema deve
+  traduzir a consulta via IA (Claude Haiku) em filtros estruturados (categoria, faixa de preço,
+  palavras-chave, só promoção) e aplicá-los à listagem; se a chamada à IA falhar, o sistema deve
+  cair para um filtro simples por palavras-chave, sem quebrar a busca.
+- **RF29** — Quando uma cliente envia uma avaliação de produto, o sistema deve pré-triar o
+  comentário via IA em busca de conteúdo impróprio e marcar a avaliação com um sinalizador de
+  moderação quando aplicável, visível só para a administradora — nunca bloqueando o envio, mesmo se
+  a chamada à IA falhar.
+- **RF30** — Quando uma cliente informa o texto do bordado ao criar um pedido, o sistema deve
+  pré-triar esse texto via IA e marcar o item do pedido com o mesmo tipo de sinalizador quando
+  aplicável — nunca bloqueando a criação do pedido, mesmo se a chamada à IA falhar.
+- **RF31** — Quando uma administradora abre uma mensagem de contato, o sistema deve oferecer a
+  opção de gerar, via IA, uma sugestão de resposta a partir da mensagem recebida, que a
+  administradora pode editar livremente antes de enviar.
+- **RF32** — Quando uma administradora cadastra ou edita um produto, o sistema deve oferecer a
+  opção de gerar, via IA, uma descrição de venda a partir do nome e da categoria informados.
+- **RF33** — Quando uma administradora solicita no dashboard, o sistema deve gerar, via IA, um
+  resumo narrativo em português dos indicadores da semana (pedidos, receita, produtos mais
+  vendidos).
 
 ### Não funcionais
 
@@ -341,6 +360,9 @@ aceite em EARS por requisito, mesmo padrão usado no `spec/` do monólito) vive 
   Brasil (`pt-BR`).
 - **RNF06** — Nenhum serviço deve ler segredos (senha do banco, credenciais do RabbitMQ, tokens de
   API) fora de variáveis de ambiente (`.env`, nunca commitado).
+- **RNF07** — O Gateway deve aplicar um rate limiting dedicado (`ai-cost`, 20 requisições/minuto por
+  IP+rota) nas rotas que acionam chamadas pagas à API da Anthropic, à parte do rate limiting geral
+  — para conter o custo e o abuso dessas rotas especificamente.
 
 ## Autenticação e Autorização
 
@@ -719,6 +741,17 @@ contra o Gateway via `docker run --network host`).
 - [x] **Renomeação "Galeria" → "Dicas para o casal"** (2026-09-10) — mesmo conteúdo (fotos reais +
       banners promocionais), só o rótulo/URL mudaram (`/galeria` → `/dicas-para-o-casal`, com redirect
       do caminho antigo); sitemap atualizado.
+- [x] **Features assistidas por IA (Anthropic Claude)** (2026-09-12) — busca semântica na loja,
+      pré-triagem de avaliações e de texto de bordado, resposta de contato sugerida, geração de
+      descrição de produto e resumo narrativo do dashboard, todas usando `claude-haiku-4-5` (ver
+      Requisitos 19–23 do `spec/`, RF28–RF33 e RNF07). Testado de ponta a ponta contra a API real da
+      Anthropic (não só com mocks). Redesenho visual completo do storefront/admin (paleta dourada no
+      lugar do marrom, logo em destaque, layout 100% de largura, responsivo) feito na mesma leva de
+      trabalho, revisado em dev antes de qualquer deploy. **Pendências conhecidas:** os 121 testes
+      unitários não cresceram — a integração com a Anthropic não tem cobertura automatizada, só
+      validação manual; `ops/test-restore.sh` foi escrito mas nunca executado de fato; e a política
+      de rate limiting `ai-cost` cobre hoje só a rota pública de busca semântica, não as rotas
+      administrativas de IA.
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
       nos manifests; falta aplicar num cluster ativo e uma license key real. **Não avancei aqui** —
       exige um cluster de verdade e uma license key real da New Relic, que eu não tenho como

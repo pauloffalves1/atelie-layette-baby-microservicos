@@ -126,6 +126,51 @@ substituição daquele relato.
 - [x] Interface e dados semeados 100% em pt-BR.
 - [x] Segredos só via `.env`/variáveis de ambiente, nunca commitados.
 
+## Requisito 19 — Busca semântica no catálogo público (RF28)
+
+- [x] `ISemanticSearchTranslator`/`AnthropicSemanticSearchTranslator` (Claude Haiku) traduz consulta
+      em linguagem natural em `ProductSearchFilters` (categoria, faixa de preço, palavras-chave, só
+      promoção) via saída JSON estruturada (schema com `anyOf` para categoria nula/enum).
+- [x] `GET /api/products/search/semantic` (Catalog) + checkbox "Busca inteligente" na loja.
+- [x] Fallback para filtro simples por palavras-chave se a chamada à IA falhar (rate limit, 5xx,
+      exceção de I/O) — testado de ponta a ponta contra a API real da Anthropic.
+
+## Requisito 20 — Pré-triagem de avaliações por IA (RF29)
+
+- [x] `IReviewModerationScreener`/`AnthropicReviewModerationScreener` grava `ModerationFlag` em
+      `ProductReview` quando a IA identifica conteúdo impróprio; nunca bloqueia o envio da avaliação
+      se a chamada falhar.
+- [x] `ModerationFlag` exposto só no DTO administrativo (`AdminProductReviewDto`), com badge na
+      listagem de avaliações do painel.
+
+## Requisito 21 — Pré-triagem de texto de bordado por IA (RF30)
+
+- [x] `IEmbroideryModerationScreener`/`AnthropicEmbroideryModerationScreener` grava `ModerationFlag`
+      em `OrderItem` a partir do texto de bordado informado no checkout; nunca bloqueia a criação do
+      pedido se a chamada falhar.
+- [x] Badge de sinalização no detalhe do pedido no painel administrativo.
+
+## Requisito 22 — Ferramentas administrativas assistidas por IA (RF31, RF32, RF33)
+
+- [x] `IContactReplyDrafter`/`AnthropicContactReplyDrafter` — botão "Sugerir resposta" nas mensagens
+      de contato do painel, gera rascunho editável, nunca envia sozinho.
+- [x] `IProductDescriptionGenerator`/`AnthropicProductDescriptionGenerator` — botão "Gerar com IA" no
+      formulário de produto; erro da IA é reportado à administradora (ação explícita, sem fallback
+      de texto padrão).
+- [x] `IDashboardSummaryGenerator`/`AnthropicDashboardSummaryGenerator` — botão "Gerar resumo da
+      semana" no dashboard, resume os indicadores agregados em português.
+- [x] Testado de ponta a ponta contra a API real da Anthropic (modelo `claude-haiku-4-5`) nos três
+      fluxos.
+
+## Requisito 23 — Contenção de custo nas rotas que chamam a API de IA (RNF07)
+
+- [x] Política `ai-cost` no Gateway (`RateLimitPartition.GetFixedWindowLimiter`, 20 requisições/min
+      por IP+rota) aplicada só à rota `catalog-semantic-search-route`.
+- [ ] Cobrir as demais rotas que chamam a IA (moderação, geração de descrição/resposta/resumo) com a
+      mesma política — hoje só a busca semântica do storefront (rota pública, sem autenticação) tem
+      rate limiting dedicado; as rotas administrativas de IA exigem login mas não têm um limite de
+      taxa específico ainda.
+
 ## Fora do escopo deste `spec/` (documentado apenas no `README.md`)
 
 - Renomeação "Galeria" → "Dicas para o casal" (2026-09-10) — mudança de rótulo/URL sem alterar

@@ -322,3 +322,88 @@ esquecida aberta num dispositivo compartilhado.
 5. Toda a interface, mensagens de erro e dados semeados DEVEM estar em português do Brasil (`pt-BR`).
 6. Nenhum serviço DEVE ler segredos (senha do banco, credenciais do RabbitMQ, tokens de API) fora de
    variáveis de ambiente (`.env`, nunca commitado).
+
+---
+
+## Requisito 19: Busca semântica no catálogo público
+
+**User Story:** Como visitante, quero descrever o que procuro em texto livre ("body de algodão até
+80 reais"), para encontrar produtos sem precisar adivinhar categorias ou nomes exatos.
+
+**Rastreamento:** RF28
+
+**Acceptance Criteria**
+1. QUANDO uma visitante ativa a busca inteligente e digita uma consulta em linguagem natural, O
+   SISTEMA (Catalog) DEVE traduzi-la via IA (Claude Haiku) em filtros estruturados (categoria, faixa
+   de preço, palavras-chave, só promoção) e retornar os produtos compatíveis.
+2. SE a chamada à IA falhar (limite de taxa, erro 5xx, indisponibilidade), ENTÃO O SISTEMA DEVE
+   degradar para um filtro simples por palavras-chave — a busca nunca deve falhar por completo só
+   porque a tradução semântica falhou.
+
+---
+
+## Requisito 20: Pré-triagem de avaliações por IA
+
+**User Story:** Como ateliê, quero que comentários potencialmente impróprios em avaliações sejam
+sinalizados automaticamente, para agilizar a moderação humana sem depender só da revisão manual.
+
+**Rastreamento:** RF29
+
+**Acceptance Criteria**
+1. QUANDO uma cliente envia uma avaliação, O SISTEMA (Catalog) DEVE pré-triar o comentário via IA e
+   gravar um sinalizador de moderação (`ModerationFlag`) na avaliação quando algo for identificado.
+2. O sinalizador DEVE ser visível apenas para a administradora (nunca exposto publicamente) e NÃO
+   DEVE, por si só, aprovar nem rejeitar a avaliação — a decisão final continua sendo humana.
+3. SE a chamada à IA falhar, ENTÃO O SISTEMA DEVE continuar aceitando a avaliação normalmente, sem
+   sinalização — a pré-triagem nunca pode bloquear o envio.
+
+---
+
+## Requisito 21: Pré-triagem de texto de bordado por IA
+
+**User Story:** Como ateliê, quero que textos de bordado potencialmente impróprios sejam sinalizados
+automaticamente ao criar o pedido, para revisar antes de produzir a peça.
+
+**Rastreamento:** RF30
+
+**Acceptance Criteria**
+1. QUANDO uma cliente informa o texto do bordado ao finalizar o checkout, O SISTEMA (Orders) DEVE
+   pré-triar esse texto via IA e gravar um sinalizador de moderação no item do pedido quando algo for
+   identificado, visível para a administradora no detalhe do pedido.
+2. SE a chamada à IA falhar, ENTÃO O SISTEMA DEVE continuar criando o pedido normalmente, sem
+   sinalização — a pré-triagem nunca pode bloquear a criação do pedido.
+
+---
+
+## Requisito 22: Ferramentas administrativas assistidas por IA
+
+**User Story:** Como administradora, quero apoio de IA para tarefas repetitivas de redação (responder
+contatos, descrever produtos, resumir a semana), para ganhar tempo sem perder a decisão final sobre o
+que é publicado ou enviado.
+
+**Rastreamento:** RF31, RF32, RF33
+
+**Acceptance Criteria**
+1. QUANDO uma administradora aciona a sugestão de resposta numa mensagem de contato, O SISTEMA
+   (Backoffice) DEVE gerar um rascunho via IA a partir do conteúdo da mensagem, sem enviá-lo
+   automaticamente — a administradora edita e envia manualmente.
+2. QUANDO uma administradora aciona a geração de descrição ao cadastrar/editar um produto, O SISTEMA
+   (Catalog) DEVE gerar um texto via IA a partir do nome e da categoria informados; SE a chamada à IA
+   falhar, ENTÃO O SISTEMA DEVE reportar o erro à administradora (ação explícita, sem um texto
+   padrão seguro para usar como fallback).
+3. QUANDO uma administradora aciona o resumo da semana no dashboard, O SISTEMA (Backoffice) DEVE
+   gerar um resumo narrativo em português dos indicadores agregados (pedidos, receita, produtos mais
+   vendidos) via IA.
+
+---
+
+## Requisito 23: Contenção de custo nas rotas que chamam a API de IA
+
+**User Story:** Como ateliê, quero limitar o uso das rotas que chamam a API da Anthropic, para não
+ter uma conta de API inflada por abuso ou tráfego anômalo.
+
+**Rastreamento:** RNF07
+
+**Acceptance Criteria**
+1. O Gateway DEVE aplicar uma política de rate limiting dedicada (`ai-cost`) às rotas que acionam
+   chamadas pagas à API da Anthropic, independente do rate limiting geral aplicado às demais rotas.
