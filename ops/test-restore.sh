@@ -13,7 +13,10 @@ ENV_FILE="/var/www/atelie-layette-baby-microservicos/.env"
 CONTAINER_BACKUP_DIR="/backup"
 
 SA_PASSWORD="$(grep -m1 '^MSSQL_SA_PASSWORD=' "$ENV_FILE" | cut -d= -f2-)"
-SQLCMD="/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P $SA_PASSWORD -C"
+# -b (abort on error) makes sqlcmd's own exit code reflect a failed RESTORE/DDL statement — without
+# it, sqlcmd prints the SQL Server error but still exits 0, so a genuine restore failure would sail
+# past the "if ! docker exec ..." check below undetected.
+SQLCMD="/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P $SA_PASSWORD -C -b"
 
 overall_status=0
 
@@ -29,6 +32,11 @@ for db in IdentityDb CatalogDb OrdersDb BackofficeDb; do
   TEST_DB="${db}_RestoreTest"
 
   docker cp "$LATEST_BAK" "$CONTAINER:${CONTAINER_BACKUP_DIR}/${BAK_NAME}" > /dev/null
+  # docker cp preserves the host file's ownership (root), but sqlservr runs as the unprivileged
+  # "mssql" user inside the container and can't read a root-owned file — RESTORE DATABASE then fails
+  # with "Cannot open backup device ... Access is denied." chmod instead of chown so this works
+  # regardless of which user `docker exec` defaults to.
+  docker exec "$CONTAINER" chmod 644 "${CONTAINER_BACKUP_DIR}/${BAK_NAME}"
 
   # Restore with MOVE so it doesn't collide with the live database's own data/log files, and WITH
   # REPLACE in case a previous run's test database was left behind by a failure.
@@ -57,10 +65,14 @@ for db in IdentityDb CatalogDb OrdersDb BackofficeDb; do
       JOIN [$TEST_DB].sys.tables t ON t.object_id = p.object_id
       WHERE p.index_id IN (0, 1);
   "
-  ROW_COUNT="$(docker exec "$CONTAINER" $SQLCMD -h -1 -Q "$CHECK_SQL" 2>/dev/null | tr -d '[:space:]')"
+  ROW_COUNT="$(docker exec "$CONTAINER" $SQLCMD -h -1 -Q "$CHECK_SQL" 2>&1 | tr -d '[:space:]')"
 
-  if [ "$ROW_COUNT" = "-1" ] || [ -z "$ROW_COUNT" ] || [ "$ROW_COUNT" -le 0 ] 2>/dev/null; then
-    echo "[$db] FALHA: restaurou mas parece vazio ou sem schema de migrations (linhas: ${ROW_COUNT:-nenhuma})"
+  # ROW_COUNT must be a plain (optionally negative) integer to count as a real result — anything
+  # else (empty, or a SQL Server error message like "Msg208,Level16,...") is a failure. Checking the
+  # shape first avoids the bash gotcha where `[ "$ROW_COUNT" -le 0 ]` on a non-numeric string is a
+  # comparison *error*, not a false result, and used to fall through to the "OK" branch below.
+  if ! [[ "$ROW_COUNT" =~ ^-?[0-9]+$ ]] || [ "$ROW_COUNT" = "-1" ] || [ "$ROW_COUNT" -le 0 ]; then
+    echo "[$db] FALHA: restaurou mas parece vazio, sem schema de migrations, ou a checagem deu erro (saída: ${ROW_COUNT:-vazia})"
     overall_status=1
   else
     echo "[$db] OK: $BAK_NAME restaurou com $ROW_COUNT linha(s) no total"
