@@ -238,6 +238,22 @@ substituição daquele relato.
       diferenciar caixa), por nome e por e-mail, termo inexistente (0), busca + filtro de status,
       exportação CSV filtrada e busca/categoria de produtos — SQL gerado conferido no log do EF.
 
+## Requisito 26 — Dashboard administrativo confiável e orientado a ação (RF36)
+
+- [x] Agregação movida do endpoint interno de Orders para `OrdersDashboardStatsCalculator` (Core,
+      puro sobre `DashboardOrderSnapshot`) — testável com horários arbitrários; 8 testes cobrem
+      fronteira de dia/mês em Brasília, série de 30 dias sem lacunas, ordem do fluxo, pago/pendente,
+      comparação com o mesmo período do mês anterior (inclusive mês anterior mais curto) e bordados
+      sinalizados.
+- [x] Fuso: `America/Sao_Paulo` com fallback para UTC-3 fixo (sem horário de verão desde 2019) quando
+      a imagem não tem tz database.
+- [x] Contrato `OrdersDashboardStatsDto`/`DashboardDto` estendido com campos novos no fim e valores
+      padrão, para Orders e Backoffice seguirem compatíveis durante o deploy.
+- [x] Admin: bloco "Precisa de atenção" com links para listas filtradas, variação mensal, gráfico de
+      30 dias com tooltip por toque/teclado (tabindex móvel + setas), escala e visão em tabela, status
+      clicáveis, estado de erro/atualização sem piscar. Cor da série validada pelo validador de paleta
+      (`#c9727f`; o rosa da marca reprovou em luminosidade/croma/contraste).
+
 ## Fora do escopo deste `spec/` (documentado apenas no `README.md`)
 
 - Renomeação "Galeria" → "Dicas para o casal" (2026-09-10) — mudança de rótulo/URL sem alterar

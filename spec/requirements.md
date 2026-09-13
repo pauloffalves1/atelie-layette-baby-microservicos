@@ -447,3 +447,25 @@ WhatsApp em vez de paginar a lista inteira.
    diferenciar acentos) ou pelos dígitos de telefone/CPF.
 5. Filtros, termo de busca e página DEVEM ficar na URL da lista, de modo que abrir um item e voltar
    (ou recarregar a página) preserve a lista filtrada.
+
+## Requisito 26: Dashboard administrativo confiável e orientado a ação
+
+**User Story:** Como dona do ateliê, quero que o dashboard mostre números corretos no fuso de
+Brasília e o que está esperando por mim agora, para decidir o dia sem abrir cada lista.
+
+**Rastreamento:** RF36
+
+**Acceptance Criteria**
+1. O SISTEMA (Orders) DEVE agrupar as vendas por dia e calcular o "mês atual" no horário de Brasília
+   — um pedido feito às 22:30 de 13/09 conta em 13/09, não em 14/09.
+2. A série "vendas nos últimos 30 dias" DEVE conter exatamente os 30 dias corridos terminando hoje,
+   incluindo os dias sem venda (valor zero).
+3. O faturamento do mês DEVE continuar contando todo pedido não cancelado, e O SISTEMA DEVE detalhar
+   quanto disso já está pago e quanto está com pagamento pendente (pedidos acertados fora do gateway
+   nunca são marcados como pagos, então o total não pode depender só do status de pagamento).
+4. O SISTEMA DEVE comparar o faturamento do mês até agora com o mesmo trecho do mês anterior (dia 1
+   até o mesmo dia/hora, limitado ao fim do mês anterior), nunca com o mês anterior inteiro.
+5. "Encomendas por status" DEVE seguir a ordem do fluxo (Recebido → Entregue).
+6. O dashboard DEVE destacar o que precisa de ação — encomendas a produzir, prontas, com pagamento
+   pendente, avaliações a aprovar e encomendas não produzidas com bordado sinalizado pela IA — cada
+   item levando à lista já filtrada, e mostrar um estado de erro com opção de tentar de novo.

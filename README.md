@@ -344,6 +344,10 @@ aceite em EARS por requisito, mesmo padrão usado no `spec/` do monólito) vive 
 - **RF35** — Uma administradora deve poder buscar encomendas por nome, e-mail ou telefone da cliente
   ou pelo número do pedido (combinável com os filtros de status/pagamento e respeitado na exportação
   CSV), e buscar produtos (por nome/categoria) e clientes; filtros e busca ficam na URL da lista.
+- **RF36** — O dashboard administrativo deve calcular dias e mês no horário de Brasília, mostrar os
+  30 dias corridos (inclusive sem vendas), detalhar o faturamento do mês em pago/pendente, comparar
+  com o mesmo período do mês anterior e destacar o que precisa de ação (a produzir, prontas, pagamento
+  pendente, avaliações e bordados sinalizados), levando cada item à lista filtrada.
 
 ### Não funcionais
 
@@ -866,6 +870,24 @@ contra o Gateway via `docker run --network host`).
       `alert()` ou nada). Corrigido de quebra: a mensagem "Promoção aplicada!" nunca aparecia (ficava
       dentro do bloco que some quando a seleção é limpa). Validado com 132+2 testes .NET, builds de
       admin/shell/storefront, e2e 7/7 e checagem visual (desktop e iPhone) com o admin rodando.
+- [x] **Dashboard confiável e orientado a ação (RF36)** (2026-09-13) — *Números:* a agregação saiu do
+      endpoint interno de Orders para `OrdersDashboardStatsCalculator` (testável, 8 testes novos).
+      Dias e mês agora no horário de Brasília (antes UTC: pedido depois das 21h caía no dia seguinte e
+      o mês virava 3h antes); a série de vendas tem os 30 dias corridos, inclusive sem venda (antes só
+      os dias com pedido, o que espremia as barras e deixava as datas das pontas enganosas); status na
+      ordem do fluxo (antes alfabética pelo nome do enum); faturamento do mês detalhado em "já pago" +
+      pagamento pendente sem deixar de contar os pedidos acertados fora do gateway (que nunca viram
+      "Pago"); comparação com o mesmo trecho do mês anterior, não com o mês inteiro. *Tela:* bloco
+      "Precisa de atenção" (a produzir, prontas, pagamento pendente, avaliações, bordados sinalizados)
+      com links para as listas já filtradas; cards e barras de status clicáveis; gráfico refeito
+      seguindo a skill de dataviz — escala com valores, 30 colunas, tooltip por mouse, toque e
+      teclado (tabindex móvel + setas), destaque de hoje e visão em tabela; cor da série `#c9727f`
+      validada pelo validador de paleta (o rosa da marca reprovou em contraste); estado de erro com
+      "Tentar de novo", horário da última atualização e recarga sem piscar. **Achado, não corrigido
+      nesta rodada:** as APIs serializam `DateTime` vindos do EF sem fuso (`Kind=Unspecified`, sem
+      `Z`), então todas as datas/horas exibidas em loja e admin aparecem 3h adiantadas em Brasília —
+      corrigido só nos horários do dashboard; a correção geral exige revisar também datas digitadas
+      pelo usuário (promoções, cupons) e fica para uma rodada própria.
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
       nos manifests; falta aplicar num cluster ativo e uma license key real. **Não avancei aqui** —
       exige um cluster de verdade e uma license key real da New Relic, que eu não tenho como

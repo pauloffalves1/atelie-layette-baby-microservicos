@@ -47,7 +47,13 @@ public sealed class DashboardService : IDashboardService
                 OrdersByStatus: stats.OrdersByStatus,
                 RecentOrders: stats.RecentOrders,
                 TopProducts: stats.TopProducts,
-                SalesLast30Days: stats.SalesLast30Days);
+                SalesLast30Days: stats.SalesLast30Days,
+                RevenueThisMonthPaid: stats.RevenueThisMonthPaid,
+                RevenueSamePeriodLastMonth: stats.RevenueSamePeriodLastMonth,
+                PendingPaymentOrders: stats.PendingPaymentOrders,
+                PendingPaymentAmount: stats.PendingPaymentAmount,
+                FlaggedOrdersCount: stats.FlaggedOrdersCount,
+                FlaggedOrders: stats.FlaggedOrders ?? []);
 
             _logger.LogInformation("Saindo de {Method}", nameof(GetSummaryAsync));
             return result;

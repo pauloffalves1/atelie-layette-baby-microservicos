@@ -22,12 +22,20 @@ public sealed class AnthropicDashboardSummaryGenerator : IDashboardSummaryGenera
     {
         var sb = new StringBuilder();
         sb.AppendLine($"Pedidos totais: {dashboard.TotalOrders}, em aberto: {dashboard.OpenOrders}");
-        sb.AppendLine($"Receita total: R$ {dashboard.RevenueTotal:F2}, receita do mês: R$ {dashboard.RevenueThisMonth:F2}");
+        sb.AppendLine($"Receita total: R$ {dashboard.RevenueTotal:F2}, receita do mês: R$ {dashboard.RevenueThisMonth:F2} "
+                    + $"(já paga: R$ {dashboard.RevenueThisMonthPaid:F2}; mesmo período do mês anterior: R$ {dashboard.RevenueSamePeriodLastMonth:F2})");
+        sb.AppendLine($"Pedidos com pagamento pendente: {dashboard.PendingPaymentOrders} (R$ {dashboard.PendingPaymentAmount:F2}); "
+                    + $"pedidos com bordado sinalizado para revisão: {dashboard.FlaggedOrdersCount}");
         sb.AppendLine($"Ticket médio: R$ {dashboard.AverageOrderValue:F2}");
         sb.AppendLine($"Produtos cadastrados: {dashboard.TotalProducts}, clientes: {dashboard.TotalCustomers}");
         sb.AppendLine("Pedidos por status: " + string.Join(", ", dashboard.OrdersByStatus.Select(s => $"{s.Status}={s.Count}")));
         sb.AppendLine("Produtos mais vendidos: " + string.Join(", ", dashboard.TopProducts.Select(p => $"{p.ProductName} ({p.QuantitySold} un., R$ {p.Revenue:F2})")));
-        sb.AppendLine("Vendas últimos 30 dias: " + string.Join(", ", dashboard.SalesLast30Days.Select(d => $"{d.Date:dd/MM}: R$ {d.Revenue:F2} ({d.OrderCount} pedidos)")));
+        // Only days that had sales — the series now includes every day of the window, and 20+ "R$ 0,00"
+        // entries would just be noise in the prompt.
+        var salesDays = dashboard.SalesLast30Days.Where(d => d.OrderCount > 0).ToList();
+        sb.AppendLine("Vendas últimos 30 dias: " + (salesDays.Count == 0
+            ? "nenhuma"
+            : string.Join(", ", salesDays.Select(d => $"{d.Date:dd/MM}: R$ {d.Revenue:F2} ({d.OrderCount} pedidos)"))));
 
         var response = await _client.Messages.Create(new MessageCreateParams
         {
