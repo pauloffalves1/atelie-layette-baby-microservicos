@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, Injector, OnInit, afterNextRender, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { WHATSAPP_NUMBER } from '@shared/core/constants/site';
 import { AuthService } from '@shared/core/services/auth.service';
@@ -17,6 +17,7 @@ export class Contact implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly contactService = inject(ContactService);
   private readonly seo = inject(SeoService);
+  private readonly injector = inject(Injector);
 
   readonly pieceTypes = ['Fralda de Ombro', 'Fralda de Boca', 'Kit Ombro e Boca', 'Outro'];
   readonly sizes = ['Padrão', 'Grande', 'Sob medida'];
@@ -49,13 +50,28 @@ export class Contact implements OnInit {
 
   readonly recordError = signal<string | null>(null);
 
+  /** The wa.me link of the last message sent — shown as a fallback in case the browser blocked the
+   * new tab (the page used to give no sign anything happened after clicking "Enviar"). */
+  readonly sentWhatsappUrl = signal<string | null>(null);
+
   submit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      afterNextRender(
+        () => {
+          const field = document.querySelector<HTMLElement>('app-contact .is-invalid');
+          field?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          field?.focus({ preventScroll: true });
+        },
+        { injector: this.injector },
+      );
       return;
     }
 
-    window.open(this.buildWhatsAppUrl(), '_blank', 'noopener');
+    const whatsappUrl = this.buildWhatsAppUrl();
+    this.sentWhatsappUrl.set(whatsappUrl);
+    this.recordError.set(null);
+    window.open(whatsappUrl, '_blank', 'noopener');
 
     // Best-effort: also records the message so it shows up in /admin/mensagens. A failure here
     // (backend down, etc.) must never block the WhatsApp conversation, which already opened above.

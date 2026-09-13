@@ -22,6 +22,8 @@
 
   @if (loading()) {
     <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+  } @else if (loadError()) {
+    <app-load-error (retry)="load()" />
   } @else if (images().length === 0) {
     <p class="text-secondary">Nenhuma foto enviada ainda. Clique em "Adicionar foto" para começar.</p>
   } @else {

@@ -12,6 +12,7 @@ import {
 import { AdminAuthService } from '@shared/core/services/admin-auth.service';
 import { OrderService } from '@shared/core/services/order.service';
 import { Pagination } from '@shared/shared/components/pagination/pagination';
+import { LoadError } from '@shared/shared/components/load-error/load-error';
 
 const STATUSES: OrderStatus[] = ['Recebido', 'EmProducao', 'Pronto', 'Enviado', 'Entregue', 'Cancelado'];
 const PAYMENT_STATUSES: PaymentStatus[] = ['Pendente', 'Pago', 'Recusado'];
@@ -25,12 +26,13 @@ const SEARCH_DEBOUNCE_MS = 350;
 @Component({
   selector: 'app-admin-order-list',
   standalone: true,
-  imports: [CurrencyPipe, DatePipe, RouterLink, Pagination],
+  imports: [CurrencyPipe, DatePipe, RouterLink, Pagination, LoadError],
   templateUrl: './admin-order-list.html',
 })
 export class AdminOrderList {
   readonly orders = signal<Order[]>([]);
   readonly loading = signal(true);
+  readonly loadError = signal(false);
   readonly activeStatus = signal<OrderStatus | null>(null);
   readonly activePaymentStatus = signal<PaymentStatus | null>(null);
   readonly search = signal('');
@@ -122,8 +124,9 @@ export class AdminOrderList {
     this.router.navigate([], { relativeTo: this.route, queryParams: changes, queryParamsHandling: 'merge', replaceUrl: true });
   }
 
-  private load(): void {
+  load(): void {
     this.loading.set(true);
+    this.loadError.set(false);
     this.orderService
       .listAllForAdmin(
         this.activeStatus() ?? undefined,
@@ -139,7 +142,10 @@ export class AdminOrderList {
           this.totalItems.set(result.totalItems);
           this.loading.set(false);
         },
-        error: () => this.loading.set(false),
+        error: () => {
+          this.loading.set(false);
+          this.loadError.set(true);
+        },
       });
   }
 }

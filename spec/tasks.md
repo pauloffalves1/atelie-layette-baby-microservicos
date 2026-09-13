@@ -275,3 +275,7 @@ substituição daquele relato.
   mostrar/ocultar senha, mensagens de erro por tipo de falha, QR code do 2FA, situação dos cupons, e
   o interceptor parando de deslogar em 401 de regra de negócio; sem regra de negócio nova, ver
   README → Status.
+- Falhas de carregamento honestas, página 404 e contato (2026-09-13) — `LoadError` com "Tentar de
+  novo" em 16 telas (inclusive impedindo salvar formulário de edição carregado vazio), página "não
+  encontrada" na loja e no admin, confirmação com link de reserva no contato; sem regra de negócio
+  nova, ver README → Status.

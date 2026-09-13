@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { GalleryImage } from '@shared/core/models/gallery-image.model';
 import { GalleryImageService } from '@shared/core/services/gallery-image.service';
 import { resolveAssetUrl } from '@shared/core/utils/asset-url';
+import { LoadError } from '@shared/shared/components/load-error/load-error';
 
 interface GalleryImageRow extends GalleryImage {
   displayUrl: string;
@@ -11,12 +12,13 @@ interface GalleryImageRow extends GalleryImage {
 @Component({
   selector: 'app-admin-gallery',
   standalone: true,
-  imports: [],
+  imports: [LoadError],
   templateUrl: './admin-gallery.html',
 })
 export class AdminGallery implements OnInit {
   readonly images = signal<GalleryImageRow[]>([]);
   readonly loading = signal(true);
+  readonly loadError = signal(false);
   readonly uploading = signal(false);
   readonly error = signal<string | null>(null);
 
@@ -60,14 +62,18 @@ export class AdminGallery implements OnInit {
     });
   }
 
-  private load(): void {
+  load(): void {
     this.loading.set(true);
+    this.loadError.set(false);
     this.galleryImageService.list().subscribe({
       next: (images) => {
         this.images.set(images.map((i) => ({ ...i, displayUrl: resolveAssetUrl(i.url), deleting: false })));
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+          this.loading.set(false);
+          this.loadError.set(true);
+        },
     });
   }
 

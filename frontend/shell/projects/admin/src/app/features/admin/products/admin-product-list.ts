@@ -6,6 +6,7 @@ import { Product } from '@shared/core/models/product.model';
 import { ProductService } from '@shared/core/services/product.service';
 import { Pagination } from '@shared/shared/components/pagination/pagination';
 import { AssetUrlPipe } from '@shared/shared/pipes/asset-url.pipe';
+import { LoadError } from '@shared/shared/components/load-error/load-error';
 
 const SEARCH_DEBOUNCE_MS = 350;
 
@@ -14,7 +15,7 @@ const SEARCH_DEBOUNCE_MS = 350;
 @Component({
   selector: 'app-admin-product-list',
   standalone: true,
-  imports: [CurrencyPipe, RouterLink, Pagination, AssetUrlPipe],
+  imports: [CurrencyPipe, RouterLink, Pagination, AssetUrlPipe, LoadError],
   templateUrl: './admin-product-list.html',
 })
 export class AdminProductList {
@@ -27,6 +28,7 @@ export class AdminProductList {
   readonly totalPages = signal(0);
   readonly totalItems = signal(0);
   readonly loading = signal(true);
+  readonly loadError = signal(false);
   readonly search = signal('');
   readonly category = signal('');
   readonly categories = signal<string[]>([]);
@@ -61,6 +63,7 @@ export class AdminProductList {
 
   load(): void {
     this.loading.set(true);
+    this.loadError.set(false);
     this.productService
       .listAllForAdmin(this.page(), 20, this.search().trim() || undefined, this.category() || undefined)
       .subscribe({
@@ -70,7 +73,10 @@ export class AdminProductList {
           this.totalItems.set(result.totalItems);
           this.loading.set(false);
         },
-        error: () => this.loading.set(false),
+        error: () => {
+          this.loading.set(false);
+          this.loadError.set(true);
+        },
       });
   }
 

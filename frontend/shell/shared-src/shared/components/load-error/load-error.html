@@ -1,0 +1,8 @@
+<div class="stat-card text-center py-5" role="alert">
+  <i class="bi bi-cloud-slash fs-1 d-block mb-3 text-secondary" aria-hidden="true"></i>
+  <p class="mb-1">{{ message() }}</p>
+  <p class="small text-secondary mb-3">Pode ser uma falha momentânea de conexão.</p>
+  <button type="button" class="btn btn-primary rounded-pill" (click)="retry.emit()">
+    <i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>Tentar de novo
+  </button>
+</div>

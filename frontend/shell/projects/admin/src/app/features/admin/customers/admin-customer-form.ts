@@ -4,12 +4,13 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, debounceTime, distinctUntilChanged, filter, map, of, switchMap, tap } from 'rxjs';
 import { CepService } from '@shared/core/services/cep.service';
 import { CustomerAdminService } from '@shared/core/services/customer-admin.service';
+import { LoadError } from '@shared/shared/components/load-error/load-error';
 import { PhoneMaskDirective } from '@shared/shared/directives/phone-mask.directive';
 
 @Component({
   selector: 'app-admin-customer-form',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, PhoneMaskDirective],
+  imports: [ReactiveFormsModule, RouterLink, PhoneMaskDirective, LoadError],
   templateUrl: './admin-customer-form.html',
 })
 export class AdminCustomerForm implements OnInit {
@@ -20,6 +21,7 @@ export class AdminCustomerForm implements OnInit {
   private readonly cepService = inject(CepService);
 
   readonly loading = signal(true);
+  readonly loadError = signal(false);
   readonly submitting = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly cepLoading = signal(false);
@@ -43,7 +45,15 @@ export class AdminCustomerForm implements OnInit {
 
   ngOnInit(): void {
     this.customerId = this.route.snapshot.paramMap.get('id')!;
+    this.load();
+    this.watchZipCode();
+  }
 
+  /** The form is only rendered once the customer loaded — a blank form after a failed load could
+   * be saved over the real record. */
+  load(): void {
+    this.loading.set(true);
+    this.loadError.set(false);
     this.customerAdminService.getById(this.customerId).subscribe({
       next: (customer) => {
         this.form.patchValue({
@@ -61,9 +71,14 @@ export class AdminCustomerForm implements OnInit {
         });
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.loadError.set(true);
+      },
     });
+  }
 
+  private watchZipCode(): void {
     this.form.controls.zipCode.valueChanges
       .pipe(
         map((value) => value.replace(/\D/g, '')),

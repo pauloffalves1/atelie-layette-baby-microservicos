@@ -922,6 +922,25 @@ contra o Gateway via `docker run --network host`).
       Auditoria e Segurança no mesmo padrão visual das outras telas. Validado com builds, 12 testes
       novos de frontend (erro HTTP, interceptor, links), e2e 7/7 e checagem no navegador com respostas
       de API simuladas para 429/2FA.
+- [x] **Falhas de carregamento honestas, página 404 e contato** (2026-09-13) — *Falhas:* 16 telas só
+      paravam o spinner quando a API falhava e caíam no estado vazio — com o servidor fora, Minha Conta
+      dizia "Você ainda não fez nenhuma encomenda" (e liberava o texto de exclusão de conta "sem
+      encomendas"), o admin dizia "Nenhum produto/cliente cadastrado", a tela de Segurança parecia "2FA
+      desativado" e oferecia ativar. Pior: nas edições de produto e de cliente, a falha abria o
+      formulário **vazio**, que podia ser preenchido e salvo por cima do registro real. Agora um
+      componente compartilhado (`LoadError`) mostra "Não foi possível carregar" com "Tentar de novo"
+      em todas elas (loja: Minha Conta — encomendas e endereços —, Favoritos; admin: encomendas e
+      detalhe, produtos e formulário, clientes e formulário, cupons, avaliações, mensagens, galeria,
+      newsletter, auditoria, segurança), e as telas de edição só mostram o formulário depois de
+      carregar. Favoritos também passou a avisar quando remover um item falha. *404:* URLs
+      inexistentes redirecionavam em silêncio para a home (loja) ou o dashboard (admin); agora há uma
+      página "Página não encontrada" dentro do layout, com atalhos (Loja, Rastrear pedido, Contato,
+      Início; no admin, Dashboard) e `noindex` na loja. *Contato:* depois de "Enviar pelo WhatsApp" a
+      página não dava sinal de nada — se o navegador bloqueasse a nova aba, parecia que não funcionou;
+      agora confirma e oferece o link de reserva "Abrir o WhatsApp". O aviso de falha ao registrar a
+      mensagem no painel já era calculado mas nunca aparecia na tela — agora aparece. Rolagem até o
+      primeiro erro e `autocomplete` em nome/e-mail/telefone. Newsletter do admin no mesmo padrão
+      visual das outras telas.
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
       nos manifests; falta aplicar num cluster ativo e uma license key real. **Não avancei aqui** —
       exige um cluster de verdade e uma license key real da New Relic, que eu não tenho como

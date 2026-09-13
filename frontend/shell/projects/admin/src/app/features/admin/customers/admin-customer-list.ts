@@ -10,16 +10,18 @@ function normalizeForSearch(value: string | null | undefined): string {
   return (value ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 }
 import { CpfMaskPipe } from '@shared/shared/pipes/cpf-mask.pipe';
+import { LoadError } from '@shared/shared/components/load-error/load-error';
 
 @Component({
   selector: 'app-admin-customer-list',
   standalone: true,
-  imports: [DatePipe, CpfMaskPipe, RouterLink],
+  imports: [DatePipe, CpfMaskPipe, RouterLink, LoadError],
   templateUrl: './admin-customer-list.html',
 })
 export class AdminCustomerList implements OnInit {
   readonly customers = signal<CustomerSummary[]>([]);
   readonly loading = signal(true);
+  readonly loadError = signal(false);
   readonly verifyingId = signal<string | null>(null);
   readonly removingId = signal<string | null>(null);
   readonly search = signal('');
@@ -48,14 +50,18 @@ export class AdminCustomerList implements OnInit {
     this.load();
   }
 
-  private load(): void {
+  load(): void {
     this.loading.set(true);
+    this.loadError.set(false);
     this.customerAdminService.list().subscribe({
       next: (customers) => {
         this.customers.set(customers);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+          this.loading.set(false);
+          this.loadError.set(true);
+        },
     });
   }
 

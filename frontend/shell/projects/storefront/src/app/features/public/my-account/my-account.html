@@ -23,6 +23,8 @@
 
     @if (loading()) {
       <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+    } @else if (ordersError()) {
+      <app-load-error message="Não foi possível carregar suas encomendas." (retry)="loadOrders()" />
     } @else if (orders().length === 0) {
       <div class="text-center py-5 text-secondary">
         <i class="bi bi-bag fs-1 d-block mb-3"></i>
@@ -71,6 +73,11 @@
 
       @if (addressesLoading()) {
         <div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div></div>
+      } @else if (addressesError() && !addressFormOpen()) {
+        <p class="small text-danger mb-0" role="alert">
+          Não foi possível carregar seus endereços.
+          <button type="button" class="btn btn-sm btn-link p-0 align-baseline" (click)="loadAddresses()">Tentar de novo</button>
+        </p>
       } @else if (addresses().length === 0 && !addressFormOpen()) {
         <p class="small text-secondary">Você ainda não tem endereços salvos. Adicione um para agilizar suas próximas compras.</p>
       } @else if (!addressFormOpen()) {
@@ -175,8 +182,11 @@
     <div class="mt-5 pt-4 border-top">
       <h6 class="text-danger">Excluir conta</h6>
 
-      @if (loading()) {
-        <!-- avoid showing an order-count-dependent message before we know the count -->
+      @if (loading() || ordersError()) {
+        <!-- the copy below depends on whether there are orders — never guess it from a failed load -->
+        @if (ordersError()) {
+          <p class="small text-secondary mb-0">Disponível assim que suas encomendas carregarem.</p>
+        }
       } @else if (!confirmingDelete()) {
         <p class="small text-secondary mb-2">
           Você pode solicitar a exclusão da sua conta a qualquer momento.

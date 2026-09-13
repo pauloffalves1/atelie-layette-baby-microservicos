@@ -125,7 +125,12 @@ export const routes: Routes = [
         title: `Pagamento (simulação) — ${SITE_NAME}`,
         loadComponent: () => import('./features/public/fake-payment/fake-payment').then((m) => m.FakePayment),
       },
+      {
+        // Inside the layout (header/footer stay) instead of the old silent redirect to home.
+        path: '**',
+        title: `Página não encontrada — ${SITE_NAME}`,
+        loadComponent: () => import('./features/public/not-found/not-found-page').then((m) => m.NotFoundPage),
+      },
     ],
   },
-  { path: '**', redirectTo: '' },
 ];

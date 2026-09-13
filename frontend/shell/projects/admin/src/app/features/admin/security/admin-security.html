@@ -4,6 +4,8 @@
 
   @if (loading()) {
     <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+  } @else if (loadError()) {
+    <app-load-error message="Não foi possível verificar a situação da verificação em duas etapas." (retry)="load()" />
   } @else {
     <div style="max-width: 36rem;">
       <div class="stat-card">

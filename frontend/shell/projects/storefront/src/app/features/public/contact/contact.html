@@ -53,7 +53,7 @@
           <div class="row g-3 mb-4">
             <div class="col-md-6">
               <label for="contact-customerName" class="form-label small fw-semibold">Nome completo</label>
-              <input type="text" id="contact-customerName" class="form-control" formControlName="customerName"
+              <input type="text" id="contact-customerName" class="form-control" formControlName="customerName" autocomplete="name"
                 [class.is-invalid]="form.controls.customerName.invalid && form.controls.customerName.touched">
               @if (form.controls.customerName.invalid && form.controls.customerName.touched) {
                 <div class="invalid-feedback">Nome é obrigatório.</div>
@@ -61,7 +61,7 @@
             </div>
             <div class="col-md-6">
               <label for="contact-customerEmail" class="form-label small fw-semibold">E-mail (opcional)</label>
-              <input type="email" id="contact-customerEmail" class="form-control" formControlName="customerEmail"
+              <input type="email" id="contact-customerEmail" class="form-control" formControlName="customerEmail" autocomplete="email" inputmode="email"
                 [class.is-invalid]="form.controls.customerEmail.invalid && form.controls.customerEmail.touched">
               @if (form.controls.customerEmail.invalid && form.controls.customerEmail.touched) {
                 <div class="invalid-feedback">Informe um e-mail válido.</div>
@@ -69,7 +69,7 @@
             </div>
             <div class="col-md-6">
               <label for="contact-customerPhone" class="form-label small fw-semibold">Telefone</label>
-              <input type="text" id="contact-customerPhone" class="form-control" formControlName="customerPhone" appPhoneMask
+              <input type="tel" id="contact-customerPhone" class="form-control" formControlName="customerPhone" appPhoneMask autocomplete="tel-national" inputmode="tel"
                 placeholder="(11) 91234-5678"
                 [class.is-invalid]="form.controls.customerPhone.invalid && form.controls.customerPhone.touched">
               @if (form.controls.customerPhone.invalid && form.controls.customerPhone.touched) {
@@ -132,8 +132,18 @@
           }
 
           <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill mt-4">
-            <i class="bi bi-whatsapp me-2"></i>Enviar pelo WhatsApp
+            <i class="bi bi-whatsapp me-2"></i>{{ sentWhatsappUrl() ? 'Enviar de novo pelo WhatsApp' : 'Enviar pelo WhatsApp' }}
           </button>
+
+          @if (sentWhatsappUrl(); as url) {
+            <div class="alert alert-success small rounded-4 mt-3 mb-0" role="status">
+              <i class="bi bi-check-circle me-1"></i>Abrimos o WhatsApp numa nova aba com a sua mensagem pronta — é só tocar em enviar por lá.
+              <span class="d-block mt-1">Não abriu? <a [href]="url" target="_blank" rel="noopener" class="alert-link">Abrir o WhatsApp</a></span>
+              @if (recordError()) {
+                <span class="d-block mt-1 text-secondary">Obs.: {{ recordError() }}.</span>
+              }
+            </div>
+          }
         </form>
       </div>
     </div>

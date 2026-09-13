@@ -6,6 +6,7 @@ import { CustomerSummary } from '@shared/core/models/customer.model';
 import { CustomerAdminService } from '@shared/core/services/customer-admin.service';
 import { ProductService } from '@shared/core/services/product.service';
 import { resolveAssetUrl } from '@shared/core/utils/asset-url';
+import { LoadError } from '@shared/shared/components/load-error/load-error';
 
 /** ISO datetime -> `datetime-local` input value (local time, no seconds), or '' when absent. */
 function toDatetimeLocal(iso: string | null): string {
@@ -18,7 +19,7 @@ function toDatetimeLocal(iso: string | null): string {
 @Component({
   selector: 'app-admin-product-form',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, LoadError],
   templateUrl: './admin-product-form.html',
 })
 export class AdminProductForm implements OnInit {
@@ -26,6 +27,7 @@ export class AdminProductForm implements OnInit {
 
   readonly isEditMode = signal(false);
   readonly loading = signal(false);
+  readonly loadError = signal(false);
   readonly submitting = signal(false);
   readonly errorMessage = signal<string | null>(null);
 
@@ -113,9 +115,17 @@ export class AdminProductForm implements OnInit {
     this.productId = id;
     this.isEditMode.set(true);
     this.justCreated.set(this.route.snapshot.queryParamMap.has('criado'));
-    this.loading.set(true);
+    this.load();
+  }
 
-    this.productService.getById(id).subscribe({
+  /** Edit mode only. The form stays hidden until the product loads — a blank form after a failed
+   * load could otherwise be saved over the real product. */
+  load(): void {
+    if (!this.productId) return;
+    this.loading.set(true);
+    this.loadError.set(false);
+
+    this.productService.getById(this.productId).subscribe({
       next: (product) => {
         this.form.patchValue({
           name: product.name,
@@ -142,7 +152,10 @@ export class AdminProductForm implements OnInit {
         });
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.loadError.set(true);
+      },
     });
   }
 

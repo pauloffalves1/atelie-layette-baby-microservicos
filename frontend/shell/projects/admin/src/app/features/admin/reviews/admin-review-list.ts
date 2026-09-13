@@ -4,18 +4,20 @@ import { AdminProductReview } from '@shared/core/models/review.model';
 import { ReviewService } from '@shared/core/services/review.service';
 import { Pagination } from '@shared/shared/components/pagination/pagination';
 import { AssetUrlPipe } from '@shared/shared/pipes/asset-url.pipe';
+import { LoadError } from '@shared/shared/components/load-error/load-error';
 
 type ApprovalFilter = 'pending' | 'approved' | 'all';
 
 @Component({
   selector: 'app-admin-review-list',
   standalone: true,
-  imports: [DatePipe, Pagination, AssetUrlPipe],
+  imports: [DatePipe, Pagination, AssetUrlPipe, LoadError],
   templateUrl: './admin-review-list.html',
 })
 export class AdminReviewList implements OnInit {
   readonly reviews = signal<AdminProductReview[]>([]);
   readonly loading = signal(true);
+  readonly loadError = signal(false);
   readonly page = signal(1);
   readonly totalPages = signal(0);
   readonly filter = signal<ApprovalFilter>('pending');
@@ -66,8 +68,9 @@ export class AdminReviewList implements OnInit {
     });
   }
 
-  private load(): void {
+  load(): void {
     this.loading.set(true);
+    this.loadError.set(false);
     const approved = this.filter() === 'pending' ? false : this.filter() === 'approved' ? true : null;
     this.reviewService.listForAdmin(approved, this.page()).subscribe({
       next: (result) => {
@@ -75,7 +78,10 @@ export class AdminReviewList implements OnInit {
         this.totalPages.set(result.totalPages);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+          this.loading.set(false);
+          this.loadError.set(true);
+        },
     });
   }
 }

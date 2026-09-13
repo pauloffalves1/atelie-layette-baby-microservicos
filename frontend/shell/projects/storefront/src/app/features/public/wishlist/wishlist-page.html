@@ -5,8 +5,14 @@
       <p class="text-secondary mt-3">Produtos que você marcou para não esquecer.</p>
     </div>
 
+    @if (removeError()) {
+      <div class="alert alert-danger small rounded-4" role="alert">{{ removeError() }}</div>
+    }
+
     @if (loading()) {
       <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+    } @else if (loadError()) {
+      <app-load-error message="Não foi possível carregar seus favoritos." (retry)="load()" />
     } @else if (items().length === 0) {
       <div class="text-center py-5 text-secondary">
         <i class="bi bi-heart fs-1 d-block mb-3"></i>

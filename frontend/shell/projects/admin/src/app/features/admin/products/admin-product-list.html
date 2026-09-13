@@ -77,6 +77,8 @@
   <div class="stat-card p-0 overflow-hidden">
     @if (loading()) {
       <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+    } @else if (loadError()) {
+      <app-load-error (retry)="load()" />
     } @else {
       <div class="table-responsive">
         <table class="table align-middle mb-0">

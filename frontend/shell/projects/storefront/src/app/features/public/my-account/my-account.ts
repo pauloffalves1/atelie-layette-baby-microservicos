@@ -9,11 +9,12 @@ import { AuthService } from '@shared/core/services/auth.service';
 import { CepService } from '@shared/core/services/cep.service';
 import { CustomerAddressService } from '@shared/core/services/customer-address.service';
 import { OrderService } from '@shared/core/services/order.service';
+import { LoadError } from '@shared/shared/components/load-error/load-error';
 
 @Component({
   selector: 'app-my-account',
   standalone: true,
-  imports: [CurrencyPipe, DatePipe, RouterLink, ReactiveFormsModule],
+  imports: [CurrencyPipe, DatePipe, RouterLink, ReactiveFormsModule, LoadError],
   templateUrl: './my-account.html',
 })
 export class MyAccount implements OnInit {
@@ -23,6 +24,8 @@ export class MyAccount implements OnInit {
 
   readonly orders = signal<Order[]>([]);
   readonly loading = signal(true);
+  readonly ordersError = signal(false);
+  readonly addressesError = signal(false);
   readonly statusLabels = ORDER_STATUS_LABELS;
   readonly cancelingId = signal<string | null>(null);
   readonly cancelError = signal<string | null>(null);
@@ -64,13 +67,7 @@ export class MyAccount implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.orderService.listMine().subscribe({
-      next: (orders) => {
-        this.orders.set(orders);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
-    });
+    this.loadOrders();
 
     this.auth.getProfile().subscribe({
       next: (profile) => this.emailVerified.set(profile.emailVerified),
@@ -106,6 +103,23 @@ export class MyAccount implements OnInit {
       });
   }
 
+  /** A failed load must not read as "Você ainda não fez nenhuma encomenda" — nor unlock the
+   * no-orders account-deletion copy below it. */
+  loadOrders(): void {
+    this.loading.set(true);
+    this.ordersError.set(false);
+    this.orderService.listMine().subscribe({
+      next: (orders) => {
+        this.orders.set(orders);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.loading.set(false);
+        this.ordersError.set(true);
+      },
+    });
+  }
+
   cancelOrder(order: Order): void {
     if (this.cancelingId()) return;
     const confirmed = confirm(`Cancelar o pedido #${order.id.slice(0, 8)}? Essa ação não pode ser desfeita.`);
@@ -125,14 +139,18 @@ export class MyAccount implements OnInit {
     });
   }
 
-  private loadAddresses(): void {
+  loadAddresses(): void {
     this.addressesLoading.set(true);
+    this.addressesError.set(false);
     this.addressService.list().subscribe({
       next: (addresses) => {
         this.addresses.set(addresses);
         this.addressesLoading.set(false);
       },
-      error: () => this.addressesLoading.set(false),
+      error: () => {
+        this.addressesLoading.set(false);
+        this.addressesError.set(true);
+      },
     });
   }
 

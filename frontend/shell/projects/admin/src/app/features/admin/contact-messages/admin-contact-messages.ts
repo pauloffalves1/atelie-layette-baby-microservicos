@@ -4,16 +4,18 @@ import { SITE_NAME } from '@shared/core/constants/site';
 import { ContactMessage, ContactService } from '@shared/core/services/contact.service';
 import { whatsappUrl } from '@shared/core/utils/contact-links';
 import { Pagination } from '@shared/shared/components/pagination/pagination';
+import { LoadError } from '@shared/shared/components/load-error/load-error';
 
 @Component({
   selector: 'app-admin-contact-messages',
   standalone: true,
-  imports: [DatePipe, Pagination],
+  imports: [DatePipe, Pagination, LoadError],
   templateUrl: './admin-contact-messages.html',
 })
 export class AdminContactMessages implements OnInit {
   readonly messages = signal<ContactMessage[]>([]);
   readonly loading = signal(true);
+  readonly loadError = signal(false);
   readonly page = signal(1);
   readonly totalPages = signal(0);
 
@@ -70,15 +72,19 @@ export class AdminContactMessages implements OnInit {
     });
   }
 
-  private load(): void {
+  load(): void {
     this.loading.set(true);
+    this.loadError.set(false);
     this.contactService.listForAdmin(this.page()).subscribe({
       next: (result) => {
         this.messages.set(result.items);
         this.totalPages.set(result.totalPages);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+          this.loading.set(false);
+          this.loadError.set(true);
+        },
     });
   }
 }

@@ -3,17 +3,19 @@ import { FormsModule } from '@angular/forms';
 import { TwoFactorSetup } from '@shared/core/models/auth.model';
 import { AdminAuthService } from '@shared/core/services/admin-auth.service';
 import { httpErrorMessage } from '@shared/core/utils/http-error-message';
+import { LoadError } from '@shared/shared/components/load-error/load-error';
 import { PixQrCode } from '@shared/shared/components/pix-qr-code/pix-qr-code';
 import { PasswordToggleDirective } from '@shared/shared/directives/password-toggle.directive';
 
 @Component({
   selector: 'app-admin-security',
   standalone: true,
-  imports: [FormsModule, PixQrCode, PasswordToggleDirective],
+  imports: [FormsModule, PixQrCode, PasswordToggleDirective, LoadError],
   templateUrl: './admin-security.html',
 })
 export class AdminSecurity implements OnInit {
   readonly loading = signal(true);
+  readonly loadError = signal(false);
   readonly setup = signal<TwoFactorSetup | null>(null);
   readonly settingUp = signal(false);
   readonly enabling = signal(false);
@@ -37,12 +39,22 @@ export class AdminSecurity implements OnInit {
   constructor(private readonly auth: AdminAuthService) {}
 
   ngOnInit(): void {
+    this.load();
+  }
+
+  load(): void {
+    this.loading.set(true);
+    this.loadError.set(false);
     this.auth.getTwoFactorStatus().subscribe({
       next: ({ enabled }) => {
         this.enabled.set(enabled);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      // Without this, a failed status check looked exactly like "2FA is off" and offered to enable it.
+      error: () => {
+        this.loading.set(false);
+        this.loadError.set(true);
+      },
     });
   }
 

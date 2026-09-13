@@ -4,6 +4,7 @@ import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Va
 import { Coupon } from '@shared/core/models/coupon.model';
 import { CouponService } from '@shared/core/services/coupon.service';
 import { httpErrorMessage } from '@shared/core/utils/http-error-message';
+import { LoadError } from '@shared/shared/components/load-error/load-error';
 
 /** A coupon that expires before it could ever be used is almost always a typo in the date. */
 function notInThePast(control: AbstractControl): ValidationErrors | null {
@@ -16,7 +17,7 @@ export type CouponState = { label: string; tone: 'success' | 'secondary' | 'warn
 @Component({
   selector: 'app-admin-coupon-list',
   standalone: true,
-  imports: [ReactiveFormsModule, DatePipe],
+  imports: [ReactiveFormsModule, DatePipe, LoadError],
   templateUrl: './admin-coupon-list.html',
 })
 export class AdminCouponList implements OnInit {
@@ -25,6 +26,7 @@ export class AdminCouponList implements OnInit {
 
   readonly coupons = signal<Coupon[]>([]);
   readonly loading = signal(true);
+  readonly loadError = signal(false);
   readonly creating = signal(false);
   readonly createError = signal<string | null>(null);
   readonly created = signal<string | null>(null);
@@ -46,12 +48,16 @@ export class AdminCouponList implements OnInit {
 
   load(): void {
     this.loading.set(true);
+    this.loadError.set(false);
     this.couponService.list().subscribe({
       next: (coupons) => {
         this.coupons.set(coupons);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+          this.loading.set(false);
+          this.loadError.set(true);
+        },
     });
   }
 

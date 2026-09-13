@@ -13,6 +13,7 @@ import {
   ShippingAddress,
 } from '@shared/core/models/order.model';
 import { OrderService } from '@shared/core/services/order.service';
+import { LoadError } from '@shared/shared/components/load-error/load-error';
 import { PixQrCode } from '@shared/shared/components/pix-qr-code/pix-qr-code';
 import { CpfMaskPipe } from '@shared/shared/pipes/cpf-mask.pipe';
 
@@ -28,12 +29,13 @@ const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
 @Component({
   selector: 'app-admin-order-detail',
   standalone: true,
-  imports: [CurrencyPipe, DatePipe, CpfMaskPipe, PixQrCode],
+  imports: [CurrencyPipe, DatePipe, CpfMaskPipe, PixQrCode, LoadError],
   templateUrl: './admin-order-detail.html',
 })
 export class AdminOrderDetail implements OnInit {
   readonly order = signal<Order | null>(null);
   readonly loading = signal(true);
+  readonly loadError = signal(false);
   readonly updating = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly pendingStatus = signal<OrderStatus | null>(null);
@@ -191,15 +193,19 @@ export class AdminOrderDetail implements OnInit {
     }
   }
 
-  private load(): void {
+  load(): void {
     this.loading.set(true);
+    this.loadError.set(false);
     this.orderService.getById(this.orderId).subscribe({
       next: (order) => {
         this.order.set(order);
         this.trackingCodeInput.set(order.trackingCode ?? '');
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.loadError.set(true);
+      },
     });
   }
 }

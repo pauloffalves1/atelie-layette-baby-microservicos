@@ -109,7 +109,11 @@ export const routes: Routes = [
         title: `Administradores — ${SITE_NAME}`,
         loadComponent: () => import('./features/admin/admins/admin-admin-list').then((m) => m.AdminAdminList),
       },
+      {
+        path: '**',
+        title: `Página não encontrada — ${SITE_NAME}`,
+        loadComponent: () => import('./features/admin/not-found/admin-not-found').then((m) => m.AdminNotFound),
+      },
     ],
   },
-  { path: '**', redirectTo: '' },
 ];

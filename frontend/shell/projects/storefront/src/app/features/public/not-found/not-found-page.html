@@ -1,0 +1,39 @@
+<section class="py-5">
+  <div class="container">
+    <div class="text-center mx-auto" style="max-width: 36rem;">
+      <span class="badge-soft mb-3 d-inline-block"><i class="bi bi-signpost-split me-1" aria-hidden="true"></i>Erro 404</span>
+      <h1 class="section-title text-center fs-1">Página não encontrada</h1>
+      <p class="text-secondary mt-3 mb-4">
+        O endereço <span class="font-monospace text-break">{{ path }}</span> não existe ou mudou de lugar.
+        Talvez algum destes caminhos ajude:
+      </p>
+
+      <div class="row g-3 text-start">
+        <div class="col-sm-6">
+          <a routerLink="/loja" class="stat-card d-flex align-items-center gap-3 text-decoration-none text-reset h-100 attention-tile">
+            <span class="avatar-icon bg-blush text-blush"><i class="bi bi-bag-heart" aria-hidden="true"></i></span>
+            <span><strong class="d-block">Loja</strong><span class="small text-secondary">Ver todos os produtos</span></span>
+          </a>
+        </div>
+        <div class="col-sm-6">
+          <a routerLink="/rastrear-pedido" class="stat-card d-flex align-items-center gap-3 text-decoration-none text-reset h-100 attention-tile">
+            <span class="avatar-icon bg-sage-light text-sage"><i class="bi bi-truck" aria-hidden="true"></i></span>
+            <span><strong class="d-block">Rastrear pedido</strong><span class="small text-secondary">Acompanhe sua encomenda</span></span>
+          </a>
+        </div>
+        <div class="col-sm-6">
+          <a routerLink="/contato" class="stat-card d-flex align-items-center gap-3 text-decoration-none text-reset h-100 attention-tile">
+            <span class="avatar-icon bg-blush text-blush"><i class="bi bi-chat-heart" aria-hidden="true"></i></span>
+            <span><strong class="d-block">Contato</strong><span class="small text-secondary">Fale com o ateliê</span></span>
+          </a>
+        </div>
+        <div class="col-sm-6">
+          <a routerLink="/" class="stat-card d-flex align-items-center gap-3 text-decoration-none text-reset h-100 attention-tile">
+            <span class="avatar-icon bg-sage-light text-sage"><i class="bi bi-house-heart" aria-hidden="true"></i></span>
+            <span><strong class="d-block">Página inicial</strong><span class="small text-secondary">Voltar ao começo</span></span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
