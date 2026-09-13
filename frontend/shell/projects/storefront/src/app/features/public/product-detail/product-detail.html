@@ -1,5 +1,9 @@
 @if (loading()) {
   <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+} @else if (loadError()) {
+  <div class="container py-5">
+    <app-load-error message="Não foi possível carregar este produto." (retry)="retryLoad()" />
+  </div>
 } @else if (notFound()) {
   <div class="container py-5 text-center">
     <i class="bi bi-emoji-frown fs-1 d-block mb-3 text-secondary"></i>
@@ -9,8 +13,9 @@
 } @else if (product(); as p) {
   <section class="py-5">
     <div class="container">
-      <nav class="small text-secondary mb-4">
-        <a routerLink="/loja" class="text-secondary">Loja</a> <i class="bi bi-chevron-right small mx-1"></i> {{ p.category }}
+      <nav class="small text-secondary mb-4" aria-label="Você está em">
+        <a routerLink="/loja" class="text-secondary">Loja</a> <i class="bi bi-chevron-right small mx-1" aria-hidden="true"></i>
+        <a routerLink="/loja" [queryParams]="{ categoria: p.category }" class="text-secondary">{{ p.category }}</a>
       </nav>
 
       <div class="row g-4 g-lg-5 align-items-start">
@@ -60,28 +65,31 @@
           </div>
           <div class="d-flex align-items-start justify-content-between gap-2 mb-3">
             <h1 class="mb-0">{{ p.name }}</h1>
-            @if (auth.isAuthenticated()) {
-              <button
-                type="button"
-                class="btn btn-sm btn-outline-secondary rounded-circle flex-shrink-0"
-                style="width: 2.5rem; height: 2.5rem;"
-                [disabled]="favoriteBusy()"
-                [attr.aria-label]="isFavorited() ? 'Remover dos favoritos' : 'Adicionar aos favoritos'"
-                [title]="isFavorited() ? 'Remover dos favoritos' : 'Adicionar aos favoritos'"
-                (click)="toggleFavorite()">
-                <i class="bi" [class.bi-heart-fill]="isFavorited()" [class.text-danger]="isFavorited()" [class.bi-heart]="!isFavorited()"></i>
-              </button>
-            }
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary rounded-circle flex-shrink-0"
+              style="width: 2.5rem; height: 2.5rem;"
+              [disabled]="favoriteBusy()"
+              [attr.aria-pressed]="auth.isAuthenticated() ? isFavorited() : null"
+              [attr.aria-label]="!auth.isAuthenticated() ? 'Entrar para salvar nos favoritos' : isFavorited() ? 'Remover dos favoritos' : 'Adicionar aos favoritos'"
+              [title]="!auth.isAuthenticated() ? 'Entre para salvar nos favoritos' : isFavorited() ? 'Remover dos favoritos' : 'Adicionar aos favoritos'"
+              (click)="toggleFavorite()">
+              <i class="bi" [class.bi-heart-fill]="isFavorited()" [class.text-danger]="isFavorited()" [class.bi-heart]="!isFavorited()" aria-hidden="true"></i>
+            </button>
           </div>
+          @if (favoriteError(); as error) {
+            <p class="small text-danger mb-2" role="alert">{{ error }}</p>
+          }
           @if (reviews().length > 0) {
-            <div class="d-flex align-items-center gap-2 mb-2">
-              <span class="text-warning">
-                @for (star of [1, 2, 3, 4, 5]; track star) {
-                  <i class="bi" [class.bi-star-fill]="star <= averageRating()" [class.bi-star]="star > averageRating()"></i>
+            <button type="button" class="btn btn-link p-0 text-decoration-none d-flex align-items-center gap-2 mb-2" (click)="scrollToReviews()"
+              [attr.aria-label]="'Nota ' + (averageRating() | number:'1.1-1') + ' de 5, ' + reviews().length + (reviews().length === 1 ? ' avaliação' : ' avaliações') + ' — ver avaliações'">
+              <span class="text-warning" aria-hidden="true">
+                @for (kind of averageStars(); track $index) {
+                  <i class="bi" [class.bi-star-fill]="kind === 'full'" [class.bi-star-half]="kind === 'half'" [class.bi-star]="kind === 'empty'"></i>
                 }
               </span>
-              <span class="small text-secondary">{{ averageRating() | number:'1.1-1' }} ({{ reviews().length }} {{ reviews().length === 1 ? 'avaliação' : 'avaliações' }})</span>
-            </div>
+              <span class="small text-secondary text-decoration-underline">{{ averageRating() | number:'1.1-1' }} ({{ reviews().length }} {{ reviews().length === 1 ? 'avaliação' : 'avaliações' }})</span>
+            </button>
           }
           @if (p.isOnPromotion) {
             <div class="d-flex align-items-center gap-2 mb-4">
@@ -197,7 +205,7 @@
 
       <div class="row mt-5">
         <div class="col-lg-8">
-          <h4 class="mb-4">Avaliações dos clientes</h4>
+          <h2 id="avaliacoes" class="h4 mb-4 product-reviews-anchor">Avaliações dos clientes</h2>
 
           @if (eligibility(); as e) {
             @if (e.hasPurchased && !e.alreadyReviewed) {
@@ -219,7 +227,12 @@
                   }
                 </div>
 
-                <textarea class="form-control mb-3" rows="3" placeholder="Conte como foi sua experiência (opcional)"
+                <div class="d-flex justify-content-between align-items-baseline">
+                  <label for="review-comment" class="form-label small">Comentário (opcional)</label>
+                  <span class="small text-secondary">{{ reviewComment().length }}/{{ maxReviewCommentLength }}</span>
+                </div>
+                <textarea id="review-comment" class="form-control mb-3" rows="3" placeholder="Conte como foi sua experiência"
+                  [maxlength]="maxReviewCommentLength"
                   [ngModel]="reviewComment()" (ngModelChange)="reviewComment.set($event)"></textarea>
 
                 <div class="mb-3">
@@ -248,9 +261,11 @@
               </div>
             }
           } @else {
-            <p class="small text-secondary mb-4">
-              <a routerLink="/entrar">Entre na sua conta</a> para avaliar este produto, caso já tenha comprado.
-            </p>
+            @if (!auth.isAuthenticated()) {
+              <p class="small text-secondary mb-4">
+                <a routerLink="/entrar" [queryParams]="loginUrlParams()">Entre na sua conta</a> para avaliar este produto, caso já tenha comprado.
+              </p>
+            }
           }
 
           @if (reviews().length === 0) {
@@ -262,7 +277,7 @@
                   <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
                     <div>
                       <strong class="small d-block">{{ review.customerName }}</strong>
-                      <span class="text-warning small">
+                      <span class="text-warning small" role="img" [attr.aria-label]="review.rating + ' de 5 estrelas'">
                         @for (star of [1, 2, 3, 4, 5]; track star) {
                           <i class="bi" [class.bi-star-fill]="star <= review.rating" [class.bi-star]="star > review.rating"></i>
                         }
@@ -274,7 +289,9 @@
                     <p class="small text-secondary mt-2 mb-0">{{ review.comment }}</p>
                   }
                   @if (review.photoUrl) {
-                    <img [src]="review.photoUrl | assetUrl" alt="Foto do cliente" class="rounded-3 mt-2" style="width: 96px; height: 96px; object-fit: cover;">
+                    <a [href]="review.photoUrl | assetUrl" target="_blank" rel="noopener" class="d-inline-block mt-2" title="Ver foto em tamanho real">
+                      <img [src]="review.photoUrl | assetUrl" [alt]="'Foto enviada por ' + review.customerName" class="rounded-3" style="width: 96px; height: 96px; object-fit: cover;" loading="lazy">
+                    </a>
                   }
                 </li>
               }
@@ -288,7 +305,7 @@
   @if (relatedProducts().length > 0) {
     <section class="py-4">
       <div class="container">
-        <h5 class="mb-4">Você também pode gostar</h5>
+        <h2 class="h5 mb-4">Você também pode gostar</h2>
         <div class="row g-4">
           @for (related of relatedProducts(); track related.id) {
             <div class="col-6 col-md-3">
@@ -300,7 +317,14 @@
                   <h6 class="mb-1">
                     <a [routerLink]="['/produto', related.slug]" class="text-dark">{{ related.name }}</a>
                   </h6>
-                  <p class="fw-bold text-blush mb-3 mt-auto">{{ related.effectivePrice | currency:'BRL' }}</p>
+                  @if (related.isOnPromotion) {
+                    <p class="mb-3 mt-auto">
+                      <span class="text-decoration-line-through text-secondary small d-block">{{ related.price | currency:'BRL' }}</span>
+                      <span class="fw-bold text-blush">{{ related.effectivePrice | currency:'BRL' }}</span>
+                    </p>
+                  } @else {
+                    <p class="fw-bold text-blush mb-3 mt-auto">{{ related.price | currency:'BRL' }}</p>
+                  }
                   <a [routerLink]="['/produto', related.slug]" class="btn btn-sm btn-outline-primary rounded-pill">Ver produto</a>
                 </div>
               </div>

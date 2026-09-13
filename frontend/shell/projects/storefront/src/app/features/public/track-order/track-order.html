@@ -9,6 +9,13 @@
             <p class="small text-secondary mb-0">Informe o e-mail usado na compra e o número do pedido.</p>
           </div>
 
+          @if (auth.isAuthenticated()) {
+            <div class="alert alert-light border rounded-4 small d-flex justify-content-between align-items-center gap-2">
+              <span>Comprou com esta conta? Todas as suas encomendas estão lá.</span>
+              <a routerLink="/minha-conta" class="btn btn-sm btn-outline-secondary rounded-pill flex-shrink-0">Minhas encomendas</a>
+            </div>
+          }
+
           <form [formGroup]="form" (ngSubmit)="submit()">
             <div class="mb-3">
               <label for="track-order-number" class="form-label small fw-semibold">Número do pedido</label>
@@ -30,7 +37,7 @@
             </div>
 
             @if (errorMessage()) {
-              <div class="alert alert-danger small rounded-4">{{ errorMessage() }}</div>
+              <div class="alert alert-danger small rounded-4" role="alert">{{ errorMessage() }}</div>
             }
 
             <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill mt-3" [disabled]="submitting()">

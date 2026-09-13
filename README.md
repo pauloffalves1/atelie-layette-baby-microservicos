@@ -999,6 +999,20 @@ contra o Gateway via `docker run --network host`).
       remover/tornar padrão um endereço mostra erro quando falha e não aceita clique duplo, falha ao
       reenviar o e-mail de verificação aparece, e Enter confirma a senha na exclusão da conta. *Loja:*
       link "Pular para o conteúdo" (primeiro Tab da página) para quem navega pelo teclado.
+- [x] **Página de produto e rastreio** (2026-09-13) — **bug:** clicar num item de "Você também pode
+      gostar" trocava a URL mas a página continuava mostrando o produto anterior (o componente é
+      reaproveitado pelo router e lia o slug uma única vez) — agora recarrega a cada troca de produto e
+      zera bordado, cor, quantidade, fotos e avaliação digitados para o anterior. Falha de conexão ou do
+      servidor mostrava "Produto não encontrado" (só um 404 real mostra isso agora; o resto vira erro
+      com "Tentar de novo"). O coração de favoritos, antes invisível para quem não está logada, aparece
+      e leva ao login voltando para o produto — assim como o link "Entre na sua conta" das avaliações.
+      A nota média virou um atalho para as avaliações e mostra meia estrela (4,5 aparecia como 4
+      estrelas); a categoria no caminho "Loja › Categoria" leva à loja filtrada; "Você também pode
+      gostar" mostra o preço promocional riscado; o comentário da avaliação ganhou rótulo e contador
+      (limite de 1000 caracteres do banco); a foto de avaliação abre em tamanho real; e escolher de novo
+      a mesma foto depois de removê-la volta a funcionar. *Rastrear pedido:* queda de conexão ou limite
+      de tentativas não diz mais "Pedido não encontrado" para um número correto, e quem está logada
+      ganha um atalho para "Minhas encomendas".
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
       nos manifests; falta aplicar num cluster ativo e uma license key real. **Não avancei aqui** —
       exige um cluster de verdade e uma license key real da New Relic, que eu não tenho como

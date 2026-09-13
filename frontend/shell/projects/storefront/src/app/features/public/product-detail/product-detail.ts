@@ -1,7 +1,9 @@
 import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Product } from '@shared/core/models/product.model';
 import { ProductReview, ReviewEligibility } from '@shared/core/models/review.model';
 import { AuthService } from '@shared/core/services/auth.service';
@@ -13,9 +15,13 @@ import { SeoService } from '@shared/core/services/seo.service';
 import { WishlistService } from '@shared/core/services/wishlist.service';
 import { resolveAssetUrl } from '@shared/core/utils/asset-url';
 import { ImageLightbox } from '@shared/shared/components/image-lightbox/image-lightbox';
+import { LoadError } from '@shared/shared/components/load-error/load-error';
 import { AssetUrlPipe } from '@shared/shared/pipes/asset-url.pipe';
 
 const MAX_EMBROIDERY_LENGTH = 30;
+
+/** Matches ProductReview.Comment's column length in Catalog. */
+export const MAX_REVIEW_COMMENT_LENGTH = 1000;
 
 /** Shown when a product has no lead time of its own configured in admin. */
 const DEFAULT_PRODUCTION_LEAD_TIME_DAYS = 7;
@@ -62,7 +68,7 @@ export const THREAD_COLOR_SWATCHES: Record<string, string> = {
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CurrencyPipe, DatePipe, DecimalPipe, FormsModule, RouterLink, AssetUrlPipe, ImageLightbox],
+  imports: [CurrencyPipe, DatePipe, DecimalPipe, FormsModule, RouterLink, AssetUrlPipe, ImageLightbox, LoadError],
   templateUrl: './product-detail.html',
 })
 export class ProductDetail implements OnInit {
@@ -71,10 +77,13 @@ export class ProductDetail implements OnInit {
   readonly threadColorSwatches = THREAD_COLOR_SWATCHES;
   readonly maxEmbroideryLength = MAX_EMBROIDERY_LENGTH;
   readonly defaultLeadTimeDays = DEFAULT_PRODUCTION_LEAD_TIME_DAYS;
+  readonly maxReviewCommentLength = MAX_REVIEW_COMMENT_LENGTH;
 
   readonly product = signal<Product | null>(null);
   readonly loading = signal(true);
   readonly notFound = signal(false);
+  /** Network/server failure — distinct from a real 404, which used to be the only message shown. */
+  readonly loadError = signal(false);
   readonly quantity = signal(1);
   readonly embroideryText = signal('');
   readonly embroideryTouched = signal(false);
@@ -106,6 +115,18 @@ export class ProductDetail implements OnInit {
     return list.length ? list.reduce((sum, r) => sum + r.rating, 0) / list.length : 0;
   });
 
+  /** 'full' | 'half' | 'empty' per star — a 4,5 average used to render as four stars. */
+  readonly averageStars = computed(() => {
+    const rounded = Math.round(this.averageRating() * 2) / 2;
+    return [1, 2, 3, 4, 5].map((star) => (star <= rounded ? 'full' : star - 0.5 === rounded ? 'half' : 'empty'));
+  });
+
+  readonly favoriteError = signal<string | null>(null);
+  private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
+  /** Bumped per product load; responses for a product the visitor already left are dropped. */
+  private loadSeq = 0;
+
   private readonly seo = inject(SeoService);
   readonly auth = inject(AuthService);
   private readonly reviewService = inject(ReviewService);
@@ -122,9 +143,21 @@ export class ProductDetail implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    const slug = this.route.snapshot.paramMap.get('slug')!;
+    // The router reuses this component when going from one product to another ("Você também pode
+    // gostar"), so reading the slug once from the snapshot left the old product on screen under the
+    // new URL. Every slug change reloads — and resets whatever was typed for the previous product.
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      this.loadProduct(params.get('slug')!);
+    });
+  }
+
+  loadProduct(slug: string): void {
+    const seq = ++this.loadSeq;
+    const isCurrent = () => seq === this.loadSeq;
+    this.resetForProduct();
     this.productService.getBySlug(slug).subscribe({
       next: (product) => {
+        if (!isCurrent()) return;
         this.product.set(product);
         this.loading.set(false);
         this.activeImageIndex.set(0);
@@ -146,6 +179,7 @@ export class ProductDetail implements OnInit {
         });
 
         this.reviewService.listByProduct(product.id).subscribe((reviews) => {
+          if (!isCurrent()) return;
           this.reviews.set(reviews);
           if (reviews.length > 0) {
             this.seo.setProductStructuredData({
@@ -163,25 +197,64 @@ export class ProductDetail implements OnInit {
 
         if (this.auth.currentUser()) {
           this.reviewService.getEligibility(product.id).subscribe({
-            next: (eligibility) => this.eligibility.set(eligibility),
+            next: (eligibility) => isCurrent() && this.eligibility.set(eligibility),
             error: () => {},
           });
           this.wishlistService.getStatus(product.id).subscribe({
-            next: (status) => this.isFavorited.set(status.isFavorited),
+            next: (status) => isCurrent() && this.isFavorited.set(status.isFavorited),
             error: () => {},
           });
         }
 
         this.productService.list(product.category, 1, 5).subscribe({
-          next: (result) => this.relatedProducts.set(result.items.filter((p) => p.id !== product.id).slice(0, 4)),
+          next: (result) => isCurrent() && this.relatedProducts.set(result.items.filter((p) => p.id !== product.id).slice(0, 4)),
           error: () => {},
         });
       },
-      error: () => {
-        this.notFound.set(true);
+      error: (err) => {
+        if (!isCurrent()) return;
+        if (err instanceof HttpErrorResponse && err.status === 404) this.notFound.set(true);
+        else this.loadError.set(true);
         this.loading.set(false);
       },
     });
+  }
+
+  retryLoad(): void {
+    this.loadProduct(this.route.snapshot.paramMap.get('slug')!);
+  }
+
+  private resetForProduct(): void {
+    this.loading.set(true);
+    this.notFound.set(false);
+    this.loadError.set(false);
+    this.product.set(null);
+    this.quantity.set(1);
+    this.embroideryText.set('');
+    this.embroideryTouched.set(false);
+    this.threadColor.set('');
+    this.threadColorTouched.set(false);
+    this.addedFeedback.set(false);
+    this.activeImageIndex.set(0);
+    this.lightboxIndex.set(null);
+    this.relatedProducts.set([]);
+    this.reviews.set([]);
+    this.eligibility.set(null);
+    this.reviewRating.set(5);
+    this.reviewComment.set('');
+    this.reviewPhotoUrl.set(null);
+    this.reviewError.set(null);
+    this.isFavorited.set(false);
+    this.favoriteError.set(null);
+  }
+
+  /** The shopper's login state is known only here — send a visitor to log in and come back. */
+  loginUrlParams(): { returnUrl: string } {
+    return { returnUrl: this.router.url };
+  }
+
+  scrollToReviews(): void {
+    document.getElementById('avaliacoes')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   selectImage(index: number): void {
@@ -227,6 +300,12 @@ export class ProductDetail implements OnInit {
   toggleFavorite(): void {
     const product = this.product();
     if (!product || this.favoriteBusy()) return;
+    if (!this.auth.isAuthenticated()) {
+      // The heart used to be hidden for visitors — now it asks them to log in and brings them back.
+      this.router.navigate(['/entrar'], { queryParams: this.loginUrlParams() });
+      return;
+    }
+    this.favoriteError.set(null);
 
     this.favoriteBusy.set(true);
     const wasFavorited = this.isFavorited();
@@ -237,7 +316,10 @@ export class ProductDetail implements OnInit {
         this.isFavorited.set(!wasFavorited);
         this.favoriteBusy.set(false);
       },
-      error: () => this.favoriteBusy.set(false),
+      error: () => {
+        this.favoriteBusy.set(false);
+        this.favoriteError.set(wasFavorited ? 'Não foi possível remover dos favoritos.' : 'Não foi possível salvar nos favoritos.');
+      },
     });
   }
 
@@ -247,8 +329,11 @@ export class ProductDetail implements OnInit {
 
   onReviewPhotoSelected(event: Event): void {
     const product = this.product();
-    const file = (event.target as HTMLInputElement).files?.[0];
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = ''; // choosing the same photo again after "Remover foto" must fire change again
     if (!product || !file) return;
+    this.reviewError.set(null);
 
     this.uploadingReviewPhoto.set(true);
     this.reviewService.uploadPhoto(product.id, file).subscribe({

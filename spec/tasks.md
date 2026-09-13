@@ -296,3 +296,8 @@ substituição daquele relato.
     itens em cada encomenda, erros e bloqueio de clique duplo em endereços, erro ao reenviar
     verificação, Enter confirma a exclusão da conta.
   - [x] Link "Pular para o conteúdo" na loja.
+- Página de produto e rastreio (2026-09-13) — troca de produto pelo "Você também pode gostar" (bug),
+  erro de carregamento x 404, favoritos e avaliação para quem não está logada com retorno ao produto,
+  meia estrela e atalho para avaliações, categoria clicável, preço promocional nos relacionados,
+  contador do comentário, mensagens de erro reais no rastreio; sem regra de negócio nova, ver
+  README → Status.

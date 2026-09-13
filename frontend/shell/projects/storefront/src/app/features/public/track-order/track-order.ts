@@ -1,14 +1,16 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '@shared/core/services/auth.service';
 import { OrderService } from '@shared/core/services/order.service';
 import { SeoService } from '@shared/core/services/seo.service';
+import { httpErrorMessage } from '@shared/core/utils/http-error-message';
 
 @Component({
   selector: 'app-track-order',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './track-order.html',
 })
 export class TrackOrder {
@@ -16,7 +18,7 @@ export class TrackOrder {
   private readonly orderService = inject(OrderService);
   private readonly router = inject(Router);
   private readonly seo = inject(SeoService);
-  private readonly auth = inject(AuthService);
+  readonly auth = inject(AuthService);
 
   readonly submitting = signal(false);
   readonly errorMessage = signal<string | null>(null);
@@ -50,9 +52,14 @@ export class TrackOrder {
     // Customers often paste the number exactly as the e-mail shows it ("#722ee49d").
     this.orderService.lookup(orderNumber.trim().replace(/^#/, ''), email.trim()).subscribe({
       next: (order) => this.router.navigate(['/pedido', order.id]),
-      error: () => {
+      error: (err) => {
         this.submitting.set(false);
-        this.errorMessage.set('Pedido não encontrado. Confira o e-mail e o número do pedido.');
+        // Only a real "no match" says the order doesn't exist — a dropped connection or the rate
+        // limit used to tell the customer their (correct) order number was wrong.
+        const notFound = err instanceof HttpErrorResponse && (err.status === 404 || err.status === 400);
+        this.errorMessage.set(notFound
+          ? 'Pedido não encontrado. Confira o e-mail e o número do pedido.'
+          : httpErrorMessage(err, 'Não foi possível consultar o pedido agora. Tente de novo em instantes.'));
       },
     });
   }
