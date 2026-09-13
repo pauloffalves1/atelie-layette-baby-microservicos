@@ -1,10 +1,19 @@
 <div class="p-3 p-md-4 p-lg-5">
   <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-1">
     <h2 class="mb-1">Newsletter</h2>
-    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" [disabled]="exporting() || subscribers().length === 0" (click)="exportCsv()">
-      @if (exporting()) { <span class="spinner-border spinner-border-sm me-2"></span> }
-      <i class="bi bi-download me-1"></i>Exportar CSV
-    </button>
+    <div class="d-flex flex-wrap gap-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" [disabled]="filtered().length === 0" (click)="copyEmails()">
+        @if (copied()) {
+          <i class="bi bi-check-lg me-1"></i>Copiados!
+        } @else {
+          <i class="bi bi-clipboard me-1"></i>Copiar e-mails{{ search().trim() ? ' filtrados' : '' }}
+        }
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" [disabled]="exporting() || subscribers().length === 0" (click)="exportCsv()">
+        @if (exporting()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+        <i class="bi bi-download me-1"></i>Exportar CSV
+      </button>
+    </div>
   </div>
   <p class="text-secondary mb-4">E-mails inscritos pelo rodapé da loja — exporte o CSV para usar numa ferramenta de campanhas (Mailchimp, Resend Broadcast etc.).</p>
 
@@ -18,6 +27,17 @@
       Nenhum e-mail inscrito ainda.
     </div>
   } @else {
+    @if (exportError(); as error) {
+      <div class="alert alert-danger small rounded-4 d-flex justify-content-between align-items-start gap-2" role="alert">
+        <span>{{ error }}</span>
+        <button type="button" class="btn-close btn-sm" aria-label="Fechar aviso" (click)="exportError.set(null)"></button>
+      </div>
+    }
+    <div class="mb-3" style="max-width: 22rem;">
+      <label for="newsletter-search" class="visually-hidden">Buscar e-mail</label>
+      <input id="newsletter-search" type="search" class="form-control form-control-sm" placeholder="Buscar e-mail..."
+        [ngModel]="search()" (ngModelChange)="search.set($event)">
+    </div>
     <div class="stat-card p-0 overflow-hidden">
       <div class="table-responsive">
         <table class="table align-middle mb-0">
@@ -28,16 +48,25 @@
             </tr>
           </thead>
           <tbody>
-            @for (subscriber of subscribers(); track subscriber.id) {
+            @for (subscriber of filtered(); track subscriber.id) {
               <tr>
                 <td class="small">{{ subscriber.email }}</td>
                 <td class="small text-secondary text-nowrap">{{ subscriber.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
               </tr>
             }
+            @if (filtered().length === 0) {
+              <tr><td colspan="2" class="small text-secondary text-center py-4">Nenhum e-mail contém "{{ search().trim() }}".</td></tr>
+            }
           </tbody>
         </table>
       </div>
-      <p class="small text-secondary px-3 py-2 mb-0">{{ subscribers().length }} {{ subscribers().length === 1 ? 'inscrito' : 'inscritos' }}</p>
+      <p class="small text-secondary px-3 py-2 mb-0" aria-live="polite">
+        @if (search().trim()) {
+          {{ filtered().length }} de {{ subscribers().length }} inscritos
+        } @else {
+          {{ subscribers().length }} {{ subscribers().length === 1 ? 'inscrito' : 'inscritos' }}
+        }
+      </p>
     </div>
   }
 </div>

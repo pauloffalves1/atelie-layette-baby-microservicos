@@ -8,19 +8,22 @@ import { SiteImageService } from '@shared/core/services/site-image.service';
 import { resolveAssetUrl } from '@shared/core/utils/asset-url';
 import { Product } from '@shared/core/models/product.model';
 import { FeaturedReview } from '@shared/core/models/review.model';
+import { LoadError } from '@shared/shared/components/load-error/load-error';
 import { AssetUrlPipe } from '@shared/shared/pipes/asset-url.pipe';
 
 const AUTO_ADVANCE_MS = 6000;
+const SWIPE_THRESHOLD_PX = 50;
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink, CurrencyPipe, AssetUrlPipe],
+  imports: [RouterLink, CurrencyPipe, AssetUrlPipe, LoadError],
   templateUrl: './home.html',
 })
 export class Home implements OnInit, OnDestroy {
   readonly featured = signal<Product[]>([]);
   readonly loading = signal(true);
+  readonly featuredError = signal(false);
   // Empty until the site-images lookup resolves, so the template renders nothing rather than a
   // default image that then gets swapped for the real one (a visible "flash" on every load).
   // Admin can register one or several "home-hero" images — several render as a carousel.
@@ -37,6 +40,14 @@ export class Home implements OnInit, OnDestroy {
   readonly activeReviewIndex = signal(0);
   private autoAdvanceHandle: ReturnType<typeof setInterval> | null = null;
 
+  /** Auto-advance holds still while the visitor is hovering/focused on a carousel (reading a review,
+   * about to click a dot) and never starts for people who asked the OS for reduced motion. */
+  private heroPaused = false;
+  private reviewsPaused = false;
+  private readonly reducedMotion =
+    typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  private swipeStartX: number | null = null;
+
   constructor(
     private readonly productService: ProductService,
     private readonly siteImageService: SiteImageService,
@@ -51,13 +62,7 @@ export class Home implements OnInit, OnDestroy {
       path: '/',
     });
 
-    this.productService.listFeatured().subscribe({
-      next: (products) => {
-        this.featured.set(products);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
-    });
+    this.loadFeatured();
 
     this.siteImageService.list().subscribe({
       next: (images) => {
@@ -78,6 +83,42 @@ export class Home implements OnInit, OnDestroy {
       },
       error: () => this.featuredReviews.set([]),
     });
+  }
+
+  loadFeatured(): void {
+    this.loading.set(true);
+    this.featuredError.set(false);
+    this.productService.listFeatured().subscribe({
+      next: (products) => {
+        this.featured.set(products);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.loading.set(false);
+        this.featuredError.set(true);
+      },
+    });
+  }
+
+  setHeroPaused(paused: boolean): void {
+    this.heroPaused = paused;
+  }
+
+  setReviewsPaused(paused: boolean): void {
+    this.reviewsPaused = paused;
+  }
+
+  onHeroPointerDown(event: PointerEvent): void {
+    this.swipeStartX = event.clientX;
+  }
+
+  onHeroPointerUp(event: PointerEvent): void {
+    if (this.swipeStartX === null) return;
+    const deltaX = event.clientX - this.swipeStartX;
+    this.swipeStartX = null;
+    if (Math.abs(deltaX) < SWIPE_THRESHOLD_PX || this.heroImages().length < 2) return;
+    if (deltaX < 0) this.nextHeroImage();
+    else this.previousHeroImage();
   }
 
   ngOnDestroy(): void {
@@ -106,7 +147,10 @@ export class Home implements OnInit, OnDestroy {
   }
 
   private startHeroAutoAdvance(): void {
-    this.heroAutoAdvanceHandle = setInterval(() => this.advanceHero(1), AUTO_ADVANCE_MS);
+    if (this.reducedMotion) return;
+    this.heroAutoAdvanceHandle = setInterval(() => {
+      if (!this.heroPaused && !document.hidden) this.advanceHero(1);
+    }, AUTO_ADVANCE_MS);
   }
 
   private stopHeroAutoAdvance(): void {
@@ -140,7 +184,10 @@ export class Home implements OnInit, OnDestroy {
   }
 
   private startAutoAdvance(): void {
-    this.autoAdvanceHandle = setInterval(() => this.advance(1), AUTO_ADVANCE_MS);
+    if (this.reducedMotion) return;
+    this.autoAdvanceHandle = setInterval(() => {
+      if (!this.reviewsPaused && !document.hidden) this.advance(1);
+    }, AUTO_ADVANCE_MS);
   }
 
   private stopAutoAdvance(): void {

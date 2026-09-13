@@ -964,6 +964,26 @@ contra o Gateway via `docker run --network host`).
       administradora logada); Imagens do site mostrava as imagens padrão como se fossem as atuais
       enquanto carregava ou se falhasse; a Galeria ainda citava a página "/galeria" (renomeada) e
       agora aceita várias fotos de uma vez, com progresso e link "Ver na loja".
+- [x] **Loja, home, carrinho e moderação sem tropeços** (2026-09-13) — *Loja:* se a listagem ou a
+      busca inteligente falhasse, a página dizia "Nenhum produto encontrado nessa categoria" (agora
+      mostra o erro com "Tentar de novo"); cada clique numa categoria e cada busca digitada jogava a
+      página de volta para o topo (a navegação de filtro agora não rola); "Próxima página" leva ao
+      início da grade em vez do título da página; enquanto o próximo filtro/página carrega, os cards
+      atuais ficam esmaecidos em vez de virarem um spinner que fazia a página pular; e voltar de um
+      produto com o botão "voltar" do navegador devolve a cliente ao ponto da lista em que estava
+      (antes voltava ao topo). *Home:* **bug** — os destaques mostravam o preço cheio de um produto
+      em promoção (a loja e o carrinho cobravam o preço com desconto) — agora mostram preço riscado,
+      preço promocional e o selo de desconto; falha ao carregar os destaques mostra erro com nova
+      tentativa em vez de uma seção vazia; os carrosséis (fotos e avaliações) pausam com o mouse em
+      cima ou com foco do teclado, param com a aba em segundo plano, não giram sozinhos para quem
+      pediu "reduzir movimento" no sistema, e as fotos principais trocam deslizando o dedo. *Carrinho:*
+      no celular o total e "Finalizar compra" só apareciam depois de todos os itens e das sugestões de
+      kit — agora aparecem também no topo; foto e nome do item levam à página do produto; link
+      "Continuar comprando" e contagem de itens no título. *Admin:* aprovar/rejeitar avaliação não
+      recarrega mais a lista inteira com spinner a cada clique (o card sai/atualiza na hora, com
+      mensagem de confirmação), e falhas que antes eram silenciosas agora aparecem; a foto da avaliação
+      abre em tamanho real. Newsletter ganhou busca por e-mail, "Copiar e-mails" (um por linha, para
+      colar direto no campo de destinatários) e mensagem de erro quando a exportação do CSV falha.
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
       nos manifests; falta aplicar num cluster ativo e uma license key real. **Não avancei aqui** —
       exige um cluster de verdade e uma license key real da New Relic, que eu não tenho como

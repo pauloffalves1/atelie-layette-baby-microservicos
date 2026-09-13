@@ -43,8 +43,10 @@
       }
     </div>
 
-    <div class="d-flex justify-content-center align-items-center flex-wrap gap-2 small text-secondary mb-4" aria-live="polite" style="min-height: 1.75rem;">
-      @if (!loading()) {
+    <div id="shop-results" class="shop-results-anchor d-flex justify-content-center align-items-center flex-wrap gap-2 small text-secondary mb-4" aria-live="polite" style="min-height: 1.75rem;">
+      @if (loading() && products().length > 0) {
+        <span><span class="spinner-border spinner-border-sm text-primary me-2" aria-hidden="true"></span>Carregando produtos...</span>
+      } @else if (!loading() && !loadError()) {
         @if (activeSemanticQuery(); as query) {
           <span><i class="bi bi-stars me-1"></i>{{ totalItems() }} {{ totalItems() === 1 ? 'resultado' : 'resultados' }} da busca inteligente para "{{ query }}"</span>
           <button type="button" class="btn btn-sm btn-link p-0" (click)="clearFilters()">Ver todos os produtos</button>
@@ -55,9 +57,11 @@
       }
     </div>
 
-    @if (loading()) {
-      <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
-    } @else if (products().length === 0) {
+    @if (loadError()) {
+      <app-load-error [message]="activeSemanticQuery() ? 'Não foi possível fazer a busca inteligente agora.' : 'Não foi possível carregar os produtos.'" (retry)="retry()" />
+    } @else if (loading() && products().length === 0) {
+      <div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Carregando produtos...</span></div></div>
+    } @else if (!loading() && products().length === 0) {
       <div class="text-center py-5 text-secondary">
         <i class="bi bi-emoji-frown fs-1 d-block mb-3"></i>
         @if (activeSemanticQuery(); as query) {
@@ -72,7 +76,9 @@
         </div>
       </div>
     } @else {
-      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+      <!-- Previous results stay (dimmed) while the next filter/page loads, instead of collapsing into a
+           spinner and making the whole page below jump. -->
+      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4 shop-grid" [class.is-refreshing]="loading()" [attr.aria-busy]="loading()">
         @for (product of products(); track product.id) {
           <div class="col">
             <div class="card card-product card-product-compact h-100">

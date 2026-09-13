@@ -283,3 +283,8 @@ substituição daquele relato.
   1400px, rodapé e botão do WhatsApp, alinhamento do hero, `ImageLightbox` no produto e na galeria,
   permissões de novo administrador, confirmações de remoção e envio múltiplo na galeria; sem regra
   de negócio nova, ver README → Status.
+- Loja, home, carrinho e moderação sem tropeços (2026-09-13) — erro de carregamento na loja e nos
+  destaques, filtros sem rolar para o topo, voltar do produto restaura a posição na lista, preço
+  promocional nos destaques da home, carrosséis que pausam/respeitam "reduzir movimento"/deslizam,
+  total e "Finalizar compra" no topo do carrinho no celular, moderação de avaliações sem recarregar
+  a lista, busca e cópia de e-mails na newsletter; sem regra de negócio nova, ver README → Status.

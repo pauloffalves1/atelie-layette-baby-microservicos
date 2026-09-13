@@ -400,6 +400,26 @@ img.rounded-4 {
   transform: scale(1.3);
 }
 
+// Swipe between hero photos on touch screens without blocking vertical page scrolling.
+.hero-carousel {
+  touch-action: pan-y;
+}
+
+// Shop grid: the previous results stay on screen, dimmed, while a filter/page change loads.
+.shop-grid {
+  transition: opacity .2s ease;
+}
+
+.shop-grid.is-refreshing {
+  opacity: .45;
+  pointer-events: none;
+}
+
+// "Próxima página" scrolls to the results — keep them clear of the sticky navbar.
+.shop-results-anchor {
+  scroll-margin-top: 8rem;
+}
+
 .admin-login-bg {
   background: linear-gradient(135deg, var(--atelie-blush) 0%, var(--atelie-cream) 50%, var(--atelie-gold-light) 100%);
 }

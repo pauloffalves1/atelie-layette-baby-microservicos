@@ -1,24 +1,28 @@
 import { CurrencyPipe } from '@angular/common';
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, Injector, OnInit, afterNextRender, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, NavigationStart, Router, RouterLink } from '@angular/router';
+import { filter } from 'rxjs';
 import { Product } from '@shared/core/models/product.model';
 import { ProductService } from '@shared/core/services/product.service';
 import { SeoService } from '@shared/core/services/seo.service';
+import { LoadError } from '@shared/shared/components/load-error/load-error';
 import { Pagination } from '@shared/shared/components/pagination/pagination';
 import { AssetUrlPipe } from '@shared/shared/pipes/asset-url.pipe';
 
 const SEARCH_DEBOUNCE_MS = 400;
+const SCROLL_KEY_PREFIX = 'atelie-bebe.shop-scroll:';
 
 @Component({
   selector: 'app-shop',
   standalone: true,
-  imports: [RouterLink, CurrencyPipe, Pagination, AssetUrlPipe, FormsModule],
+  imports: [RouterLink, CurrencyPipe, Pagination, AssetUrlPipe, FormsModule, LoadError],
   templateUrl: './shop.html',
 })
 export class Shop implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
 
   readonly products = signal<Product[]>([]);
   readonly categories = signal<string[]>([]);
@@ -28,6 +32,9 @@ export class Shop implements OnInit {
   readonly totalPages = signal(0);
   readonly totalItems = signal(0);
   readonly loading = signal(true);
+  /** The listing (or smart search) request failed — shown as an error with a retry instead of the
+   * "Nenhum produto encontrado" empty state, which read as "the shop has nothing". */
+  readonly loadError = signal(false);
   readonly smartSearchEnabled = signal(false);
 
   /** The query whose smart-search results are on screen — goToPage() re-runs it instead of the
@@ -41,6 +48,12 @@ export class Shop implements OnInit {
    * its results (or vice versa). */
   private requestSeq = 0;
 
+  /** Arrived here with the browser's back/forward button (typically back from a product page) —
+   * the first listing that loads puts the visitor back where they were in it, instead of at the
+   * top of page 1's hero. Router's own restoration can't: it runs before the products arrive.
+   * Read here, while the component is being created: by ngOnInit the navigation has already ended. */
+  private restoreScrollPending = inject(Router).currentNavigation()?.trigger === 'popstate';
+
   constructor(
     private readonly productService: ProductService,
     private readonly route: ActivatedRoute,
@@ -49,6 +62,17 @@ export class Shop implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // NavigationStart still has the listing's URL in router.url — remember how far down it was.
+    this.router.events
+      .pipe(filter((event) => event instanceof NavigationStart), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        try {
+          sessionStorage.setItem(SCROLL_KEY_PREFIX + this.router.url, String(Math.round(window.scrollY)));
+        } catch {
+          // Storage blocked (private mode etc.) — back just lands at the top, as before.
+        }
+      });
+
     this.seo.update({
       title: 'Loja',
       description: 'Fraldas de ombro e boca prontas para comprar, com opção de bordado personalizado — Kit Ombro e Boca, Fralda de Ombro e Fralda de Boca.',
@@ -110,12 +134,21 @@ export class Shop implements OnInit {
   clearFilters(): void {
     this.cancelPendingSearch();
     this.searchTerm.set('');
-    this.router.navigate([], { queryParams: {} });
+    this.router.navigate([], { queryParams: {}, scroll: 'manual' });
     // Same URL (already unfiltered) wouldn't re-emit queryParamMap — reload explicitly.
     if (!this.activeCategory() && !this.route.snapshot.queryParamMap.get('busca')) this.load(null, 1, '');
   }
 
+  retry(): void {
+    const semanticQuery = this.activeSemanticQuery();
+    if (semanticQuery) this.runSemanticSearch(semanticQuery, this.page());
+    else this.load(this.activeCategory(), this.page(), this.searchTerm().trim());
+  }
+
   goToPage(page: number): void {
+    // The current cards stay on screen (dimmed) while the next page loads, so this lands on the top
+    // of the grid rather than all the way up at the page title.
+    document.getElementById('shop-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     const semanticQuery = this.activeSemanticQuery();
     if (semanticQuery) {
       this.runSemanticSearch(semanticQuery, page);
@@ -130,7 +163,9 @@ export class Shop implements OnInit {
     if (category) queryParams['categoria'] = category;
     if (params.busca) queryParams['busca'] = params.busca;
     if (params.pagina) queryParams['pagina'] = params.pagina;
-    this.router.navigate([], { queryParams });
+    // 'manual': filtering or typing a search must not yank the page back to the top on every
+    // keystroke/chip click (the router's scroll-to-top is meant for moving between pages).
+    this.router.navigate([], { queryParams, scroll: 'manual' });
   }
 
   private cancelPendingSearch(): void {
@@ -141,6 +176,7 @@ export class Shop implements OnInit {
   private load(category: string | null, page: number, search: string): void {
     const seq = ++this.requestSeq;
     this.loading.set(true);
+    this.loadError.set(false);
     this.productService.list(category ?? undefined, page, 12, search || undefined).subscribe({
       next: (result) => {
         if (seq !== this.requestSeq) return;
@@ -148,10 +184,9 @@ export class Shop implements OnInit {
         this.totalPages.set(result.totalPages);
         this.totalItems.set(result.totalItems);
         this.loading.set(false);
+        this.restoreScrollIfReturning();
       },
-      error: () => {
-        if (seq === this.requestSeq) this.loading.set(false);
-      },
+      error: () => this.fail(seq),
     });
   }
 
@@ -159,6 +194,7 @@ export class Shop implements OnInit {
     const seq = ++this.requestSeq;
     this.activeSemanticQuery.set(query);
     this.loading.set(true);
+    this.loadError.set(false);
     this.productService.semanticSearch(query, page, 12).subscribe({
       next: (result) => {
         if (seq !== this.requestSeq) return;
@@ -168,9 +204,25 @@ export class Shop implements OnInit {
         this.page.set(page);
         this.loading.set(false);
       },
-      error: () => {
-        if (seq === this.requestSeq) this.loading.set(false);
-      },
+      error: () => this.fail(seq),
     });
+  }
+
+  private fail(seq: number): void {
+    if (seq !== this.requestSeq) return;
+    this.loading.set(false);
+    this.loadError.set(true);
+  }
+
+  private restoreScrollIfReturning(): void {
+    if (!this.restoreScrollPending) return;
+    this.restoreScrollPending = false;
+    let top = 0;
+    try {
+      top = Number(sessionStorage.getItem(SCROLL_KEY_PREFIX + this.router.url)) || 0;
+    } catch {
+      return;
+    }
+    if (top > 0) afterNextRender(() => window.scrollTo({ top }), { injector: this.injector });
   }
 }

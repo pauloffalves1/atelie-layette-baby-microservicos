@@ -18,12 +18,21 @@
         </div>
       </div>
       <div class="col-lg-6">
-        <div class="hero-carousel position-relative rounded-5 overflow-hidden shadow-lg ms-auto" style="max-width: 680px;">
+        <div class="hero-carousel position-relative rounded-5 overflow-hidden shadow-lg ms-auto" style="max-width: 680px;"
+          [attr.role]="heroImages().length > 1 ? 'region' : null"
+          [attr.aria-roledescription]="heroImages().length > 1 ? 'carrossel' : null"
+          [attr.aria-label]="heroImages().length > 1 ? 'Fotos do ateliê' : null"
+          (mouseenter)="setHeroPaused(true)" (mouseleave)="setHeroPaused(false)"
+          (focusin)="setHeroPaused(true)" (focusout)="setHeroPaused(false)"
+          (pointerdown)="onHeroPointerDown($event)" (pointerup)="onHeroPointerUp($event)">
           <div class="ratio ratio-1x1">
             @for (url of heroImages(); track url; let i = $index) {
-              <img [src]="url" alt="Fraldas de ombro e boca bordadas com monograma"
+              <img [src]="url"
+                [alt]="heroImages().length > 1 ? 'Fraldas de ombro e boca bordadas com monograma — foto ' + (i + 1) + ' de ' + heroImages().length : 'Fraldas de ombro e boca bordadas com monograma'"
                 class="w-100 h-100 object-fit-cover hero-carousel-slide"
-                [class.active]="i === activeHeroIndex()">
+                [class.active]="i === activeHeroIndex()"
+                [attr.aria-hidden]="i === activeHeroIndex() ? null : 'true'"
+                draggable="false">
             }
           </div>
 
@@ -37,6 +46,7 @@
             <div class="hero-carousel-indicators">
               @for (url of heroImages(); track url; let i = $index) {
                 <button type="button" class="hero-carousel-dot" [class.active]="i === activeHeroIndex()"
+                  [attr.aria-current]="i === activeHeroIndex() ? 'true' : null"
                   [attr.aria-label]="'Ir para foto ' + (i + 1)" (click)="goToHeroImage(i)"></button>
               }
             </div>
@@ -86,7 +96,9 @@
     </div>
 
     @if (loading()) {
-      <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+      <div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Carregando destaques...</span></div></div>
+    } @else if (featuredError()) {
+      <app-load-error message="Não foi possível carregar os destaques do ateliê." (retry)="loadFeatured()" />
     } @else {
       <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5 g-4">
         @for (product of featured(); track product.id) {
@@ -101,11 +113,23 @@
                   @if (product.isExclusive) {
                     <span class="badge-soft align-self-start small"><i class="bi bi-stars me-1"></i>Exclusivo pra você</span>
                   }
+                  @if (product.isOnPromotion) {
+                    <span class="badge bg-success align-self-start small">-{{ product.discountPercentage }}%</span>
+                  }
                 </div>
                 <h6 class="mb-1">
                   <a [routerLink]="['/produto', product.slug]" class="text-dark stretched-link-none">{{ product.name }}</a>
                 </h6>
-                <p class="fw-bold text-blush mb-3 mt-auto">{{ product.price | currency:'BRL' }}</p>
+                <!-- Same price display as the shop: the home used to show the full price for a product
+                     that the shop (and the cart) sold at a discount. -->
+                @if (product.isOnPromotion) {
+                  <p class="mb-3 mt-auto">
+                    <span class="text-decoration-line-through text-secondary small d-block">{{ product.price | currency:'BRL' }}</span>
+                    <span class="fw-bold text-blush">{{ product.effectivePrice | currency:'BRL' }}</span>
+                  </p>
+                } @else {
+                  <p class="fw-bold text-blush mb-3 mt-auto">{{ product.price | currency:'BRL' }}</p>
+                }
                 <a [routerLink]="['/produto', product.slug]" class="btn btn-sm btn-primary rounded-pill">
                   <i class="bi bi-scissors me-1"></i>Personalizar
                 </a>
@@ -122,10 +146,13 @@
   <section class="py-5">
     <div class="container">
       <h2 class="section-title text-center mb-5">O que nossas clientes dizem</h2>
-      <div class="reviews-carousel carousel carousel-dark slide mx-auto" style="max-width: 640px;">
+      <div class="reviews-carousel carousel carousel-dark slide mx-auto" style="max-width: 640px;"
+        role="region" aria-roledescription="carrossel" aria-label="Avaliações de clientes"
+        (mouseenter)="setReviewsPaused(true)" (mouseleave)="setReviewsPaused(false)"
+        (focusin)="setReviewsPaused(true)" (focusout)="setReviewsPaused(false)">
         <div class="carousel-inner">
           @for (review of featuredReviews(); track review.id; let i = $index) {
-            <div class="carousel-item" [class.active]="i === activeReviewIndex()">
+            <div class="carousel-item" [class.active]="i === activeReviewIndex()" [attr.aria-hidden]="i === activeReviewIndex() ? null : 'true'">
               <div class="stat-card hover-lift text-center mx-2">
                 <span class="text-warning d-block mb-2">
                   @for (star of [1, 2, 3, 4, 5]; track star) {

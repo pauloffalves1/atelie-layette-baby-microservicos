@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, OnInit, signal } from '@angular/core';
 import { AdminProductReview } from '@shared/core/models/review.model';
 import { ReviewService } from '@shared/core/services/review.service';
+import { httpErrorMessage } from '@shared/core/utils/http-error-message';
 import { Pagination } from '@shared/shared/components/pagination/pagination';
 import { AssetUrlPipe } from '@shared/shared/pipes/asset-url.pipe';
 import { LoadError } from '@shared/shared/components/load-error/load-error';
@@ -22,6 +23,8 @@ export class AdminReviewList implements OnInit {
   readonly totalPages = signal(0);
   readonly filter = signal<ApprovalFilter>('pending');
   readonly busyId = signal<string | null>(null);
+  readonly actionError = signal<string | null>(null);
+  readonly actionMessage = signal<string | null>(null);
 
   constructor(private readonly reviewService: ReviewService) {}
 
@@ -31,6 +34,7 @@ export class AdminReviewList implements OnInit {
 
   setFilter(filter: ApprovalFilter): void {
     if (this.filter() === filter) return;
+    this.clearFeedback();
     this.filter.set(filter);
     this.page.set(1);
     this.load();
@@ -44,12 +48,20 @@ export class AdminReviewList implements OnInit {
   approve(review: AdminProductReview): void {
     if (this.busyId()) return;
     this.busyId.set(review.id);
+    this.clearFeedback();
     this.reviewService.approve(review.id).subscribe({
       next: () => {
         this.busyId.set(null);
-        this.load();
+        // Updated in place instead of reloading the page: the reload flashed a spinner over the whole
+        // list after every click, which is slow going through a queue of pending reviews.
+        if (this.filter() === 'pending') this.removeLocally(review.id);
+        else this.reviews.update((list) => list.map((r) => (r.id === review.id ? { ...r, approved: true } : r)));
+        this.actionMessage.set(`Avaliação de ${review.customerName} aprovada — já aparece na página do produto.`);
       },
-      error: () => this.busyId.set(null),
+      error: (err) => {
+        this.busyId.set(null);
+        this.actionError.set(httpErrorMessage(err, `Não foi possível aprovar a avaliação de ${review.customerName}.`));
+      },
     });
   }
 
@@ -59,13 +71,36 @@ export class AdminReviewList implements OnInit {
     if (!confirmed) return;
 
     this.busyId.set(review.id);
+    this.clearFeedback();
     this.reviewService.reject(review.id).subscribe({
       next: () => {
         this.busyId.set(null);
-        this.load();
+        this.removeLocally(review.id);
+        this.actionMessage.set(`Avaliação de ${review.customerName} removida.`);
       },
-      error: () => this.busyId.set(null),
+      error: (err) => {
+        this.busyId.set(null);
+        this.actionError.set(httpErrorMessage(err, `Não foi possível remover a avaliação de ${review.customerName}.`));
+      },
     });
+  }
+
+  dismissFeedback(): void {
+    this.clearFeedback();
+  }
+
+  private clearFeedback(): void {
+    this.actionError.set(null);
+    this.actionMessage.set(null);
+  }
+
+  /** Last card of a page gone — fetch again so the next page's reviews slide in (or step back a page). */
+  private removeLocally(id: string): void {
+    this.reviews.update((list) => list.filter((r) => r.id !== id));
+    if (this.reviews().length === 0) {
+      if (this.page() > 1) this.page.update((p) => p - 1);
+      this.load();
+    }
   }
 
   load(): void {

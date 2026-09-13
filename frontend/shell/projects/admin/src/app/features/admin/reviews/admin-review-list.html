@@ -2,11 +2,24 @@
   <h2 class="mb-1">Avaliações</h2>
   <p class="text-secondary mb-4">Aprove ou rejeite avaliações antes que apareçam na loja.</p>
 
-  <div class="btn-group mb-4" role="group">
-    <button type="button" class="btn btn-sm" [class.btn-primary]="filter() === 'pending'" [class.btn-outline-primary]="filter() !== 'pending'" (click)="setFilter('pending')">Pendentes</button>
-    <button type="button" class="btn btn-sm" [class.btn-primary]="filter() === 'approved'" [class.btn-outline-primary]="filter() !== 'approved'" (click)="setFilter('approved')">Aprovadas</button>
-    <button type="button" class="btn btn-sm" [class.btn-primary]="filter() === 'all'" [class.btn-outline-primary]="filter() !== 'all'" (click)="setFilter('all')">Todas</button>
+  <div class="btn-group mb-4" role="group" aria-label="Filtrar avaliações">
+    <button type="button" class="btn btn-sm" [class.btn-primary]="filter() === 'pending'" [class.btn-outline-primary]="filter() !== 'pending'" [attr.aria-pressed]="filter() === 'pending'" (click)="setFilter('pending')">Pendentes</button>
+    <button type="button" class="btn btn-sm" [class.btn-primary]="filter() === 'approved'" [class.btn-outline-primary]="filter() !== 'approved'" [attr.aria-pressed]="filter() === 'approved'" (click)="setFilter('approved')">Aprovadas</button>
+    <button type="button" class="btn btn-sm" [class.btn-primary]="filter() === 'all'" [class.btn-outline-primary]="filter() !== 'all'" [attr.aria-pressed]="filter() === 'all'" (click)="setFilter('all')">Todas</button>
   </div>
+
+  @if (actionError(); as error) {
+    <div class="alert alert-danger small rounded-4 d-flex justify-content-between align-items-start gap-2" role="alert">
+      <span>{{ error }}</span>
+      <button type="button" class="btn-close btn-sm" aria-label="Fechar aviso" (click)="dismissFeedback()"></button>
+    </div>
+  }
+  @if (actionMessage(); as message) {
+    <div class="alert alert-success small rounded-4 d-flex justify-content-between align-items-start gap-2" role="status">
+      <span><i class="bi bi-check-circle me-1"></i>{{ message }}</span>
+      <button type="button" class="btn-close btn-sm" aria-label="Fechar aviso" (click)="dismissFeedback()"></button>
+    </div>
+  }
 
   @if (loading()) {
     <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
@@ -40,7 +53,7 @@
                     <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ review.moderationFlag }}
                   </span>
                 }
-                <span class="text-warning">
+                <span class="text-warning" role="img" [attr.aria-label]="review.rating + ' de 5 estrelas'">
                   @for (star of [1, 2, 3, 4, 5]; track star) {
                     <i class="bi" [class.bi-star-fill]="star <= review.rating" [class.bi-star]="star > review.rating"></i>
                   }
@@ -52,7 +65,9 @@
               <p class="mb-2 small">{{ review.comment }}</p>
             }
             @if (review.photoUrl) {
-              <img [src]="review.photoUrl | assetUrl" alt="Foto da avaliação" class="rounded-3 mb-2" style="width: 96px; height: 96px; object-fit: cover;">
+              <a [href]="review.photoUrl | assetUrl" target="_blank" rel="noopener" class="d-inline-block mb-2" title="Abrir a foto em tamanho real">
+                <img [src]="review.photoUrl | assetUrl" [alt]="'Foto enviada por ' + review.customerName" class="rounded-3" style="width: 96px; height: 96px; object-fit: cover;">
+              </a>
             }
 
             <div class="d-flex gap-2 mt-2">

@@ -1,6 +1,11 @@
 <section class="py-5">
   <div class="container">
-    <h1 class="section-title fs-1 mb-5">Seu carrinho</h1>
+    <h1 class="section-title fs-1 mb-5">
+      Seu carrinho
+      @if (cart.totalItems() > 0) {
+        <span class="fs-5 text-secondary fw-normal ms-2">({{ cart.totalItems() }} {{ cart.totalItems() === 1 ? 'item' : 'itens' }})</span>
+      }
+    </h1>
 
     @if (cart.items().length === 0) {
       <div class="text-center py-5 text-secondary">
@@ -17,15 +22,29 @@
     } @else {
       <div class="row g-4 g-lg-5">
         <div class="col-lg-8">
+          <!-- Phones: the summary column only comes after every item (and the kit suggestions), so the
+               total and the way forward sit up here too. -->
+          <div class="stat-card d-lg-none d-flex justify-content-between align-items-center gap-3 mb-3 py-3">
+            <div>
+              <span class="small text-secondary d-block">Subtotal</span>
+              <span class="fw-bold fs-5 text-blush">{{ cart.totalPrice() | currency:'BRL' }}</span>
+            </div>
+            <a routerLink="/checkout" class="btn btn-primary rounded-pill">
+              Finalizar compra <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+          </div>
+
           <div class="list-group list-group-flush">
             @for (item of cart.items(); track item.product.id + '|' + (item.embroideryText ?? '') + '|' + (item.threadColor ?? '')) {
               <div class="list-group-item py-3 px-0 border-bottom">
                 <div class="row align-items-center g-3">
                   <div class="col-3 col-md-2">
-                    <img [src]="item.product.imageUrl | assetUrl" [alt]="item.product.name" class="img-fluid rounded-4" loading="lazy">
+                    <a [routerLink]="['/produto', item.product.slug]" tabindex="-1" aria-hidden="true">
+                      <img [src]="item.product.imageUrl | assetUrl" alt="" class="img-fluid rounded-4" loading="lazy">
+                    </a>
                   </div>
                   <div class="col-9 col-md-4">
-                    <h6 class="mb-1">{{ item.product.name }}</h6>
+                    <h6 class="mb-1"><a [routerLink]="['/produto', item.product.slug]" class="text-dark">{{ item.product.name }}</a></h6>
                     @if (item.product.isOnPromotion) {
                       <span class="small text-decoration-line-through text-secondary">{{ item.product.price | currency:'BRL' }}</span>
                       <span class="small text-success ms-1">{{ item.product.effectivePrice | currency:'BRL' }}</span>
@@ -68,6 +87,10 @@
               </div>
             }
           </div>
+
+          <a routerLink="/loja" class="btn btn-sm btn-link text-secondary px-0 mt-3">
+            <i class="bi bi-arrow-left me-1"></i>Continuar comprando
+          </a>
 
           @if (cart.lastRemoved(); as removed) {
             <div class="alert alert-light border rounded-4 small py-2 mt-3 d-flex justify-content-between align-items-center gap-2" role="status">
