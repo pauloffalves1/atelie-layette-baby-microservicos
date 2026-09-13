@@ -45,11 +45,14 @@
             <a routerLink="/entrar" class="btn btn-lg btn-primary rounded-pill">Entrar</a>
           }
 
-          <button type="button" class="btn btn-lg btn-primary rounded-pill position-relative" (click)="checkoutModal.open('cart')">
-            <i class="bi bi-bag-heart"></i>
-            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-sage">
-              {{ cart.totalItems() }}
-            </span>
+          <button type="button" class="btn btn-lg btn-primary rounded-pill position-relative" (click)="checkoutModal.open('cart')"
+            [attr.aria-label]="cart.totalItems() === 0 ? 'Carrinho vazio' : 'Carrinho, ' + cart.totalItems() + (cart.totalItems() === 1 ? ' item' : ' itens')">
+            <i class="bi bi-bag-heart" aria-hidden="true"></i>
+            @if (cart.totalItems() > 0) {
+              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-sage" aria-hidden="true">
+                {{ cart.totalItems() }}
+              </span>
+            }
           </button>
         </div>
       </div>
@@ -97,21 +100,29 @@
             <p class="small text-secondary mb-0"><i class="bi bi-check-circle me-1"></i>Inscrição confirmada!</p>
           } @else {
             <p class="small text-secondary">Receba avisos de novidades e promoções.</p>
-            <div class="input-group input-group-sm">
+            <form class="input-group input-group-sm" (submit)="$event.preventDefault(); subscribeNewsletter()" novalidate>
               <input
                 type="email"
                 class="form-control"
                 placeholder="Seu e-mail"
+                aria-label="Seu e-mail para receber novidades"
+                autocomplete="email"
+                [class.is-invalid]="newsletterError()"
+                [attr.aria-describedby]="newsletterError() ? 'newsletter-error' : null"
                 [ngModel]="newsletterEmail()"
-                (ngModelChange)="newsletterEmail.set($event)">
-              <button type="button" class="btn btn-primary" [disabled]="newsletterSubmitting()" (click)="subscribeNewsletter()">
+                [ngModelOptions]="{ standalone: true }"
+                (ngModelChange)="newsletterEmail.set($event); newsletterError.set(null)">
+              <button type="submit" class="btn btn-primary" [disabled]="newsletterSubmitting()" aria-label="Inscrever na newsletter">
                 @if (newsletterSubmitting()) {
                   <span class="spinner-border spinner-border-sm"></span>
                 } @else {
-                  <i class="bi bi-send"></i>
+                  <i class="bi bi-send" aria-hidden="true"></i>
                 }
               </button>
-            </div>
+            </form>
+            @if (newsletterError()) {
+              <p id="newsletter-error" class="small text-danger mt-1 mb-0" role="alert">{{ newsletterError() }}</p>
+            }
           }
         </div>
       </div>

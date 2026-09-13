@@ -15,6 +15,8 @@ import qrcode from 'qrcode-generator';
 export class PixQrCode {
   readonly text = input.required<string>();
   readonly size = input<number>(200);
+  /** Also used for the admin 2FA setup QR (an otpauth:// URI), not only PIX codes. */
+  readonly alt = input<string>('QR Code PIX');
 
   readonly dataUrl = computed(() => {
     const value = this.text();

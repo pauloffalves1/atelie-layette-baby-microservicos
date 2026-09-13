@@ -2,6 +2,8 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '@shared/core/services/auth.service';
+import { httpErrorMessage } from '@shared/core/utils/http-error-message';
+import { PasswordToggleDirective } from '@shared/shared/directives/password-toggle.directive';
 
 function passwordsMatch(group: AbstractControl): ValidationErrors | null {
   const password = group.get('password')?.value;
@@ -12,7 +14,7 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
 @Component({
   selector: 'app-reset-password-page',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, PasswordToggleDirective],
   templateUrl: './reset-password-page.html',
 })
 export class ResetPasswordPage implements OnInit {
@@ -62,7 +64,7 @@ export class ResetPasswordPage implements OnInit {
       },
       error: (err) => {
         this.submitting.set(false);
-        this.errorMessage.set(err?.error?.detail ?? 'Link inválido ou expirado. Solicite uma nova redefinição de senha.');
+        this.errorMessage.set(httpErrorMessage(err, 'Link inválido ou expirado. Solicite uma nova redefinição de senha.'));
       },
     });
   }

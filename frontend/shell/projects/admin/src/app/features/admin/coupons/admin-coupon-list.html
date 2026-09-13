@@ -1,4 +1,4 @@
-<div class="p-4 p-lg-5">
+<div class="p-3 p-md-4 p-lg-5">
   <h2 class="mb-1">Cupons de desconto</h2>
   <p class="text-secondary mb-4">Códigos que o cliente digita no checkout, além das promoções automáticas por produto.</p>
 
@@ -6,29 +6,56 @@
     <h6 class="mb-3">Novo cupom</h6>
 
     @if (createError()) {
-      <div class="alert alert-danger small rounded-4">{{ createError() }}</div>
+      <div class="alert alert-danger small rounded-4" role="alert">{{ createError() }}</div>
+    }
+    @if (created(); as code) {
+      <div class="alert alert-success small rounded-4 d-flex justify-content-between align-items-center gap-2" role="status">
+        <span><i class="bi bi-check-circle me-1"></i>Cupom <strong>{{ code }}</strong> criado.</span>
+        <button type="button" class="btn btn-sm btn-link p-0" (click)="copyCode(code)">{{ copiedCode() === code ? 'Copiado!' : 'Copiar código' }}</button>
+      </div>
     }
 
-    <form [formGroup]="form" (ngSubmit)="create()" class="row g-3 align-items-end">
-      <div class="col-md-3">
-        <label class="form-label small fw-semibold">Código</label>
-        <input type="text" class="form-control text-uppercase" formControlName="code" placeholder="Ex: BEMVINDA10"
+    <form [formGroup]="form" (ngSubmit)="create()" class="row g-3 align-items-start" novalidate>
+      <div class="col-sm-6 col-lg-3">
+        <label for="coupon-code" class="form-label small fw-semibold">Código</label>
+        <input type="text" id="coupon-code" class="form-control text-uppercase" formControlName="code" placeholder="Ex: BEMVINDA10" autocomplete="off"
           [class.is-invalid]="form.controls.code.invalid && form.controls.code.touched">
+        @if (form.controls.code.hasError('required') && form.controls.code.touched) {
+          <div class="invalid-feedback">Informe o código.</div>
+        } @else if (form.controls.code.hasError('pattern') && form.controls.code.touched) {
+          <div class="invalid-feedback">Use só letras e números, sem espaços ou símbolos.</div>
+        }
       </div>
-      <div class="col-md-2">
-        <label class="form-label small fw-semibold">Desconto (%)</label>
-        <input type="number" min="1" max="99" class="form-control" formControlName="discountPercentage"
+      <div class="col-sm-6 col-lg-2">
+        <label for="coupon-discount" class="form-label small fw-semibold">Desconto (%)</label>
+        <input type="number" id="coupon-discount" min="1" max="99" class="form-control" formControlName="discountPercentage" inputmode="numeric"
           [class.is-invalid]="form.controls.discountPercentage.invalid && form.controls.discountPercentage.touched">
+        @if (form.controls.discountPercentage.invalid && form.controls.discountPercentage.touched) {
+          <div class="invalid-feedback">Entre 1 e 99%.</div>
+        }
       </div>
-      <div class="col-md-3">
-        <label class="form-label small fw-semibold">Expira em (opcional)</label>
-        <input type="datetime-local" class="form-control" formControlName="expiresAt">
+      <div class="col-sm-6 col-lg-3">
+        <label for="coupon-expires" class="form-label small fw-semibold">Validade</label>
+        <input type="datetime-local" id="coupon-expires" class="form-control" formControlName="expiresAt"
+          [class.is-invalid]="form.controls.expiresAt.invalid && form.controls.expiresAt.touched">
+        @if (form.controls.expiresAt.invalid && form.controls.expiresAt.touched) {
+          <div class="invalid-feedback">Escolha uma data futura.</div>
+        } @else {
+          <span class="form-text">Opcional · em branco = sem validade</span>
+        }
       </div>
-      <div class="col-md-2">
-        <label class="form-label small fw-semibold">Limite de usos (opcional)</label>
-        <input type="number" min="1" class="form-control" formControlName="maxUses">
+      <div class="col-sm-6 col-lg-2">
+        <label for="coupon-max-uses" class="form-label small fw-semibold">Limite de usos</label>
+        <input type="number" id="coupon-max-uses" min="1" class="form-control" formControlName="maxUses" inputmode="numeric"
+          [class.is-invalid]="form.controls.maxUses.invalid && form.controls.maxUses.touched">
+        @if (form.controls.maxUses.invalid && form.controls.maxUses.touched) {
+          <div class="invalid-feedback">Mínimo 1.</div>
+        } @else {
+          <span class="form-text">Opcional · em branco = ilimitado</span>
+        }
       </div>
-      <div class="col-md-2">
+      <div class="col-lg-2">
+        <label class="form-label small d-none d-lg-block" aria-hidden="true">&nbsp;</label>
         <button type="submit" class="btn btn-primary rounded-pill w-100" [disabled]="creating()">
           @if (creating()) {
             <span class="spinner-border spinner-border-sm me-2"></span>
@@ -38,6 +65,13 @@
       </div>
     </form>
   </div>
+
+  @if (actionError()) {
+    <div class="alert alert-danger small rounded-4 d-flex justify-content-between align-items-center gap-2" role="alert">
+      <span>{{ actionError() }}</span>
+      <button type="button" class="btn-close" aria-label="Fechar" (click)="actionError.set(null)"></button>
+    </div>
+  }
 
   <div class="stat-card p-0 overflow-hidden">
     @if (loading()) {
@@ -51,25 +85,38 @@
               <th>Desconto</th>
               <th>Expira em</th>
               <th>Usos</th>
-              <th>Status</th>
+              <th>Situação</th>
               <th class="text-end">Ações</th>
             </tr>
           </thead>
           <tbody>
             @for (coupon of coupons(); track coupon.id) {
+              @let s = state(coupon);
               <tr>
-                <td class="fw-semibold">{{ coupon.code }}</td>
+                <td class="text-nowrap">
+                  <span class="fw-semibold font-monospace">{{ coupon.code }}</span>
+                  <button type="button" class="btn btn-sm btn-link text-secondary p-0 ms-2" (click)="copyCode(coupon.code)"
+                    [attr.aria-label]="'Copiar código ' + coupon.code" [title]="copiedCode() === coupon.code ? 'Copiado!' : 'Copiar código'">
+                    <i class="bi" [class.bi-clipboard]="copiedCode() !== coupon.code" [class.bi-clipboard-check]="copiedCode() === coupon.code"></i>
+                  </button>
+                </td>
                 <td>{{ coupon.discountPercentage }}%</td>
-                <td>{{ coupon.expiresAt ? (coupon.expiresAt | date:'dd/MM/yyyy HH:mm') : 'Sem validade' }}</td>
+                <td class="text-nowrap">{{ coupon.expiresAt ? (coupon.expiresAt | date:'dd/MM/yyyy HH:mm') : 'Sem validade' }}</td>
                 <td>{{ coupon.usesCount }}{{ coupon.maxUses ? ' / ' + coupon.maxUses : '' }}</td>
                 <td>
-                  <span class="badge rounded-pill" [class.bg-success]="coupon.isValid" [class.bg-secondary]="!coupon.isValid">
-                    {{ coupon.isValid ? 'Válido' : 'Inválido' }}
-                  </span>
+                  <span class="badge rounded-pill" [class.bg-success]="s.tone === 'success'" [class.bg-secondary]="s.tone === 'secondary'"
+                    [class.text-bg-warning]="s.tone === 'warning'">{{ s.label }}</span>
+                  @if (s.hint) {
+                    <span class="small text-secondary d-block">{{ s.hint }}</span>
+                  }
                 </td>
                 <td class="text-end">
-                  <button class="btn btn-sm btn-outline-secondary rounded-pill" (click)="toggleActive(coupon)">
-                    {{ coupon.active ? 'Desativar' : 'Ativar' }}
+                  <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" [disabled]="togglingId() === coupon.id" (click)="toggleActive(coupon)">
+                    @if (togglingId() === coupon.id) {
+                      <span class="spinner-border spinner-border-sm"></span>
+                    } @else {
+                      {{ coupon.active ? 'Desativar' : 'Ativar' }}
+                    }
                   </button>
                 </td>
               </tr>

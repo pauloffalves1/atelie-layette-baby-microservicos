@@ -8,14 +8,16 @@
             <h4 class="mt-2">Entrar na sua conta</h4>
           </div>
 
-          @if (returnUrl() === '/checkout') {
-            <div class="alert alert-info small rounded-4">Entre na sua conta para finalizar o pedido.</div>
+          @if (fromCheckout()) {
+            <div class="alert alert-info small rounded-4">
+              <i class="bi bi-bag-heart me-1"></i>Entre na sua conta para finalizar a compra — seu carrinho continua salvo.
+            </div>
           }
 
-          <form [formGroup]="form" (ngSubmit)="submit()">
+          <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
             <div class="mb-3">
               <label for="login-email" class="form-label small fw-semibold">E-mail</label>
-              <input type="email" id="login-email" class="form-control" formControlName="email"
+              <input type="email" id="login-email" class="form-control" formControlName="email" autocomplete="username" inputmode="email"
                 [class.is-invalid]="form.controls.email.invalid && form.controls.email.touched">
               @if (form.controls.email.invalid && form.controls.email.touched) {
                 <div class="invalid-feedback">Informe um e-mail válido.</div>
@@ -26,15 +28,17 @@
                 <label for="login-password" class="form-label small fw-semibold mb-0">Senha</label>
                 <a routerLink="/esqueci-senha" class="small text-blush">Esqueci minha senha</a>
               </div>
-              <input type="password" id="login-password" class="form-control" formControlName="password"
-                [class.is-invalid]="form.controls.password.invalid && form.controls.password.touched">
+              <div class="input-group has-validation">
+                <input type="password" id="login-password" class="form-control" formControlName="password" autocomplete="current-password" appPasswordToggle
+                  [class.is-invalid]="form.controls.password.invalid && form.controls.password.touched">
+              </div>
               @if (form.controls.password.invalid && form.controls.password.touched) {
-                <div class="invalid-feedback">Senha é obrigatória.</div>
+                <div class="invalid-feedback d-block">Senha é obrigatória.</div>
               }
             </div>
 
             @if (errorMessage()) {
-              <div class="alert alert-danger small rounded-4">{{ errorMessage() }}</div>
+              <div class="alert alert-danger small rounded-4" role="alert">{{ errorMessage() }}</div>
             }
 
             <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill mt-3" [disabled]="submitting()">
@@ -47,7 +51,7 @@
 
           <p class="text-center small text-secondary mt-4 mb-0">
             Ainda não tem conta?
-            <a routerLink="/cadastro" [queryParams]="{ returnUrl: returnUrl() }" class="text-blush fw-semibold">Cadastre-se</a>
+            <a routerLink="/cadastro" [queryParams]="registerQueryParams()" class="text-blush fw-semibold">Cadastre-se</a>
           </p>
         </div>
       </div>

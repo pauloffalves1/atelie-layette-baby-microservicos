@@ -1,13 +1,15 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '@shared/core/services/auth.service';
 import { CheckoutModalService } from '@shared/core/services/checkout-modal.service';
+import { httpErrorMessage } from '@shared/core/utils/http-error-message';
+import { PasswordToggleDirective } from '@shared/shared/directives/password-toggle.directive';
 
 @Component({
   selector: 'app-login-page',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, PasswordToggleDirective],
   templateUrl: './login-page.html',
 })
 export class LoginPage implements OnInit {
@@ -34,11 +36,26 @@ export class LoginPage implements OnInit {
     private readonly checkoutModal: CheckoutModalService,
   ) {}
 
+  /** Arrived here from the checkout — either the modal's "Continuar" (resumeCheckout) or the old
+   * standalone /checkout route; both deserve the "finish your purchase" context message. */
+  readonly fromCheckout = signal(false);
+
+  /** Carries the checkout context over to sign-up, so creating an account also resumes the purchase. */
+  readonly registerQueryParams = computed(() => ({
+    returnUrl: this.returnUrl(),
+    ...(this.resumeCheckoutParam() ? { resumeCheckout: this.resumeCheckoutParam() } : {}),
+  }));
+  private readonly resumeCheckoutParam = signal<string | null>(null);
+
   ngOnInit(): void {
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
     if (returnUrl) this.returnUrl.set(returnUrl);
 
-    if (this.route.snapshot.queryParamMap.get('resumeCheckout') === 'delivery') this.resumeCheckoutStep = 'delivery';
+    if (this.route.snapshot.queryParamMap.get('resumeCheckout') === 'delivery') {
+      this.resumeCheckoutStep = 'delivery';
+      this.resumeCheckoutParam.set('delivery');
+    }
+    this.fromCheckout.set(this.resumeCheckoutStep !== null || this.returnUrl() === '/checkout');
   }
 
   submit(): void {
@@ -56,9 +73,9 @@ export class LoginPage implements OnInit {
           if (this.resumeCheckoutStep) this.checkoutModal.open(this.resumeCheckoutStep);
         });
       },
-      error: () => {
+      error: (err) => {
         this.submitting.set(false);
-        this.errorMessage.set('E-mail ou senha inválidos.');
+        this.errorMessage.set(httpErrorMessage(err, 'Não foi possível entrar agora.', 'E-mail ou senha inválidos.'));
       },
     });
   }

@@ -818,3 +818,21 @@ a.status-row:focus-visible .status-row-fill {
     transition: none;
   }
 }
+
+// Show/hide password button (PasswordToggleDirective): buttons are pills site-wide, but glued to an
+// input it must take the input's own corner radius and border, not a half-pill.
+.input-group > .password-toggle {
+  border-color: var(--bs-border-color);
+  border-radius: 0 $input-border-radius $input-border-radius 0;
+  color: rgba(58, 50, 56, .6);
+}
+
+.input-group > .password-toggle:hover,
+.input-group > .password-toggle:focus-visible {
+  background: var(--atelie-blush);
+  color: var(--atelie-text);
+}
+
+.input-group > .form-control.is-invalid + .password-toggle {
+  border-color: var(--bs-form-invalid-border-color);
+}

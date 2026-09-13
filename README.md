@@ -898,6 +898,30 @@ contra o Gateway via `docker run --network host`).
       validado ida e volta pela API (grava 13:00Z, lê 13:00Z). CSVs de encomendas e newsletter, que
       formatam a data no servidor, agora convertem para Brasília (`BrasiliaTime`, compartilhado com o
       dashboard), inclusive a data do nome do arquivo. 4 testes novos no SharedKernel.
+- [x] **Rodada de UX: loja, autenticação, 2FA e cupons** (2026-09-13) — *Loja:* a busca inteligente
+      tinha uma corrida — com a opção ligada, cada pausa na digitação disparava a busca comum com a
+      frase inteira ("Nenhum produto encontrado para 'body de algodão até 80 reais'") e, com Enter
+      logo após a última tecla, a busca comum atrasada chegava depois e sobrescrevia o resultado da
+      inteligente; agora ela só roda ao confirmar (Enter/botão "Buscar") e respostas antigas são
+      descartadas por número de requisição. Contagem de resultados, "Limpar filtros"/"Ver todos"
+      no estado vazio, selo do carrinho sem "0" e com rótulo acessível, newsletter do rodapé com
+      Enter, validação e mensagem de erro. *Autenticação:* botão mostrar/ocultar senha
+      (`PasswordToggleDirective`, volta a ocultar ao enviar), `autocomplete` para gerenciadores de
+      senha, mensagens por tipo de falha (`httpErrorMessage`: bloqueio 429 do Gateway, sem conexão,
+      servidor fora — antes tudo virava "E-mail ou senha inválidos"), aviso "finalize sua compra"
+      também para quem vem do modal de checkout (antes só pelo fluxo antigo `/checkout`), cadastro
+      que retoma o checkout e rola até o primeiro erro. **Bug corrigido:** o interceptor deslogava em
+      qualquer 401, mas o backend também usa 401 para erro de negócio (senha atual errada ao trocar
+      senha ou desativar 2FA, senha errada ao excluir a conta) — um erro de digitação derrubava a
+      sessão; agora só desloga quando o 401 vem sem `detail` (rejeição do token pelo middleware JWT,
+      conferido contra a API real: corpo vazio + `WWW-Authenticate`). *Admin:* ativar 2FA mostra QR
+      code do `otpauth://` que o backend já enviava (antes era preciso digitar a chave de 32
+      caracteres), chave manual como alternativa com "Copiar", campo do código só aceita dígitos;
+      cupons mostram o motivo da situação (Desativado/Expirado/Esgotado), validam código (mesma regra
+      do backend), validade no passado e limite, copiam código e mostram erro ao ativar/desativar;
+      Auditoria e Segurança no mesmo padrão visual das outras telas. Validado com builds, 12 testes
+      novos de frontend (erro HTTP, interceptor, links), e2e 7/7 e checagem no navegador com respostas
+      de API simuladas para 429/2FA.
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
       nos manifests; falta aplicar num cluster ativo e uma license key real. **Não avancei aqui** —
       exige um cluster de verdade e uma license key real da New Relic, que eu não tenho como

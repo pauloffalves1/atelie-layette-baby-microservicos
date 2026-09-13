@@ -8,14 +8,16 @@
             <h4 class="mt-2">Criar minha conta</h4>
           </div>
 
-          @if (returnUrl() === '/checkout') {
-            <div class="alert alert-info small rounded-4">Crie sua conta para finalizar o pedido.</div>
+          @if (fromCheckout()) {
+            <div class="alert alert-info small rounded-4">
+              <i class="bi bi-bag-heart me-1"></i>Crie sua conta para finalizar a compra — seu carrinho continua salvo.
+            </div>
           }
 
-          <form [formGroup]="form" (ngSubmit)="submit()">
+          <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
             <div class="mb-3">
               <label for="register-name" class="form-label small fw-semibold">Nome completo</label>
-              <input type="text" id="register-name" class="form-control" formControlName="name"
+              <input type="text" id="register-name" class="form-control" formControlName="name" autocomplete="name"
                 [class.is-invalid]="form.controls.name.invalid && form.controls.name.touched">
               @if (form.controls.name.invalid && form.controls.name.touched) {
                 <div class="invalid-feedback">Nome é obrigatório.</div>
@@ -23,7 +25,7 @@
             </div>
             <div class="mb-3">
               <label for="register-email" class="form-label small fw-semibold">E-mail</label>
-              <input type="email" id="register-email" class="form-control" formControlName="email"
+              <input type="email" id="register-email" class="form-control" formControlName="email" autocomplete="email" inputmode="email"
                 [class.is-invalid]="form.controls.email.invalid && form.controls.email.touched">
               @if (form.controls.email.invalid && form.controls.email.touched) {
                 <div class="invalid-feedback">Informe um e-mail válido.</div>
@@ -31,7 +33,7 @@
             </div>
             <div class="mb-3">
               <label for="register-cpf" class="form-label small fw-semibold">CPF</label>
-              <input type="text" id="register-cpf" class="form-control" formControlName="cpf"
+              <input type="text" id="register-cpf" class="form-control" formControlName="cpf" inputmode="numeric"
                 placeholder="000.000.000-00"
                 [class.is-invalid]="form.controls.cpf.invalid && form.controls.cpf.touched">
               @if (form.controls.cpf.invalid && form.controls.cpf.touched) {
@@ -40,7 +42,7 @@
             </div>
             <div class="mb-3">
               <label for="register-phone" class="form-label small fw-semibold">Telefone / WhatsApp</label>
-              <input type="text" id="register-phone" class="form-control" formControlName="phone" appPhoneMask
+              <input type="tel" id="register-phone" class="form-control" formControlName="phone" appPhoneMask autocomplete="tel-national" inputmode="tel"
                 placeholder="(11) 91234-5678"
                 [class.is-invalid]="form.controls.phone.invalid && form.controls.phone.touched">
               @if (form.controls.phone.invalid && form.controls.phone.touched) {
@@ -53,7 +55,7 @@
               <div class="col-md-4">
                 <label for="register-zipCode" class="form-label small fw-semibold">CEP</label>
                 <div class="position-relative">
-                  <input type="text" id="register-zipCode" class="form-control" formControlName="zipCode"
+                  <input type="text" id="register-zipCode" class="form-control" formControlName="zipCode" autocomplete="postal-code" inputmode="numeric"
                     placeholder="00000-000" maxlength="9"
                     [class.is-invalid]="(form.controls.zipCode.invalid && form.controls.zipCode.touched) || cepError()">
                   @if (cepLoading()) {
@@ -68,7 +70,7 @@
               </div>
               <div class="col-md-8">
                 <label for="register-street" class="form-label small fw-semibold">Rua</label>
-                <input type="text" id="register-street" class="form-control" formControlName="street"
+                <input type="text" id="register-street" class="form-control" formControlName="street" autocomplete="address-line1"
                   [class.is-invalid]="form.controls.street.invalid && form.controls.street.touched">
                 @if (form.controls.street.invalid && form.controls.street.touched) {
                   <div class="invalid-feedback">Rua é obrigatória.</div>
@@ -84,11 +86,11 @@
               </div>
               <div class="col-md-8">
                 <label for="register-complement" class="form-label small fw-semibold">Complemento</label>
-                <input type="text" id="register-complement" class="form-control" formControlName="complement">
+                <input type="text" id="register-complement" class="form-control" formControlName="complement" autocomplete="address-line2">
               </div>
               <div class="col-md-6">
                 <label for="register-neighborhood" class="form-label small fw-semibold">Bairro</label>
-                <input type="text" id="register-neighborhood" class="form-control" formControlName="neighborhood"
+                <input type="text" id="register-neighborhood" class="form-control" formControlName="neighborhood" autocomplete="address-level3"
                   [class.is-invalid]="form.controls.neighborhood.invalid && form.controls.neighborhood.touched">
                 @if (form.controls.neighborhood.invalid && form.controls.neighborhood.touched) {
                   <div class="invalid-feedback">Bairro é obrigatório.</div>
@@ -96,7 +98,7 @@
               </div>
               <div class="col-md-4">
                 <label for="register-city" class="form-label small fw-semibold">Cidade</label>
-                <input type="text" id="register-city" class="form-control" formControlName="city"
+                <input type="text" id="register-city" class="form-control" formControlName="city" autocomplete="address-level2"
                   [class.is-invalid]="form.controls.city.invalid && form.controls.city.touched">
                 @if (form.controls.city.invalid && form.controls.city.touched) {
                   <div class="invalid-feedback">Cidade é obrigatória.</div>
@@ -104,7 +106,7 @@
               </div>
               <div class="col-md-2">
                 <label for="register-state" class="form-label small fw-semibold">Estado</label>
-                <input type="text" id="register-state" class="form-control" formControlName="state" maxlength="2" placeholder="UF"
+                <input type="text" id="register-state" class="form-control text-uppercase" formControlName="state" autocomplete="address-level1" maxlength="2" placeholder="UF"
                   [class.is-invalid]="form.controls.state.invalid && form.controls.state.touched">
                 @if (form.controls.state.invalid && form.controls.state.touched) {
                   <div class="invalid-feedback">Obrigatório.</div>
@@ -114,11 +116,13 @@
 
             <div class="mb-3">
               <label for="register-password" class="form-label small fw-semibold">Senha</label>
-              <input type="password" id="register-password" class="form-control" formControlName="password"
-                [class.is-invalid]="form.controls.password.invalid && form.controls.password.touched"
-                aria-describedby="register-password-help">
+              <div class="input-group has-validation">
+                <input type="password" id="register-password" class="form-control" formControlName="password" autocomplete="new-password" appPasswordToggle
+                  [class.is-invalid]="form.controls.password.invalid && form.controls.password.touched"
+                  aria-describedby="register-password-help">
+              </div>
               @if (form.controls.password.invalid && form.controls.password.touched) {
-                <div class="invalid-feedback">A senha deve ter pelo menos 6 caracteres.</div>
+                <div class="invalid-feedback d-block">A senha deve ter pelo menos 6 caracteres.</div>
               }
               <span id="register-password-help" class="form-text">Mínimo de 6 caracteres.</span>
             </div>
@@ -137,7 +141,7 @@
 
           <p class="text-center small text-secondary mt-4 mb-0">
             Já tem conta?
-            <a routerLink="/entrar" [queryParams]="{ returnUrl: returnUrl() }" class="text-blush fw-semibold">Entrar</a>
+            <a routerLink="/entrar" [queryParams]="loginQueryParams()" class="text-blush fw-semibold">Entrar</a>
           </p>
         </div>
       </div>

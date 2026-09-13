@@ -271,3 +271,7 @@ substituição daquele relato.
   pendências, confirmação antes de mudar status de encomenda, WhatsApp/e-mail clicáveis, recado de
   presente na etiqueta, galeria/acesso exclusivo salvos junto com o produto e aviso de alterações não
   salvas; sem regra de negócio nova além do Requisito 25, ver README → Status.
+- Rodada de UX de loja, autenticação, 2FA e cupons (2026-09-13) — corrida da busca inteligente,
+  mostrar/ocultar senha, mensagens de erro por tipo de falha, QR code do 2FA, situação dos cupons, e
+  o interceptor parando de deslogar em 401 de regra de negócio; sem regra de negócio nova, ver
+  README → Status.

@@ -1,97 +1,124 @@
-<div class="container-fluid py-4" style="max-width: 560px;">
-  <h1 class="h4 mb-4">Segurança</h1>
+<div class="p-3 p-md-4 p-lg-5">
+  <h2 class="mb-1">Segurança</h2>
+  <p class="text-secondary mb-4">Proteja o acesso ao painel administrativo.</p>
 
   @if (loading()) {
     <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
   } @else {
-    <div class="stat-card">
-      <h6 class="mb-2">Autenticação de dois fatores (2FA)</h6>
-      <p class="small text-secondary">
-        Exige um código de 6 dígitos do seu celular, além da senha, para entrar no painel administrativo.
-      </p>
+    <div style="max-width: 36rem;">
+      <div class="stat-card">
+        <h6 class="mb-2">Verificação em duas etapas (2FA)</h6>
+        <p class="small text-secondary">
+          Além da senha, pede um código de 6 dígitos gerado no seu celular para entrar no painel.
+        </p>
 
-      @if (enabled()) {
-        <div class="alert alert-success small rounded-4 mb-3">
-          <i class="bi bi-shield-check me-2"></i>2FA está ativado na sua conta.
-        </div>
+        @if (enabled()) {
+          <div class="alert alert-success small rounded-4 mb-3">
+            <i class="bi bi-shield-check me-2"></i>A verificação em duas etapas está ativada na sua conta.
+          </div>
 
-        @if (!confirmingDisable()) {
-          <button type="button" class="btn btn-sm btn-outline-danger rounded-pill" (click)="startDisable()">
-            Desativar 2FA
+          @if (!confirmingDisable()) {
+            <button type="button" class="btn btn-sm btn-outline-danger rounded-pill" (click)="startDisable()">
+              Desativar 2FA
+            </button>
+          } @else {
+            <form class="border rounded-4 p-3" (submit)="$event.preventDefault(); confirmDisable()" novalidate>
+              <label for="disable-2fa-password" class="form-label small">Digite sua senha para confirmar a desativação.</label>
+              <div class="input-group input-group-sm mb-2">
+                <input type="password" id="disable-2fa-password" class="form-control" autocomplete="current-password" appPasswordToggle
+                  [value]="disablePassword()" (input)="disablePassword.set($any($event.target).value)">
+              </div>
+              @if (disableError()) {
+                <p class="text-danger small mb-2" role="alert">{{ disableError() }}</p>
+              }
+              <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-danger rounded-pill" [disabled]="disabling() || !disablePassword()">
+                  @if (disabling()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+                  Confirmar desativação
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" [disabled]="disabling()" (click)="cancelDisable()">
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          }
+        } @else if (!setup()) {
+          <button type="button" class="btn btn-sm btn-primary rounded-pill" [disabled]="settingUp()" (click)="startSetup()">
+            @if (settingUp()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+            Ativar 2FA
           </button>
-        } @else {
-          <div class="border rounded-4 p-3">
-            <p class="small mb-2">Digite sua senha para confirmar a desativação.</p>
-            <input type="password" class="form-control form-control-sm mb-2" placeholder="Sua senha"
-              [value]="disablePassword()" (input)="disablePassword.set($any($event.target).value)">
-            @if (disableError()) {
-              <p class="text-danger small mb-2">{{ disableError() }}</p>
+          @if (setupError()) {
+            <p class="text-danger small mt-2 mb-0" role="alert">{{ setupError() }}</p>
+          }
+        } @else if (setup(); as s) {
+          <form class="border rounded-4 p-3" (submit)="$event.preventDefault(); confirmEnable()" novalidate>
+            <p class="small fw-semibold mb-2">1. Escaneie com o aplicativo autenticador</p>
+            <p class="small text-secondary mb-3">Google Authenticator, Microsoft Authenticator, Authy... — toque em "adicionar" e aponte a câmera para o código.</p>
+            <div class="d-flex justify-content-center mb-3">
+              <app-pix-qr-code [text]="s.otpAuthUri" [size]="180" alt="QR code para configurar a verificação em duas etapas no aplicativo autenticador" />
+            </div>
+
+            <details class="small mb-3">
+              <summary class="text-secondary">Não consegue escanear? Digite a chave manualmente</summary>
+              <div class="d-flex align-items-center gap-2 mt-2">
+                <code class="font-monospace bg-light rounded-2 p-2 text-break flex-grow-1 user-select-all">{{ s.secret }}</code>
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill text-nowrap" (click)="copySecret()">
+                  {{ secretCopied() ? 'Copiada!' : 'Copiar' }}
+                </button>
+              </div>
+            </details>
+
+            <label for="confirm-2fa-code" class="small fw-semibold mb-2 d-block">2. Digite o código de 6 dígitos que aparece no aplicativo</label>
+            <input type="text" id="confirm-2fa-code" class="form-control form-control-lg text-center font-monospace mb-2" style="letter-spacing: .3em; max-width: 12rem;"
+              inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000"
+              [value]="confirmCode()" (input)="onCodeInput($any($event.target))">
+            @if (enableError()) {
+              <p class="text-danger small mb-2" role="alert">{{ enableError() }}</p>
             }
             <div class="d-flex gap-2">
-              <button type="button" class="btn btn-sm btn-danger rounded-pill" [disabled]="disabling()" (click)="confirmDisable()">
-                @if (disabling()) { <span class="spinner-border spinner-border-sm me-2"></span> }
-                Confirmar desativação
+              <button type="submit" class="btn btn-sm btn-primary rounded-pill" [disabled]="enabling() || confirmCode().length !== 6">
+                @if (enabling()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+                Ativar
               </button>
-              <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" [disabled]="disabling()" (click)="cancelDisable()">
+              <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" [disabled]="enabling()" (click)="cancelSetup()">
                 Cancelar
               </button>
             </div>
-          </div>
+          </form>
         }
-      } @else if (!setup()) {
-        <button type="button" class="btn btn-sm btn-primary rounded-pill" [disabled]="settingUp()" (click)="startSetup()">
-          @if (settingUp()) { <span class="spinner-border spinner-border-sm me-2"></span> }
-          Ativar 2FA
-        </button>
-      } @else {
-        <div class="border rounded-4 p-3">
-          <p class="small mb-2">1. Adicione esta chave no seu aplicativo autenticador (Google Authenticator, Authy, etc.), usando "entrada manual":</p>
-          <p class="font-monospace small bg-light rounded-2 p-2 text-break">{{ setup()!.secret }}</p>
-          <p class="small mb-2">2. Digite o código de 6 dígitos gerado pelo aplicativo:</p>
-          <input type="text" class="form-control form-control-sm mb-2" inputmode="numeric" maxlength="6"
-            [value]="confirmCode()" (input)="confirmCode.set($any($event.target).value)">
-          @if (enableError()) {
-            <p class="text-danger small mb-2">{{ enableError() }}</p>
-          }
-          <div class="d-flex gap-2">
-            <button type="button" class="btn btn-sm btn-primary rounded-pill" [disabled]="enabling()" (click)="confirmEnable()">
-              @if (enabling()) { <span class="spinner-border spinner-border-sm me-2"></span> }
-              Confirmar
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" [disabled]="enabling()" (click)="cancelSetup()">
-              Cancelar
-            </button>
+      </div>
+
+      <form class="stat-card mt-4" (submit)="$event.preventDefault(); changePassword()" novalidate>
+        <h6 class="mb-2">Alterar senha</h6>
+        <p class="small text-secondary">Troque a senha usada para entrar no painel administrativo.</p>
+
+        <div class="mb-2">
+          <label for="current-password" class="form-label small fw-semibold">Senha atual</label>
+          <div class="input-group input-group-sm">
+            <input type="password" id="current-password" class="form-control" autocomplete="current-password" appPasswordToggle
+              [value]="currentPassword()" (input)="currentPassword.set($any($event.target).value); passwordError.set(null)">
           </div>
         </div>
-      }
-    </div>
+        <div class="mb-2">
+          <label for="new-password" class="form-label small fw-semibold">Nova senha</label>
+          <div class="input-group input-group-sm">
+            <input type="password" id="new-password" class="form-control" autocomplete="new-password" appPasswordToggle
+              [value]="newPassword()" (input)="newPassword.set($any($event.target).value); passwordError.set(null)">
+          </div>
+        </div>
 
-    <div class="stat-card mt-4">
-      <h6 class="mb-2">Alterar senha</h6>
-      <p class="small text-secondary">Troque a senha usada para entrar no painel administrativo.</p>
+        @if (passwordError()) {
+          <p class="text-danger small mb-2" role="alert">{{ passwordError() }}</p>
+        }
+        @if (passwordSuccess()) {
+          <p class="text-success small mb-2" role="status"><i class="bi bi-check-circle me-1"></i>Senha alterada com sucesso.</p>
+        }
 
-      <div class="mb-2">
-        <label class="form-label small fw-semibold">Senha atual</label>
-        <input type="password" class="form-control form-control-sm" [value]="currentPassword()"
-          (input)="currentPassword.set($any($event.target).value)">
-      </div>
-      <div class="mb-2">
-        <label class="form-label small fw-semibold">Nova senha</label>
-        <input type="password" class="form-control form-control-sm" [value]="newPassword()"
-          (input)="newPassword.set($any($event.target).value)">
-      </div>
-
-      @if (passwordError()) {
-        <p class="text-danger small mb-2">{{ passwordError() }}</p>
-      }
-      @if (passwordSuccess()) {
-        <p class="text-success small mb-2">Senha alterada com sucesso.</p>
-      }
-
-      <button type="button" class="btn btn-sm btn-primary rounded-pill" [disabled]="changingPassword()" (click)="changePassword()">
-        @if (changingPassword()) { <span class="spinner-border spinner-border-sm me-2"></span> }
-        Alterar senha
-      </button>
+        <button type="submit" class="btn btn-sm btn-primary rounded-pill" [disabled]="changingPassword()">
+          @if (changingPassword()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+          Alterar senha
+        </button>
+      </form>
     </div>
   }
 </div>

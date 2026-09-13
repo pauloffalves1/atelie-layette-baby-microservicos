@@ -1,14 +1,19 @@
-<div class="container-fluid py-4">
-  <h1 class="h4 mb-4">Auditoria</h1>
+<div class="p-3 p-md-4 p-lg-5">
+  <h2 class="mb-1">Auditoria</h2>
+  <p class="text-secondary mb-4">Registro das ações feitas pelas administradoras no painel.</p>
 
   @if (loading()) {
     <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
   } @else if (entries().length === 0) {
-    <p class="text-secondary small">Nenhuma ação registrada ainda.</p>
+    <div class="stat-card text-center text-secondary py-5">
+      <i class="bi bi-journal-text fs-1 d-block mb-3"></i>
+      Nenhuma ação registrada ainda.
+    </div>
   } @else {
+    <div class="stat-card p-0 overflow-hidden">
     <div class="table-responsive">
-      <table class="table align-middle">
-        <thead>
+      <table class="table align-middle mb-0">
+        <thead class="table-light">
           <tr>
             <th>Quando</th>
             <th>Admin</th>
@@ -19,7 +24,7 @@
         <tbody>
           @for (entry of entries(); track entry.id) {
             <tr>
-              <td class="small text-secondary">{{ entry.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td class="small text-secondary text-nowrap">{{ entry.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
               <td class="small">{{ entry.adminName }}</td>
               <td class="small"><span class="badge-soft">{{ actionLabel(entry.action) }}</span></td>
               <td class="small text-secondary">{{ entry.details }}</td>
@@ -27,6 +32,7 @@
           }
         </tbody>
       </table>
+    </div>
     </div>
 
     <app-pagination [page]="page()" [totalPages]="totalPages()" (pageChange)="goToPage($event)" />

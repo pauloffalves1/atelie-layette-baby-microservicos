@@ -2,11 +2,13 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AdminAuthService } from '@shared/core/services/admin-auth.service';
+import { httpErrorMessage } from '@shared/core/utils/http-error-message';
+import { PasswordToggleDirective } from '@shared/shared/directives/password-toggle.directive';
 
 @Component({
   selector: 'app-admin-login',
   standalone: true,
-  imports: [ReactiveFormsModule, FormsModule],
+  imports: [ReactiveFormsModule, FormsModule, PasswordToggleDirective],
   templateUrl: './admin-login.html',
 })
 export class AdminLogin {
@@ -48,9 +50,9 @@ export class AdminLogin {
           this.router.navigate(['/admin/dashboard']);
         }
       },
-      error: () => {
+      error: (err) => {
         this.submitting.set(false);
-        this.errorMessage.set('E-mail ou senha inválidos.');
+        this.errorMessage.set(httpErrorMessage(err, 'Não foi possível entrar agora.', 'E-mail ou senha inválidos.'));
       },
     });
   }
@@ -63,9 +65,11 @@ export class AdminLogin {
 
     this.auth.verifyTwoFactor(this.pendingAdminId, this.twoFactorCode()).subscribe({
       next: () => this.router.navigate(['/admin/dashboard']),
-      error: () => {
+      error: (err) => {
         this.submitting.set(false);
-        this.errorMessage.set('Código inválido.');
+        this.errorMessage.set(
+          httpErrorMessage(err, 'Código inválido.', 'Código inválido ou expirado — use o código que aparece agora no aplicativo.'),
+        );
       },
     });
   }

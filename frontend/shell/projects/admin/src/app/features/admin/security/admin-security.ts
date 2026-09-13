@@ -2,11 +2,14 @@ import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TwoFactorSetup } from '@shared/core/models/auth.model';
 import { AdminAuthService } from '@shared/core/services/admin-auth.service';
+import { httpErrorMessage } from '@shared/core/utils/http-error-message';
+import { PixQrCode } from '@shared/shared/components/pix-qr-code/pix-qr-code';
+import { PasswordToggleDirective } from '@shared/shared/directives/password-toggle.directive';
 
 @Component({
   selector: 'app-admin-security',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, PixQrCode, PasswordToggleDirective],
   templateUrl: './admin-security.html',
 })
 export class AdminSecurity implements OnInit {
@@ -17,6 +20,8 @@ export class AdminSecurity implements OnInit {
   readonly confirmCode = signal('');
   readonly enableError = signal<string | null>(null);
   readonly enabled = signal(false);
+  readonly setupError = signal<string | null>(null);
+  readonly secretCopied = signal(false);
 
   readonly disabling = signal(false);
   readonly disablePassword = signal('');
@@ -44,12 +49,33 @@ export class AdminSecurity implements OnInit {
   startSetup(): void {
     this.settingUp.set(true);
     this.enableError.set(null);
+    this.setupError.set(null);
     this.auth.beginTwoFactorSetup().subscribe({
       next: (setup) => {
         this.setup.set(setup);
         this.settingUp.set(false);
       },
-      error: () => this.settingUp.set(false),
+      error: (err) => {
+        this.settingUp.set(false);
+        this.setupError.set(httpErrorMessage(err, 'Não foi possível iniciar a configuração agora.'));
+      },
+    });
+  }
+
+  /** Keeps only digits in the 6-digit code field (setting the element too, so typed letters vanish). */
+  onCodeInput(input: HTMLInputElement): void {
+    const digits = input.value.replace(/\D/g, '').slice(0, 6);
+    input.value = digits;
+    this.confirmCode.set(digits);
+    this.enableError.set(null);
+  }
+
+  copySecret(): void {
+    const secret = this.setup()?.secret;
+    if (!secret) return;
+    navigator.clipboard.writeText(secret).then(() => {
+      this.secretCopied.set(true);
+      setTimeout(() => this.secretCopied.set(false), 2000);
     });
   }
 
@@ -69,7 +95,7 @@ export class AdminSecurity implements OnInit {
       },
       error: (err) => {
         this.enabling.set(false);
-        this.enableError.set(err?.error?.detail ?? 'Código inválido.');
+        this.enableError.set(httpErrorMessage(err, 'Código inválido.', 'Código inválido ou expirado — use o código que aparece agora no aplicativo.'));
       },
     });
   }
@@ -106,13 +132,20 @@ export class AdminSecurity implements OnInit {
       },
       error: (err) => {
         this.disabling.set(false);
-        this.disableError.set(err?.error?.detail ?? 'Senha incorreta.');
+        this.disableError.set(httpErrorMessage(err, 'Senha incorreta.', 'Senha incorreta.'));
       },
     });
   }
 
   changePassword(): void {
-    if (!this.currentPassword() || !this.newPassword()) return;
+    if (!this.currentPassword() || !this.newPassword()) {
+      this.passwordError.set('Preencha a senha atual e a nova senha.');
+      return;
+    }
+    if (this.newPassword() === this.currentPassword()) {
+      this.passwordError.set('A nova senha precisa ser diferente da atual.');
+      return;
+    }
 
     this.changingPassword.set(true);
     this.passwordError.set(null);
@@ -127,7 +160,7 @@ export class AdminSecurity implements OnInit {
       },
       error: (err) => {
         this.changingPassword.set(false);
-        this.passwordError.set(err?.error?.detail ?? 'Não foi possível alterar a senha.');
+        this.passwordError.set(httpErrorMessage(err, 'Não foi possível alterar a senha.', 'Senha atual incorreta.'));
       },
     });
   }

@@ -26,6 +26,7 @@ export class PublicLayout {
   readonly newsletterEmail = signal('');
   readonly newsletterSubmitting = signal(false);
   readonly newsletterSubscribed = signal(false);
+  readonly newsletterError = signal<string | null>(null);
 
   // Native toggles for the account dropdown and the mobile nav — this app never loads Bootstrap's
   // JS bundle (only its SCSS partials, per client architecture), so the markup's old
@@ -88,16 +89,26 @@ export class PublicLayout {
   }
 
   subscribeNewsletter(): void {
-    if (!this.newsletterEmail() || this.newsletterSubmitting()) return;
+    if (this.newsletterSubmitting()) return;
+
+    const email = this.newsletterEmail().trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      this.newsletterError.set('Informe um e-mail válido.');
+      return;
+    }
 
     this.newsletterSubmitting.set(true);
-    this.newsletterService.subscribe(this.newsletterEmail()).subscribe({
+    this.newsletterError.set(null);
+    this.newsletterService.subscribe(email).subscribe({
       next: () => {
         this.newsletterSubmitting.set(false);
         this.newsletterSubscribed.set(true);
         this.newsletterEmail.set('');
       },
-      error: () => this.newsletterSubmitting.set(false),
+      error: (err) => {
+        this.newsletterSubmitting.set(false);
+        this.newsletterError.set(err?.error?.detail ?? 'Não foi possível concluir a inscrição agora. Tente de novo em instantes.');
+      },
     });
   }
 }
