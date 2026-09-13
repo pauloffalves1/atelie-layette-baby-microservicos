@@ -38,10 +38,12 @@ export class OrderService {
 
   // ---- admin ----
 
-  listAllForAdmin(status?: string, paymentStatus?: string, page = 1, pageSize = 20): Observable<PagedResult<Order>> {
+  /** `search` matches customer name/e-mail/phone or the short order number (with or without "#"). */
+  listAllForAdmin(status?: string, paymentStatus?: string, page = 1, pageSize = 20, search?: string): Observable<PagedResult<Order>> {
     const params: Record<string, string | number> = { page, pageSize };
     if (status) params['status'] = status;
     if (paymentStatus) params['paymentStatus'] = paymentStatus;
+    if (search) params['search'] = search;
     return this.http.get<PagedResult<Order>>(this.adminUrl, { params });
   }
 
@@ -75,10 +77,11 @@ export class OrderService {
     return this.http.get<{ session: string; environment: 'SANDBOX' | 'PROD' }>(`${environment.apiUrl}/payments/pagbank/3ds-session`);
   }
 
-  exportCsv(status?: string, paymentStatus?: string): Observable<Blob> {
+  exportCsv(status?: string, paymentStatus?: string, search?: string): Observable<Blob> {
     const params: Record<string, string> = {};
     if (status) params['status'] = status;
     if (paymentStatus) params['paymentStatus'] = paymentStatus;
+    if (search) params['search'] = search;
     return this.http.get(`${this.adminUrl}/export`, { params, responseType: 'blob' });
   }
 

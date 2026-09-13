@@ -2,6 +2,13 @@
   <h2 class="mb-1">Clientes</h2>
   <p class="text-secondary mb-4">Todas as contas de cliente cadastradas na loja.</p>
 
+  <div class="position-relative mb-3" style="max-width: 28rem">
+    <i class="bi bi-search position-absolute top-50 translate-middle-y ms-3 text-secondary" aria-hidden="true"></i>
+    <input type="search" class="form-control rounded-pill ps-5" placeholder="Buscar por nome, e-mail, telefone ou CPF"
+      aria-label="Buscar clientes" [value]="search()" (input)="search.set($any($event.target).value)"
+      (keydown.escape)="search.set('')">
+  </div>
+
   <div class="stat-card p-0 overflow-hidden">
     @if (loading()) {
       <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
@@ -20,7 +27,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (customer of customers(); track customer.id) {
+            @for (customer of filteredCustomers(); track customer.id) {
               <tr>
                 <td class="fw-semibold">
                   {{ customer.name }}
@@ -28,7 +35,9 @@
                     <span class="badge bg-secondary ms-2">Conta excluída</span>
                   }
                 </td>
-                <td>{{ customer.email }}</td>
+                <td>
+                  @if (customer.isAnonymized) { {{ customer.email }} } @else { <a [href]="'mailto:' + customer.email">{{ customer.email }}</a> }
+                </td>
                 <td>
                   @if (customer.emailVerified) {
                     <span class="badge bg-success-subtle text-success-emphasis">Verificado</span>
@@ -38,7 +47,16 @@
                     —
                   }
                 </td>
-                <td>{{ customer.phone || '—' }}</td>
+                <td class="text-nowrap">
+                  @if (whatsappLink(customer); as waUrl) {
+                    {{ customer.phone }}
+                    <a [href]="waUrl" target="_blank" rel="noopener" class="text-success ms-1" [attr.aria-label]="'WhatsApp de ' + customer.name" title="Abrir no WhatsApp">
+                      <i class="bi bi-whatsapp"></i>
+                    </a>
+                  } @else {
+                    {{ customer.phone || '—' }}
+                  }
+                </td>
                 <td>{{ customer.cpf | cpfMask }}</td>
                 <td>{{ customer.createdAt | date:'dd/MM/yyyy' }}</td>
                 <td class="text-end">
@@ -72,8 +90,17 @@
                 </td>
               </tr>
             }
-            @if (customers().length === 0) {
-              <tr><td colspan="7" class="text-center text-secondary py-4">Nenhum cliente cadastrado.</td></tr>
+            @if (filteredCustomers().length === 0) {
+              <tr>
+                <td colspan="7" class="text-center text-secondary py-4">
+                  @if (search().trim()) {
+                    Nenhum cliente encontrado para "{{ search() }}".
+                    <button type="button" class="btn btn-link btn-sm p-0 align-baseline" (click)="search.set('')">Limpar busca</button>
+                  } @else {
+                    Nenhum cliente cadastrado.
+                  }
+                </td>
+              </tr>
             }
           </tbody>
         </table>

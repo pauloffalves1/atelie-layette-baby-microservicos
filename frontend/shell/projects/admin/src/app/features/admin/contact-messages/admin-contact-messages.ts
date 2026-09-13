@@ -1,6 +1,8 @@
 import { DatePipe } from '@angular/common';
 import { Component, OnInit, signal } from '@angular/core';
+import { SITE_NAME } from '@shared/core/constants/site';
 import { ContactMessage, ContactService } from '@shared/core/services/contact.service';
+import { whatsappUrl } from '@shared/core/utils/contact-links';
 import { Pagination } from '@shared/shared/components/pagination/pagination';
 
 @Component({
@@ -42,6 +44,29 @@ export class AdminContactMessages implements OnInit {
         this.draftingReplyId.set(null);
         this.replyErrorId.set(message.id);
       },
+    });
+  }
+
+  readonly copiedReplyId = signal<string | null>(null);
+
+  whatsappLink(message: ContactMessage): string | null {
+    return whatsappUrl(message.phone, this.draftedReplies()[message.id]);
+  }
+
+  mailtoLink(message: ContactMessage): string {
+    const body = this.draftedReplies()[message.id];
+    const params = new URLSearchParams({ subject: `Re: seu contato com o ${SITE_NAME}` });
+    if (body) params.set('body', body);
+    // URLSearchParams encodes spaces as "+", which mail clients show literally in mailto bodies.
+    return `mailto:${message.email}?${params.toString().replace(/\+/g, '%20')}`;
+  }
+
+  copyReply(message: ContactMessage): void {
+    const reply = this.draftedReplies()[message.id];
+    if (!reply) return;
+    navigator.clipboard.writeText(reply).then(() => {
+      this.copiedReplyId.set(message.id);
+      setTimeout(() => this.copiedReplyId.set(null), 2000);
     });
   }
 

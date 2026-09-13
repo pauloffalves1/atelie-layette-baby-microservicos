@@ -27,9 +27,9 @@ public sealed class OrderRepository : IOrderRepository
         return orders.FirstOrDefault(o => o.Id.ToString().StartsWith(shortId, StringComparison.OrdinalIgnoreCase));
     }
 
-    public async Task<(IReadOnlyList<Order> Items, int TotalItems)> ListAsync(OrderStatus? status, PaymentStatus? paymentStatus, int page, int pageSize, CancellationToken ct = default)
+    public async Task<(IReadOnlyList<Order> Items, int TotalItems)> ListAsync(OrderStatus? status, PaymentStatus? paymentStatus, int page, int pageSize, string? search = null, CancellationToken ct = default)
     {
-        var query = FilteredQuery(status, paymentStatus);
+        var query = FilteredQuery(status, paymentStatus, search);
 
         var totalItems = await query.CountAsync(ct);
         var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
@@ -38,10 +38,10 @@ public sealed class OrderRepository : IOrderRepository
     }
 
     /// <summary>Unpaginated — used only for CSV export, never for a UI listing.</summary>
-    public async Task<IReadOnlyList<Order>> ListAllAsync(OrderStatus? status, PaymentStatus? paymentStatus, CancellationToken ct = default) =>
-        await FilteredQuery(status, paymentStatus).ToListAsync(ct);
+    public async Task<IReadOnlyList<Order>> ListAllAsync(OrderStatus? status, PaymentStatus? paymentStatus, string? search = null, CancellationToken ct = default) =>
+        await FilteredQuery(status, paymentStatus, search).ToListAsync(ct);
 
-    private IQueryable<Order> FilteredQuery(OrderStatus? status, PaymentStatus? paymentStatus)
+    private IQueryable<Order> FilteredQuery(OrderStatus? status, PaymentStatus? paymentStatus, string? search)
     {
         var query = _dbContext.Orders.Include(o => o.Items).AsQueryable();
 
@@ -50,6 +50,20 @@ public sealed class OrderRepository : IOrderRepository
 
         if (paymentStatus is not null)
             query = query.Where(o => o.PaymentStatus == paymentStatus);
+
+        var term = search?.Trim().TrimStart('#');
+        if (!string.IsNullOrEmpty(term))
+        {
+            var contains = $"%{term}%";
+            // (string)(object) casts the value-converted Email down to its provider column so LIKE
+            // can run in SQL; Guid.ToString() becomes CONVERT(varchar(36), Id) on SQL Server, and
+            // the default CI collation makes the prefix match case-insensitive.
+            query = query.Where(o =>
+                EF.Functions.Like(o.CustomerName, contains) ||
+                EF.Functions.Like((string)(object)o.CustomerEmail, contains) ||
+                (o.CustomerPhone != null && EF.Functions.Like(o.CustomerPhone, contains)) ||
+                EF.Functions.Like(o.Id.ToString(), $"{term}%"));
+        }
 
         return query.OrderByDescending(o => o.CreatedAt);
     }

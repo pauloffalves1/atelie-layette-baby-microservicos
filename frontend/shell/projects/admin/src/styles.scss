@@ -578,3 +578,71 @@ details[open] .faq-chevron {
     font-size: 10px;
   }
 }
+
+// Admin panel below Bootstrap's `lg` breakpoint: the fixed 260px sidebar would leave a phone with
+// ~130px of content, so it becomes an off-canvas drawer opened from a sticky top bar (AdminLayout
+// toggles `.open`, renders `.admin-backdrop`, and marks the closed drawer `inert`).
+.admin-topbar {
+  display: none;
+}
+
+@media (max-width: 991.98px) {
+  .admin-shell {
+    display: block;
+  }
+
+  .admin-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    padding: .5rem 1rem;
+    background: #fffaf5;
+    border-bottom: 1px solid rgba(217, 164, 65, .25);
+  }
+
+  .admin-sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1050;
+    width: min(280px, 85vw);
+    overflow-y: auto;
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+  }
+
+  .admin-sidebar.open {
+    transform: none;
+    box-shadow: $box-shadow-lg;
+  }
+
+  .admin-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1040;
+    background: rgba(0, 0, 0, .35);
+  }
+
+  .admin-content {
+    min-height: calc(100vh - 3.5rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-sidebar {
+    transition: none;
+  }
+}
+
+@media print {
+  .admin-topbar,
+  .admin-sidebar,
+  .admin-backdrop {
+    display: none !important;
+  }
+}

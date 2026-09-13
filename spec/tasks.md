@@ -222,6 +222,22 @@ substituição daquele relato.
 - [x] Testado ao vivo: upload de 2 fotos, reordenar (miniaturas trocam de posição), navegar entre
       as duas no carrossel da home, excluir uma, excluir a última (volta ao fallback padrão).
 
+## Requisito 25 — Busca nas listas do painel administrativo (RF35)
+
+- [x] Orders: `GET /api/admin/orders` e `/export` aceitam `search` — `OrderRepository.FilteredQuery`
+      aplica `LIKE` em nome, e-mail (`(string)(object)` para atravessar o value converter de `Email`),
+      telefone e prefixo de `CONVERT(varchar(36), Id)`; `#` inicial ignorado. Teste de serviço
+      `OrderServiceAdminSearchTests` fixa o repasse do termo.
+- [x] Catalog: `GET /api/admin/products` passou a repassar `search` e `category` ao `ListAsync` que já
+      suportava os dois (a chave de cache já incluía ambos).
+- [x] Clientes: filtro em memória no frontend (a API de clientes do admin já devolve a lista inteira,
+      sem paginação), ignorando acentos e comparando telefone/CPF só pelos dígitos.
+- [x] Frontend: listas de encomendas e produtos guardam filtros/busca/página na URL
+      (`?status=&pagamento=&busca=&pagina=`, `?busca=&categoria=&pagina=`), com debounce na digitação.
+- [x] Validado contra o SQL Server real (stack local): busca por `#84ed` e `5D6165` (prefixo, sem
+      diferenciar caixa), por nome e por e-mail, termo inexistente (0), busca + filtro de status,
+      exportação CSV filtrada e busca/categoria de produtos — SQL gerado conferido no log do EF.
+
 ## Fora do escopo deste `spec/` (documentado apenas no `README.md`)
 
 - Renomeação "Galeria" → "Dicas para o casal" (2026-09-10) — mudança de rótulo/URL sem alterar
@@ -232,3 +248,7 @@ substituição daquele relato.
 - Rodada de UX do funil de compra (2026-09-13) — prévia do bordado, desfazer remoção no carrinho,
   validação/rolagem e autocomplete no checkout, detalhes de bordado/endereço/rastreio no pós-compra;
   sem regra de negócio nova, ver README → Status.
+- Rodada de UX do painel admin (2026-09-13) — menu recolhível no celular com contadores de
+  pendências, confirmação antes de mudar status de encomenda, WhatsApp/e-mail clicáveis, recado de
+  presente na etiqueta, galeria/acesso exclusivo salvos junto com o produto e aviso de alterações não
+  salvas; sem regra de negócio nova além do Requisito 25, ver README → Status.

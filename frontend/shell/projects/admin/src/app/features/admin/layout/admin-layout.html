@@ -1,8 +1,32 @@
 <div class="admin-shell">
-  <aside class="admin-sidebar p-3 d-flex flex-column">
-    <a routerLink="/admin/dashboard" class="d-flex align-items-center gap-2 text-decoration-none mb-4 px-2 pt-2">
-      <span class="fw-script fs-4 text-blush brand-embroidered">Ateliê Layette Baby</span>
-    </a>
+  <header class="admin-topbar">
+    <button type="button" class="btn btn-outline-secondary rounded-circle position-relative" style="width: 2.5rem; height: 2.5rem; padding: 0"
+      aria-controls="admin-sidebar" [attr.aria-expanded]="menuOpen()" aria-label="Abrir menu" (click)="toggleMenu()">
+      <i class="bi bi-list fs-5"></i>
+      @if ((newOrdersCount() ?? 0) + (pendingReviewsCount() ?? 0) > 0) {
+        <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
+          <span class="visually-hidden">Há pendências</span>
+        </span>
+      }
+    </button>
+    <span class="fw-script fs-5 text-blush">Ateliê Layette Baby</span>
+    <span style="width: 2.5rem"></span>
+  </header>
+
+  @if (menuOpen() && !isDesktop()) {
+    <div class="admin-backdrop" (click)="closeMenu()" aria-hidden="true"></div>
+  }
+
+  <aside id="admin-sidebar" class="admin-sidebar p-3 d-flex flex-column" [class.open]="menuOpen()"
+    [attr.inert]="!isDesktop() && !menuOpen() ? '' : null">
+    <div class="d-flex align-items-center justify-content-between mb-4 px-2 pt-2">
+      <a routerLink="/admin/dashboard" class="d-flex align-items-center gap-2 text-decoration-none">
+        <span class="fw-script fs-4 text-blush brand-embroidered">Ateliê Layette Baby</span>
+      </a>
+      @if (!isDesktop()) {
+        <button type="button" class="btn-close" aria-label="Fechar menu" (click)="closeMenu()"></button>
+      }
+    </div>
 
     <nav class="nav flex-column gap-1 flex-grow-1">
       @if (auth.hasPermission('Dashboard')) {
@@ -18,6 +42,10 @@
       @if (auth.hasPermission('Orders')) {
         <a class="nav-link d-flex align-items-center gap-2" routerLink="/admin/encomendas" routerLinkActive="active">
           <i class="bi bi-receipt"></i> Encomendas
+          @if (newOrdersCount(); as count) {
+            <span class="badge rounded-pill bg-danger ms-auto" [attr.aria-label]="count + (count === 1 ? ' encomenda nova' : ' encomendas novas')"
+              title="Encomendas com status Recebido">{{ count }}</span>
+          }
         </a>
       }
       @if (auth.hasPermission('Coupons')) {
@@ -33,6 +61,10 @@
       @if (auth.hasPermission('Reviews')) {
         <a class="nav-link d-flex align-items-center gap-2" routerLink="/admin/avaliacoes" routerLinkActive="active">
           <i class="bi bi-star"></i> Avaliações
+          @if (pendingReviewsCount(); as count) {
+            <span class="badge rounded-pill bg-danger ms-auto" [attr.aria-label]="count + (count === 1 ? ' avaliação pendente' : ' avaliações pendentes')"
+              title="Avaliações aguardando aprovação">{{ count }}</span>
+          }
         </a>
       }
       @if (auth.hasPermission('ContactMessages')) {

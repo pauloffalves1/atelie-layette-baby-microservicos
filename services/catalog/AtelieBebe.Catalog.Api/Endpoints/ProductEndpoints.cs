@@ -33,8 +33,8 @@ public static class ProductEndpoints
         var adminGroup = app.MapGroup("/api/admin/products").WithTags("Produtos (admin)")
             .RequireAuthorization(JwtAuthenticationExtensions.PermissionPolicyName(AdminPermission.Products));
 
-        adminGroup.MapGet("/", async (IProductService service, CancellationToken ct, int page = 1, int pageSize = 20) =>
-            Results.Ok(await service.ListAsync(null, onlyActive: false, page, pageSize, ct: ct)));
+        adminGroup.MapGet("/", async (string? category, string? search, IProductService service, CancellationToken ct, int page = 1, int pageSize = 20) =>
+            Results.Ok(await service.ListAsync(string.IsNullOrWhiteSpace(category) ? null : category, onlyActive: false, page, pageSize, search: string.IsNullOrWhiteSpace(search) ? null : search.Trim(), ct: ct)));
 
         adminGroup.MapGet("/{id:guid}", async (Guid id, IProductService service, CancellationToken ct) =>
             Results.Ok(await service.GetForAdminAsync(id, ct)));

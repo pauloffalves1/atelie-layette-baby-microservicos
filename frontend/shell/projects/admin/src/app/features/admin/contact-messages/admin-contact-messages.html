@@ -17,22 +17,41 @@
             <div class="d-flex justify-content-between flex-wrap gap-2 mb-2">
               <div>
                 <span class="fw-semibold d-block">{{ message.name }}</span>
-                <span class="small text-secondary">{{ message.email }} · {{ message.phone }}</span>
+                <span class="small text-secondary">
+                  <a [href]="'mailto:' + message.email" class="text-secondary">{{ message.email }}</a>
+                  @if (message.phone) { · {{ message.phone }} }
+                </span>
               </div>
               <span class="small text-secondary">{{ message.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
             </div>
-            <p class="mb-2 small">{{ message.message }}</p>
-            <button type="button" class="btn btn-sm btn-outline-secondary" [disabled]="draftingReplyId() === message.id" (click)="suggestReply(message)">
-              @if (draftingReplyId() === message.id) {
-                <span class="spinner-border spinner-border-sm me-1"></span> Gerando...
-              } @else {
-                <i class="bi bi-stars me-1"></i>Sugerir resposta
+            <p class="mb-2 small" style="white-space: pre-line;">{{ message.message }}</p>
+            <div class="d-flex flex-wrap gap-2">
+              <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" [disabled]="draftingReplyId() === message.id" (click)="suggestReply(message)">
+                @if (draftingReplyId() === message.id) {
+                  <span class="spinner-border spinner-border-sm me-1"></span> Gerando...
+                } @else {
+                  <i class="bi bi-stars me-1"></i>{{ draftedReplies()[message.id] ? 'Gerar outra sugestão' : 'Sugerir resposta' }}
+                }
+              </button>
+              @if (whatsappLink(message); as waUrl) {
+                <a [href]="waUrl" target="_blank" rel="noopener" class="btn btn-sm btn-success rounded-pill">
+                  <i class="bi bi-whatsapp me-1"></i>{{ draftedReplies()[message.id] ? 'Responder com o rascunho' : 'Responder no WhatsApp' }}
+                </a>
               }
-            </button>
+              <a [href]="mailtoLink(message)" class="btn btn-sm btn-outline-primary rounded-pill">
+                <i class="bi bi-envelope me-1"></i>Responder por e-mail
+              </a>
+            </div>
             @if (draftedReplies()[message.id]) {
               <div class="mt-2 p-2 bg-body-secondary rounded-3 small">
-                <strong class="d-block mb-1">Rascunho sugerido:</strong>
-                {{ draftedReplies()[message.id] }}
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <strong>Rascunho sugerido — revise antes de enviar:</strong>
+                  <button type="button" class="btn btn-sm btn-link p-0" (click)="copyReply(message)">
+                    <i class="bi me-1" [class.bi-clipboard]="copiedReplyId() !== message.id" [class.bi-clipboard-check]="copiedReplyId() === message.id"></i>
+                    {{ copiedReplyId() === message.id ? 'Copiado!' : 'Copiar' }}
+                  </button>
+                </div>
+                <span style="white-space: pre-line;">{{ draftedReplies()[message.id] }}</span>
               </div>
             }
             @if (replyErrorId() === message.id) {

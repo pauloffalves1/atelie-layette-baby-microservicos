@@ -30,7 +30,7 @@ update).
 
 ```bash
 dotnet build AtelieBebe.Microservices.slnx                          # build everything
-dotnet test AtelieBebe.Microservices.slnx --nologo                  # 132 unit tests, 5 projects
+dotnet test AtelieBebe.Microservices.slnx --nologo                  # 134 unit tests, 5 projects
 cp .env.example .env && cd keys && openssl genrsa -out jwt-private.pem 2048 && \
   openssl rsa -in jwt-private.pem -pubout -out jwt-public.pem       # one-time local setup
 docker compose build && docker compose up -d                        # run everything locally

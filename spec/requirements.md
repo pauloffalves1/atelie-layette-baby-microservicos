@@ -426,3 +426,24 @@ inicial, para que ela alterne automaticamente em vez de ficar travada numa únic
    embutido no frontend.
 3. Uma administradora DEVE poder adicionar, remover e reordenar (mover para cima/para baixo) as
    imagens de `home-hero` pelo painel administrativo, sem precisar mexer no código.
+
+## Requisito 25: Busca nas listas do painel administrativo
+
+**User Story:** Como administradora, quero buscar uma encomenda pelo nome, e-mail, telefone ou número
+do pedido (e produtos e clientes pelo nome), para encontrar na hora o que uma cliente cita no
+WhatsApp em vez de paginar a lista inteira.
+
+**Rastreamento:** RF35
+
+**Acceptance Criteria**
+1. QUANDO uma administradora informa um termo de busca na lista de encomendas, O SISTEMA (Orders)
+   DEVE retornar apenas as encomendas cujo nome, e-mail ou telefone da cliente contenham o termo, ou
+   cujo número curto do pedido comece com ele — com ou sem `#` na frente, sem diferenciar maiúsculas.
+2. A busca de encomendas DEVE poder ser combinada com os filtros de status e de pagamento já
+   existentes, e a exportação CSV DEVE respeitar o mesmo termo.
+3. QUANDO uma administradora busca na lista de produtos, O SISTEMA (Catalog) DEVE filtrar por nome ou
+   descrição e, opcionalmente, por categoria — incluindo produtos inativos.
+4. QUANDO uma administradora busca na lista de clientes, O SISTEMA DEVE filtrar por nome/e-mail (sem
+   diferenciar acentos) ou pelos dígitos de telefone/CPF.
+5. Filtros, termo de busca e página DEVEM ficar na URL da lista, de modo que abrir um item e voltar
+   (ou recarregar a página) preserve a lista filtrada.

@@ -1,6 +1,13 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { CanDeactivateFn, Routes } from '@angular/router';
 import { SITE_NAME } from '@shared/core/constants/site';
 import { adminGuard } from '@shared/core/guards/admin.guard';
+import { AdminAuthService } from '@shared/core/services/admin-auth.service';
+
+/** Typed structurally so this file doesn't eagerly import the lazy-loaded product form. Skipped
+ * once logged out (idle timeout / "Sair"), where a blocking confirm would only get in the way. */
+const confirmLeaveProductForm: CanDeactivateFn<{ confirmLeave(): boolean }> = (component) =>
+  !inject(AdminAuthService).isAuthenticated() || component.confirmLeave();
 
 export const routes: Routes = [
   {
@@ -28,11 +35,13 @@ export const routes: Routes = [
         path: 'produtos/novo',
         title: `Novo produto — ${SITE_NAME}`,
         loadComponent: () => import('./features/admin/products/admin-product-form').then((m) => m.AdminProductForm),
+        canDeactivate: [confirmLeaveProductForm],
       },
       {
         path: 'produtos/:id/editar',
         title: `Editar produto — ${SITE_NAME}`,
         loadComponent: () => import('./features/admin/products/admin-product-form').then((m) => m.AdminProductForm),
+        canDeactivate: [confirmLeaveProductForm],
       },
       {
         path: 'encomendas',

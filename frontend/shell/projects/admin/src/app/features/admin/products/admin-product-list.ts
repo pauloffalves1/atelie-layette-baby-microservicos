@@ -1,26 +1,44 @@
 import { CurrencyPipe } from '@angular/common';
-import { Component, OnInit, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Product } from '@shared/core/models/product.model';
 import { ProductService } from '@shared/core/services/product.service';
 import { Pagination } from '@shared/shared/components/pagination/pagination';
 import { AssetUrlPipe } from '@shared/shared/pipes/asset-url.pipe';
 
+const SEARCH_DEBOUNCE_MS = 350;
+
+/** Search, category and page live in the URL (?busca=&categoria=&pagina=) — same reasoning as the
+ * order list: coming back from editing a product lands on the same filtered page. */
 @Component({
   selector: 'app-admin-product-list',
   standalone: true,
   imports: [CurrencyPipe, RouterLink, Pagination, AssetUrlPipe],
   templateUrl: './admin-product-list.html',
 })
-export class AdminProductList implements OnInit {
+export class AdminProductList {
+  private readonly productService = inject(ProductService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+
   readonly products = signal<Product[]>([]);
   readonly page = signal(1);
   readonly totalPages = signal(0);
+  readonly totalItems = signal(0);
   readonly loading = signal(true);
+  readonly search = signal('');
+  readonly category = signal('');
+  readonly categories = signal<string[]>([]);
+  readonly actionError = signal<string | null>(null);
 
   readonly deletingId = signal<string | null>(null);
+  readonly togglingId = signal<string | null>(null);
 
   readonly selectedIds = signal<string[]>([]);
+  readonly allOnPageSelected = computed(
+    () => this.products().length > 0 && this.products().every((p) => this.selectedIds().includes(p.id)),
+  );
   readonly bulkDiscount = signal<number | null>(null);
   readonly bulkStartsAt = signal('');
   readonly bulkEndsAt = signal('');
@@ -28,31 +46,67 @@ export class AdminProductList implements OnInit {
   readonly bulkPromotionError = signal<string | null>(null);
   readonly bulkPromotionApplied = signal(false);
 
-  constructor(private readonly productService: ProductService) {}
+  private searchTimeout: ReturnType<typeof setTimeout> | undefined;
 
-  ngOnInit(): void {
-    this.load();
+  constructor() {
+    this.productService.listCategories().subscribe({ next: (categories) => this.categories.set(categories), error: () => {} });
+
+    this.route.queryParamMap.pipe(takeUntilDestroyed(inject(DestroyRef))).subscribe((params) => {
+      this.search.set(params.get('busca') ?? '');
+      this.category.set(params.get('categoria') ?? '');
+      this.page.set(Math.max(1, Number(params.get('pagina')) || 1));
+      this.load();
+    });
   }
 
   load(): void {
     this.loading.set(true);
-    this.productService.listAllForAdmin(this.page()).subscribe({
-      next: (result) => {
-        this.products.set(result.items);
-        this.totalPages.set(result.totalPages);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
-    });
+    this.productService
+      .listAllForAdmin(this.page(), 20, this.search().trim() || undefined, this.category() || undefined)
+      .subscribe({
+        next: (result) => {
+          this.products.set(result.items);
+          this.totalPages.set(result.totalPages);
+          this.totalItems.set(result.totalItems);
+          this.loading.set(false);
+        },
+        error: () => this.loading.set(false),
+      });
+  }
+
+  onSearchInput(value: string): void {
+    this.search.set(value);
+    if (this.searchTimeout) clearTimeout(this.searchTimeout);
+    this.searchTimeout = setTimeout(() => this.updateQuery({ busca: value.trim() || null, pagina: null }), SEARCH_DEBOUNCE_MS);
+  }
+
+  clearFilters(): void {
+    if (this.searchTimeout) clearTimeout(this.searchTimeout);
+    this.updateQuery({ busca: null, categoria: null, pagina: null });
+  }
+
+  filterByCategory(category: string): void {
+    this.updateQuery({ categoria: category || null, pagina: null });
   }
 
   goToPage(page: number): void {
-    this.page.set(page);
-    this.load();
+    this.updateQuery({ pagina: page > 1 ? page : null });
   }
 
   toggleActive(product: Product): void {
-    this.productService.setActive(product.id, !product.active).subscribe(() => this.load());
+    if (this.togglingId()) return;
+    this.togglingId.set(product.id);
+    this.actionError.set(null);
+    this.productService.setActive(product.id, !product.active).subscribe({
+      next: () => {
+        this.togglingId.set(null);
+        this.load();
+      },
+      error: (err) => {
+        this.togglingId.set(null);
+        this.actionError.set(err?.error?.detail ?? `Não foi possível ${product.active ? 'inativar' : 'ativar'} "${product.name}".`);
+      },
+    });
   }
 
   deleteProduct(product: Product): void {
@@ -63,14 +117,16 @@ export class AdminProductList implements OnInit {
     if (!confirmed) return;
 
     this.deletingId.set(product.id);
+    this.actionError.set(null);
     this.productService.delete(product.id).subscribe({
       next: () => {
         this.deletingId.set(null);
+        this.selectedIds.update((ids) => ids.filter((id) => id !== product.id));
         this.load();
       },
       error: (err) => {
         this.deletingId.set(null);
-        alert(err?.error?.detail ?? 'Não foi possível excluir o produto.');
+        this.actionError.set(err?.error?.detail ?? `Não foi possível excluir "${product.name}".`);
       },
     });
   }
@@ -78,6 +134,13 @@ export class AdminProductList implements OnInit {
   toggleSelected(productId: string, checked: boolean): void {
     const current = this.selectedIds();
     this.selectedIds.set(checked ? [...current, productId] : current.filter((id) => id !== productId));
+  }
+
+  toggleSelectAllOnPage(checked: boolean): void {
+    const pageIds = this.products().map((p) => p.id);
+    this.selectedIds.update((current) =>
+      checked ? [...new Set([...current, ...pageIds])] : current.filter((id) => !pageIds.includes(id)),
+    );
   }
 
   clearSelection(): void {
@@ -116,5 +179,9 @@ export class AdminProductList implements OnInit {
           this.bulkPromotionError.set(err?.error?.detail ?? 'Não foi possível aplicar a promoção.');
         },
       });
+  }
+
+  private updateQuery(changes: Record<string, string | number | null>): void {
+    this.router.navigate([], { relativeTo: this.route, queryParams: changes, queryParamsHandling: 'merge', replaceUrl: true });
   }
 }

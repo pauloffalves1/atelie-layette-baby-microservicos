@@ -44,8 +44,11 @@ export class ProductService {
 
   // ---- admin ----
 
-  listAllForAdmin(page = 1, pageSize = 20): Observable<PagedResult<Product>> {
-    return this.http.get<PagedResult<Product>>(this.adminUrl, { params: { page, pageSize } });
+  listAllForAdmin(page = 1, pageSize = 20, search?: string, category?: string): Observable<PagedResult<Product>> {
+    const params: Record<string, string | number> = { page, pageSize };
+    if (search) params['search'] = search;
+    if (category) params['category'] = category;
+    return this.http.get<PagedResult<Product>>(this.adminUrl, { params });
   }
 
   getById(id: string): Observable<AdminProduct> {

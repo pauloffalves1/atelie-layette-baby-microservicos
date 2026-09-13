@@ -341,6 +341,9 @@ aceite em EARS por requisito, mesmo padrão usado no `spec/` do monólito) vive 
 - **RF34** — Uma administradora deve poder cadastrar uma ou mais imagens para a foto principal da
   página inicial; quando houver mais de uma, o sistema deve exibi-las como um carrossel (com setas
   e indicadores) em vez de uma foto fixa.
+- **RF35** — Uma administradora deve poder buscar encomendas por nome, e-mail ou telefone da cliente
+  ou pelo número do pedido (combinável com os filtros de status/pagamento e respeitado na exportação
+  CSV), e buscar produtos (por nome/categoria) e clientes; filtros e busca ficam na URL da lista.
 
 ### Não funcionais
 
@@ -842,6 +845,27 @@ contra o Gateway via `docker run --network host`).
       com `#` e já vem com o e-mail da cliente logada. Também corrigido um transbordo horizontal de
       8px no celular em produto/carrinho/checkout (`row g-5` → `g-4 g-lg-5`). Validado com build de
       produção de storefront e shell, e2e 7/7 e checagem visual em viewport de iPhone.
+- [x] **Rodada de UX do painel admin + busca (RF35)** (2026-09-13) — *Layout:* a barra lateral fixa
+      de 260px deixava ~130px de conteúdo no celular; abaixo de `lg` ela vira um menu recolhível
+      (barra superior com botão, fundo escurecido, `inert` quando fechado, fecha ao navegar/Esc), e
+      o menu mostra contadores de encomendas `Recebido` e avaliações pendentes (atualizados a cada
+      navegação). Também deixou de sair na impressão da etiqueta. *Encomendas:* mudar status agora
+      pede confirmação inline avisando que a cliente é notificada por e-mail/WhatsApp (e que
+      cancelar não tem volta) — antes um clique já disparava; número `#xxxxxxxx` na lista; busca por
+      nome/e-mail/telefone/nº (backend novo em Orders, `LIKE` validado contra o SQL Server real);
+      filtros, busca e página na URL, preservados ao voltar do detalhe; botão de WhatsApp com
+      mensagem pré-preenchida e e-mail clicável; recado de presente e destinatário na etiqueta
+      impressa. *Mensagens/Clientes:* responder no WhatsApp (com o rascunho da IA, se gerado) ou por
+      e-mail, copiar rascunho; busca local em Clientes (ignora acentos, telefone/CPF por dígitos).
+      *Produtos:* "Salvar produto" também salva galeria e acesso exclusivo alterados (antes navegava
+      e descartava fotos recém-enviadas), selos de "Não salva", aviso ao sair com alterações
+      pendentes (guard + `beforeunload`), produto novo abre direto na edição para completar
+      galeria/promoção; sugestões das categorias existentes com alerta de "categoria nova";
+      reordenar fotos da galeria; busca + filtro de categoria na lista (Catalog só passou a repassar
+      `search`/`category`); selecionar todos; erro visível ao ativar/inativar/excluir (antes
+      `alert()` ou nada). Corrigido de quebra: a mensagem "Promoção aplicada!" nunca aparecia (ficava
+      dentro do bloco que some quando a seleção é limpa). Validado com 132+2 testes .NET, builds de
+      admin/shell/storefront, e2e 7/7 e checagem visual (desktop e iPhone) com o admin rodando.
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
       nos manifests; falta aplicar num cluster ativo e uma license key real. **Não avancei aqui** —
       exige um cluster de verdade e uma license key real da New Relic, que eu não tenho como

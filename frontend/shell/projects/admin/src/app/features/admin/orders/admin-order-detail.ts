@@ -1,6 +1,8 @@
-import { CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, OnInit, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { CurrencyPipe, DatePipe, Location } from '@angular/common';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { SITE_NAME } from '@shared/core/constants/site';
+import { whatsappUrl } from '@shared/core/utils/contact-links';
 import {
   CustomOrderDetails,
   Order,
@@ -26,7 +28,7 @@ const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
 @Component({
   selector: 'app-admin-order-detail',
   standalone: true,
-  imports: [CurrencyPipe, DatePipe, RouterLink, CpfMaskPipe, PixQrCode],
+  imports: [CurrencyPipe, DatePipe, CpfMaskPipe, PixQrCode],
   templateUrl: './admin-order-detail.html',
 })
 export class AdminOrderDetail implements OnInit {
@@ -34,6 +36,11 @@ export class AdminOrderDetail implements OnInit {
   readonly loading = signal(true);
   readonly updating = signal(false);
   readonly errorMessage = signal<string | null>(null);
+  readonly pendingStatus = signal<OrderStatus | null>(null);
+  readonly customerWhatsappUrl = computed(() => {
+    const order = this.order();
+    return order ? whatsappUrl(order.customerPhone, `Olá, ${order.customerName.split(' ')[0]}! Sobre o seu pedido #${order.id.slice(0, 8)} no ${SITE_NAME}: `) : null;
+  });
   readonly statusLabels = ORDER_STATUS_LABELS;
   readonly paymentStatusLabels = PAYMENT_STATUS_LABELS;
 
@@ -48,6 +55,19 @@ export class AdminOrderDetail implements OnInit {
   readonly trackingCodeSaved = signal(false);
 
   private orderId!: string;
+  private readonly location = inject(Location);
+  private readonly router = inject(Router);
+
+  /** Back to the list the admin came from, keeping its filters/page (they live in the list's URL);
+   * falls back to the unfiltered list when this page was opened directly (bookmark, new tab). */
+  goBack(): void {
+    const navigationId = (history.state as { navigationId?: number } | null)?.navigationId ?? 1;
+    if (navigationId > 1) {
+      this.location.back();
+    } else {
+      this.router.navigate(['/admin/encomendas']);
+    }
+  }
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -64,7 +84,15 @@ export class AdminOrderDetail implements OnInit {
     return order ? ALLOWED_TRANSITIONS[order.status] : [];
   }
 
-  changeStatus(status: OrderStatus): void {
+  /**
+   * Every status change notifies the customer (e-mail + WhatsApp, see OrderStatusChangedDomainEvent)
+   * and "Cancelado" is terminal, so a transition button only stages it in `pendingStatus` — this
+   * applies it after the admin confirms.
+   */
+  confirmStatusChange(): void {
+    const status = this.pendingStatus();
+    if (!status) return;
+
     this.updating.set(true);
     this.errorMessage.set(null);
 
@@ -72,6 +100,7 @@ export class AdminOrderDetail implements OnInit {
       next: (order) => {
         this.order.set(order);
         this.updating.set(false);
+        this.pendingStatus.set(null);
       },
       error: (err) => {
         this.updating.set(false);

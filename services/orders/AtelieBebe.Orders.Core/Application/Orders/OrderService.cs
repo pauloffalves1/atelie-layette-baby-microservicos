@@ -207,7 +207,7 @@ public sealed class OrderService : IOrderService
         }
     }
 
-    public async Task<PagedResult<OrderDto>> ListAsync(string? status, string? paymentStatus, int page, int pageSize, CancellationToken ct = default)
+    public async Task<PagedResult<OrderDto>> ListAsync(string? status, string? paymentStatus, int page, int pageSize, string? search = null, CancellationToken ct = default)
     {
         _logger.LogInformation("Entrando em {Method}", nameof(ListAsync));
         try
@@ -215,7 +215,7 @@ public sealed class OrderService : IOrderService
             var (parsedStatus, parsedPaymentStatus) = ParseFilters(status, paymentStatus);
 
             var (normalizedPage, normalizedPageSize) = Pagination.Normalize(page, pageSize);
-            var (orders, totalItems) = await _unitOfWork.Orders.ListAsync(parsedStatus, parsedPaymentStatus, normalizedPage, normalizedPageSize, ct);
+            var (orders, totalItems) = await _unitOfWork.Orders.ListAsync(parsedStatus, parsedPaymentStatus, normalizedPage, normalizedPageSize, search, ct);
             var result = new PagedResult<OrderDto>(orders.Select(ToDto).ToList(), normalizedPage, normalizedPageSize, totalItems);
 
             _logger.LogInformation("Saindo de {Method}", nameof(ListAsync));
@@ -228,13 +228,13 @@ public sealed class OrderService : IOrderService
         }
     }
 
-    public async Task<IReadOnlyList<OrderDto>> ExportAsync(string? status, string? paymentStatus, CancellationToken ct = default)
+    public async Task<IReadOnlyList<OrderDto>> ExportAsync(string? status, string? paymentStatus, string? search = null, CancellationToken ct = default)
     {
         _logger.LogInformation("Entrando em {Method}", nameof(ExportAsync));
         try
         {
             var (parsedStatus, parsedPaymentStatus) = ParseFilters(status, paymentStatus);
-            var orders = await _unitOfWork.Orders.ListAllAsync(parsedStatus, parsedPaymentStatus, ct);
+            var orders = await _unitOfWork.Orders.ListAllAsync(parsedStatus, parsedPaymentStatus, search, ct);
             var result = orders.Select(ToDto).ToList();
 
             _logger.LogInformation("Saindo de {Method}", nameof(ExportAsync));

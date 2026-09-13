@@ -4,6 +4,13 @@
     <h2 class="mb-0">{{ isEditMode() ? 'Editar produto' : 'Novo produto' }}</h2>
   </div>
 
+  @if (justCreated()) {
+    <div class="alert alert-success rounded-4 small d-flex justify-content-between align-items-center gap-2" role="status">
+      <span><i class="bi bi-check-circle me-1"></i>Produto criado! Agora você já pode adicionar fotos à galeria, uma promoção ou acesso exclusivo abaixo.</span>
+      <button type="button" class="btn-close" aria-label="Fechar aviso" (click)="justCreated.set(false)"></button>
+    </div>
+  }
+
   @if (loading()) {
     <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
   } @else {
@@ -21,10 +28,20 @@
             </div>
             <div class="col-md-4">
               <label for="product-category" class="form-label small fw-semibold">Categoria</label>
-              <input type="text" id="product-category" class="form-control" formControlName="category" placeholder="Ex: Bodies"
+              <input type="text" id="product-category" class="form-control" formControlName="category" placeholder="Escolha ou digite"
+                list="product-category-options" autocomplete="off"
                 [class.is-invalid]="form.controls.category.invalid && form.controls.category.touched">
+              <datalist id="product-category-options">
+                @for (category of categories(); track category) {
+                  <option [value]="category"></option>
+                }
+              </datalist>
               @if (form.controls.category.invalid && form.controls.category.touched) {
                 <div class="invalid-feedback">Categoria é obrigatória.</div>
+              } @else if (isNewCategory()) {
+                <div class="form-text text-warning-emphasis">
+                  <i class="bi bi-exclamation-circle me-1"></i>Categoria nova — confira a grafia (a loja agrupa produtos pelo nome exato).
+                </div>
               }
             </div>
             <div class="col-md-6">
@@ -102,11 +119,23 @@
             }
             Salvar produto
           </button>
+          @if (galleryDirty() || customersDirty()) {
+            <p class="small text-secondary text-center mt-2 mb-0">
+              Também salva
+              @if (galleryDirty()) { as fotos da galeria }
+              @if (galleryDirty() && customersDirty()) { e }
+              @if (customersDirty()) { o acesso exclusivo }
+              alterados.
+            </p>
+          }
         </div>
 
         @if (isEditMode()) {
           <div class="stat-card mb-4">
-            <h6 class="mb-1">Promoção</h6>
+            <h6 class="mb-1">
+              Promoção
+              @if (promotionDirty()) { <span class="badge bg-warning-subtle text-warning-emphasis ms-1">Não salva</span> }
+            </h6>
             <p class="small text-secondary mb-3">
               Desconto por tempo limitado — ativa e expira sozinha, conforme o período abaixo.
               @if (isOnPromotion()) {
@@ -157,7 +186,10 @@
           </div>
 
           <div class="stat-card mb-4">
-            <h6 class="mb-1">Galeria de fotos</h6>
+            <h6 class="mb-1">
+              Galeria de fotos
+              @if (galleryDirty()) { <span class="badge bg-warning-subtle text-warning-emphasis ms-1">Não salva</span> }
+            </h6>
             <p class="small text-secondary mb-3">
               Fotos adicionais mostradas na página do produto, além da foto principal acima.
             </p>
@@ -168,15 +200,27 @@
 
             @if (galleryImages().length > 0) {
               <div class="row g-2 mb-3">
-                @for (url of galleryImages(); track url; let i = $index) {
+                @for (url of galleryImages(); track url; let i = $index; let first = $first; let last = $last) {
                   <div class="col-4">
                     <div class="ratio ratio-1x1 rounded-4 overflow-hidden position-relative bg-light">
-                      <img [src]="resolveGalleryUrl(url)" alt="Foto da galeria" class="w-100 h-100 object-fit-cover">
+                      <img [src]="resolveGalleryUrl(url)" [alt]="'Foto ' + (i + 1) + ' da galeria'" class="w-100 h-100 object-fit-cover">
                       <button type="button" class="btn btn-sm btn-danger rounded-circle position-absolute top-0 end-0 m-1" style="width: 1.75rem; height: 1.75rem; padding: 0"
-                        (click)="removeGalleryImage(i)" title="Remover">
+                        (click)="removeGalleryImage(i)" title="Remover" [attr.aria-label]="'Remover foto ' + (i + 1)">
                         <i class="bi bi-x"></i>
                       </button>
                     </div>
+                    @if (galleryImages().length > 1) {
+                      <div class="d-flex justify-content-center gap-1 mt-1">
+                        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" [disabled]="first"
+                          (click)="moveGalleryImage(i, -1)" [attr.aria-label]="'Mover foto ' + (i + 1) + ' para antes'" title="Mover para antes">
+                          <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" [disabled]="last"
+                          (click)="moveGalleryImage(i, 1)" [attr.aria-label]="'Mover foto ' + (i + 1) + ' para depois'" title="Mover para depois">
+                          <i class="bi bi-chevron-right"></i>
+                        </button>
+                      </div>
+                    }
                   </div>
                 }
               </div>
@@ -206,7 +250,10 @@
           </div>
 
           <div class="stat-card">
-            <h6 class="mb-1">Acesso exclusivo</h6>
+            <h6 class="mb-1">
+              Acesso exclusivo
+              @if (customersDirty()) { <span class="badge bg-warning-subtle text-warning-emphasis ms-1">Não salvo</span> }
+            </h6>
             <p class="small text-secondary mb-3">
               Marque os clientes que podem ver e encomendar este produto. Sem nenhum marcado, o produto é público.
             </p>

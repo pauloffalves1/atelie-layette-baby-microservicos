@@ -1,8 +1,11 @@
 <div class="p-4 p-lg-5 d-print-none">
   <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
     <div class="d-flex align-items-center gap-3">
-      <a routerLink="/admin/encomendas" class="btn btn-sm btn-outline-secondary rounded-circle" title="Voltar para encomendas"><i class="bi bi-arrow-left"></i></a>
-      <h2 class="mb-0">Detalhes da encomenda</h2>
+      <button type="button" class="btn btn-sm btn-outline-secondary rounded-circle" title="Voltar para encomendas" aria-label="Voltar para encomendas" (click)="goBack()"><i class="bi bi-arrow-left"></i></button>
+      <h2 class="mb-0">
+        Encomenda
+        @if (order(); as o) { <span class="text-secondary fw-normal">#{{ o.id.slice(0, 8) }}</span> }
+      </h2>
     </div>
     @if (order()) {
       <button type="button" class="btn btn-sm btn-outline-primary rounded-pill" (click)="printPackingSlip()">
@@ -130,9 +133,14 @@
         <div class="stat-card mb-4">
           <h6 class="mb-3"><i class="bi bi-person me-2"></i>Cliente</h6>
           <p class="small mb-1"><strong>{{ o.customerName }}</strong></p>
-          <p class="small mb-1">{{ o.customerEmail }}</p>
+          <p class="small mb-1"><a [href]="'mailto:' + o.customerEmail">{{ o.customerEmail }}</a></p>
           @if (o.customerPhone) { <p class="small mb-1">{{ o.customerPhone }}</p> }
           @if (o.customerCpf) { <p class="small mb-0">CPF: {{ o.customerCpf | cpfMask }}</p> }
+          @if (customerWhatsappUrl(); as waUrl) {
+            <a [href]="waUrl" target="_blank" rel="noopener" class="btn btn-sm btn-success rounded-pill w-100 mt-3">
+              <i class="bi bi-whatsapp me-1"></i>Falar no WhatsApp
+            </a>
+          }
         </div>
 
         @if (o.status === 'Enviado' || o.status === 'Entregue' || o.trackingCode) {
@@ -201,6 +209,34 @@
 
           @if (availableTransitions.length === 0) {
             <p class="small text-secondary mb-0">Este pedido não possui mais transições de status disponíveis.</p>
+          } @else if (pendingStatus(); as status) {
+            <div class="rounded-4 p-3" [class.bg-danger-subtle]="status === 'Cancelado'" [class.bg-body-secondary]="status !== 'Cancelado'" role="alertdialog" aria-labelledby="status-confirm-title">
+              <p class="fw-semibold small mb-1" id="status-confirm-title">
+                Marcar como "{{ statusLabels[status] }}"?
+              </p>
+              <p class="small mb-3">
+                {{ o.customerName.split(' ')[0] }} recebe um aviso por e-mail e WhatsApp.
+                @if (status === 'Cancelado') {
+                  <strong>O cancelamento não pode ser desfeito.</strong>
+                }
+                @if (status === 'Enviado' && !o.trackingCode) {
+                  Depois de confirmar, informe o código de rastreio no quadro que aparece acima.
+                }
+              </p>
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-sm rounded-pill flex-fill"
+                  [class.btn-danger]="status === 'Cancelado'" [class.btn-primary]="status !== 'Cancelado'"
+                  [disabled]="updating()" (click)="confirmStatusChange()">
+                  @if (updating()) {
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                  }
+                  Confirmar
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" [disabled]="updating()" (click)="pendingStatus.set(null)">
+                  Voltar
+                </button>
+              </div>
+            </div>
           } @else {
             <div class="d-grid gap-2">
               @for (status of availableTransitions; track status) {
@@ -208,11 +244,7 @@
                   class="btn rounded-pill"
                   [class.btn-primary]="status !== 'Cancelado'"
                   [class.btn-outline-danger]="status === 'Cancelado'"
-                  [disabled]="updating()"
-                  (click)="changeStatus(status)">
-                  @if (updating()) {
-                    <span class="spinner-border spinner-border-sm me-2"></span>
-                  }
+                  (click)="pendingStatus.set(status)">
                   Marcar como "{{ statusLabels[status] }}"
                 </button>
               }
@@ -263,5 +295,13 @@
         <p class="mb-0 mt-1"><strong>Obs.:</strong> {{ o.notes }}</p>
       }
     </div>
+
+    @if (o.giftMessage || o.recipientName) {
+      <div class="mt-2">
+        <h6 class="border-bottom pb-1 mb-1">Presente — incluir cartão</h6>
+        @if (o.recipientName) { <p class="mb-0">Para: <strong>{{ o.recipientName }}</strong></p> }
+        @if (o.giftMessage) { <p class="mb-0 fst-italic">"{{ o.giftMessage }}"</p> }
+      </div>
+    }
   </div>
 }

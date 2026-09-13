@@ -49,8 +49,8 @@ public static class OrderEndpoints
         var adminGroup = app.MapGroup("/api/admin/orders").WithTags("Encomendas (admin)")
             .RequireAuthorization(JwtAuthenticationExtensions.PermissionPolicyName(AdminPermission.Orders));
 
-        adminGroup.MapGet("/", async (string? status, string? paymentStatus, IOrderService service, CancellationToken ct, int page = 1, int pageSize = 20) =>
-            Results.Ok(await service.ListAsync(status, paymentStatus, page, pageSize, ct)));
+        adminGroup.MapGet("/", async (string? status, string? paymentStatus, string? search, IOrderService service, CancellationToken ct, int page = 1, int pageSize = 20) =>
+            Results.Ok(await service.ListAsync(status, paymentStatus, page, pageSize, search, ct)));
 
         adminGroup.MapPatch("/{id:guid}/status", async (Guid id, UpdateOrderStatusRequest request, HttpContext http, IOrderService service, AdminAuditPublisher auditPublisher, CancellationToken ct) =>
         {
@@ -88,9 +88,9 @@ public static class OrderEndpoints
         adminGroup.MapPost("/{id:guid}/payment-link", async (Guid id, IOrderService service, CancellationToken ct) =>
             Results.Ok(new { pixQrCodeText = await service.GeneratePixChargeAsync(id, ct) }));
 
-        adminGroup.MapGet("/export", async (string? status, string? paymentStatus, IOrderService service, CancellationToken ct) =>
+        adminGroup.MapGet("/export", async (string? status, string? paymentStatus, string? search, IOrderService service, CancellationToken ct) =>
         {
-            var orders = await service.ExportAsync(status, paymentStatus, ct);
+            var orders = await service.ExportAsync(status, paymentStatus, search, ct);
             var csv = BuildCsv(orders);
             var fileName = $"encomendas-{DateTime.UtcNow:yyyy-MM-dd}.csv";
             return Results.File(new UTF8Encoding(true).GetBytes(csv), "text/csv", fileName);

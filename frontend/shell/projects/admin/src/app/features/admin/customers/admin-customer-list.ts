@@ -1,8 +1,14 @@
 import { DatePipe } from '@angular/common';
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CustomerSummary } from '@shared/core/models/customer.model';
 import { CustomerAdminService } from '@shared/core/services/customer-admin.service';
+import { whatsappUrl } from '@shared/core/utils/contact-links';
+
+/** Lowercase, accent-free — so "joao" finds "João". */
+function normalizeForSearch(value: string | null | undefined): string {
+  return (value ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
 import { CpfMaskPipe } from '@shared/shared/pipes/cpf-mask.pipe';
 
 @Component({
@@ -16,6 +22,25 @@ export class AdminCustomerList implements OnInit {
   readonly loading = signal(true);
   readonly verifyingId = signal<string | null>(null);
   readonly removingId = signal<string | null>(null);
+  readonly search = signal('');
+
+  /** The admin customer endpoint already returns every account (unpaginated), so search filters
+   * in memory — name/e-mail ignore case and accents, phone/CPF match on digits alone. */
+  readonly filteredCustomers = computed(() => {
+    const term = normalizeForSearch(this.search().trim());
+    if (!term) return this.customers();
+    const digits = term.replace(/\D/g, '');
+    return this.customers().filter(
+      (c) =>
+        normalizeForSearch(c.name).includes(term) ||
+        normalizeForSearch(c.email).includes(term) ||
+        (digits.length >= 3 && ((c.phone ?? '').replace(/\D/g, '').includes(digits) || (c.cpf ?? '').replace(/\D/g, '').includes(digits))),
+    );
+  });
+
+  whatsappLink(customer: CustomerSummary): string | null {
+    return whatsappUrl(customer.phone);
+  }
 
   constructor(private readonly customerAdminService: CustomerAdminService) {}
 

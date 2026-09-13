@@ -1,6 +1,7 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Observable, forkJoin } from 'rxjs';
 import { CustomerSummary } from '@shared/core/models/customer.model';
 import { CustomerAdminService } from '@shared/core/services/customer-admin.service';
 import { ProductService } from '@shared/core/services/product.service';
@@ -52,6 +53,31 @@ export class AdminProductForm implements OnInit {
   readonly promotionError = signal<string | null>(null);
 
   private productId: string | null = null;
+  private leavingAfterSave = false;
+
+  readonly justCreated = signal(false);
+  readonly categories = signal<string[]>([]);
+
+  /** Snapshots of what the server has, to tell whether each separately-saved section was edited. */
+  private readonly savedGallery = signal<string[]>([]);
+  private readonly savedCustomerIds = signal<string[]>([]);
+  private readonly savedPromotion = signal({ discount: null as number | null, startsAt: '', endsAt: '' });
+
+  readonly galleryDirty = computed(() => this.galleryImages().join('|') !== this.savedGallery().join('|'));
+  readonly customersDirty = computed(
+    () => [...this.selectedCustomerIds()].sort().join('|') !== [...this.savedCustomerIds()].sort().join('|'),
+  );
+  readonly promotionDirty = computed(() => {
+    const saved = this.savedPromotion();
+    return (
+      (this.promotionDiscount() || null) !== (saved.discount || null) ||
+      this.promotionStartsAt() !== saved.startsAt ||
+      this.promotionEndsAt() !== saved.endsAt
+    );
+  });
+
+  /** Typed category that no active product uses yet — likely a typo of an existing one. */
+  readonly isNewCategory = signal(false);
 
   readonly form = this.fb.nonNullable.group({
     name: ['', Validators.required],
@@ -72,12 +98,21 @@ export class AdminProductForm implements OnInit {
 
   ngOnInit(): void {
     this.customerAdminService.list().subscribe((customers) => this.customers.set(customers));
+    this.productService.listCategories().subscribe({
+      next: (categories) => {
+        this.categories.set(categories);
+        this.updateNewCategoryHint();
+      },
+      error: () => {},
+    });
+    this.form.controls.category.valueChanges.subscribe(() => this.updateNewCategoryHint());
 
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) return;
 
     this.productId = id;
     this.isEditMode.set(true);
+    this.justCreated.set(this.route.snapshot.queryParamMap.has('criado'));
     this.loading.set(true);
 
     this.productService.getById(id).subscribe({
@@ -91,15 +126,40 @@ export class AdminProductForm implements OnInit {
           featured: product.featured,
           productionLeadTimeDays: product.productionLeadTimeDays,
         });
+        this.form.markAsPristine();
         this.selectedCustomerIds.set(product.allowedCustomerIds);
+        this.savedCustomerIds.set(product.allowedCustomerIds);
         this.galleryImages.set(product.imageUrls);
+        this.savedGallery.set(product.imageUrls);
         this.isOnPromotion.set(product.isOnPromotion);
         this.promotionDiscount.set(product.discountPercentage);
         this.promotionStartsAt.set(toDatetimeLocal(product.promotionStartsAt));
         this.promotionEndsAt.set(toDatetimeLocal(product.promotionEndsAt));
+        this.savedPromotion.set({
+          discount: product.discountPercentage,
+          startsAt: toDatetimeLocal(product.promotionStartsAt),
+          endsAt: toDatetimeLocal(product.promotionEndsAt),
+        });
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
+    });
+  }
+
+  private updateNewCategoryHint(): void {
+    const typed = this.form.controls.category.value.trim().toLocaleLowerCase('pt-BR');
+    this.isNewCategory.set(
+      typed.length > 0 && this.categories().length > 0 && !this.categories().some((c) => c.toLocaleLowerCase('pt-BR') === typed),
+    );
+  }
+
+  moveGalleryImage(index: number, delta: -1 | 1): void {
+    this.galleryImages.update((urls) => {
+      const target = index + delta;
+      if (target < 0 || target >= urls.length) return urls;
+      const next = [...urls];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
     });
   }
 
@@ -118,6 +178,7 @@ export class AdminProductForm implements OnInit {
     this.productService.uploadImage(file).subscribe({
       next: ({ url }) => {
         this.form.patchValue({ imageUrl: url });
+        this.form.markAsDirty();
         this.uploadingImage.set(false);
       },
       error: (err) => {
@@ -142,6 +203,7 @@ export class AdminProductForm implements OnInit {
     this.productService.generateDescription(name, category).subscribe({
       next: ({ description }) => {
         this.form.patchValue({ description });
+        this.form.markAsDirty();
         this.generatingDescription.set(false);
       },
       error: () => {
@@ -189,8 +251,10 @@ export class AdminProductForm implements OnInit {
 
     this.savingGallery.set(true);
     this.gallerySaved.set(false);
-    this.productService.setImages(this.productId, this.galleryImages()).subscribe({
+    const images = this.galleryImages();
+    this.productService.setImages(this.productId, images).subscribe({
       next: () => {
+        this.savedGallery.set(images);
         this.savingGallery.set(false);
         this.gallerySaved.set(true);
         setTimeout(() => this.gallerySaved.set(false), 2500);
@@ -208,8 +272,10 @@ export class AdminProductForm implements OnInit {
 
     this.savingCustomers.set(true);
     this.customersSaved.set(false);
-    this.productService.setAllowedCustomers(this.productId, this.selectedCustomerIds()).subscribe({
+    const customerIds = this.selectedCustomerIds();
+    this.productService.setAllowedCustomers(this.productId, customerIds).subscribe({
       next: () => {
+        this.savedCustomerIds.set(customerIds);
         this.savingCustomers.set(false);
         this.customersSaved.set(true);
         setTimeout(() => this.customersSaved.set(false), 2500);
@@ -238,6 +304,7 @@ export class AdminProductForm implements OnInit {
       .subscribe({
         next: (product) => {
           this.savingPromotion.set(false);
+          this.savedPromotion.set({ discount: this.promotionDiscount(), startsAt: this.promotionStartsAt(), endsAt: this.promotionEndsAt() });
           this.isOnPromotion.set(product.isOnPromotion);
           this.promotionSaved.set(true);
           setTimeout(() => this.promotionSaved.set(false), 2500);
@@ -262,6 +329,7 @@ export class AdminProductForm implements OnInit {
         this.promotionDiscount.set(null);
         this.promotionStartsAt.set('');
         this.promotionEndsAt.set('');
+        this.savedPromotion.set({ discount: null, startsAt: '', endsAt: '' });
       },
       error: (err) => {
         this.savingPromotion.set(false);
@@ -270,9 +338,31 @@ export class AdminProductForm implements OnInit {
     });
   }
 
+  /** Anything the admin changed that no save button has persisted yet — guards leaving the page. */
+  hasUnsavedChanges(): boolean {
+    return !this.leavingAfterSave && (this.form.dirty || this.galleryDirty() || this.customersDirty() || this.promotionDirty());
+  }
+
+  /** Route `canDeactivate` hook (see app.routes.ts). */
+  confirmLeave(): boolean {
+    return !this.hasUnsavedChanges() || confirm('Há alterações não salvas neste produto. Sair mesmo assim e descartá-las?');
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent): void {
+    if (this.hasUnsavedChanges()) event.preventDefault();
+  }
+
   submit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      return;
+    }
+
+    // Promotion needs its own validation (all three fields or none), so it isn't folded into this
+    // save like gallery/access are — but silently dropping a half-edited promotion is worse.
+    if (this.promotionDirty()) {
+      this.errorMessage.set('A promoção tem alterações não salvas — clique em "Salvar promoção" (ou "Remover") antes de salvar o produto.');
       return;
     }
 
@@ -284,22 +374,38 @@ export class AdminProductForm implements OnInit {
       name: value.name,
       description: value.description || null,
       price: value.price,
-      category: value.category,
+      category: value.category.trim(),
       imageUrl: value.imageUrl || null,
       featured: value.featured,
       productionLeadTimeDays: value.productionLeadTimeDays || null,
     };
 
-    const onSuccess = () => this.router.navigate(['/admin/produtos']);
     const onError = (err: any) => {
       this.submitting.set(false);
       this.errorMessage.set(err?.error?.detail ?? 'Não foi possível salvar o produto.');
     };
 
     if (this.isEditMode() && this.productId) {
-      this.productService.update(this.productId, payload).subscribe({ next: onSuccess, error: onError });
+      const id = this.productId;
+      // Gallery photos and exclusive access used to need their own "Salvar" clicks, and "Salvar
+      // produto" navigated away without them — losing freshly uploaded photos. Save them together.
+      const requests: Observable<unknown>[] = [this.productService.update(id, payload)];
+      if (this.galleryDirty()) requests.push(this.productService.setImages(id, this.galleryImages()));
+      if (this.customersDirty()) requests.push(this.productService.setAllowedCustomers(id, this.selectedCustomerIds()));
+
+      forkJoin(requests).subscribe({ next: () => this.leaveAfterSave(['/admin/produtos']), error: onError });
     } else {
-      this.productService.create(payload).subscribe({ next: onSuccess, error: onError });
+      // A new product can only get gallery photos, a promotion and exclusive access once it exists,
+      // so land on its edit page (instead of back on the list) to make those next steps obvious.
+      this.productService.create(payload).subscribe({
+        next: (product) => this.leaveAfterSave(['/admin/produtos', product.id, 'editar'], { criado: 1 }),
+        error: onError,
+      });
     }
+  }
+
+  private leaveAfterSave(commands: unknown[], queryParams?: Record<string, unknown>): void {
+    this.leavingAfterSave = true;
+    this.router.navigate(commands, { queryParams });
   }
 }
