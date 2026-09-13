@@ -1,4 +1,5 @@
 using AtelieBebe.Catalog.Core.Domain.Entities;
+using AtelieBebe.SharedKernel.Common;
 using AtelieBebe.SharedKernel.Outbox;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,6 +15,10 @@ public class CatalogDbContext : DbContext, IOutboxDbContext
     public DbSet<GalleryImage> GalleryImages => Set<GalleryImage>();
     public DbSet<SiteImage> SiteImages => Set<SiteImage>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+
+    // Stored DateTimes are UTC; read them back as UTC so the API serializes them with "Z" — see UtcDateTimeConventions.
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder) =>
+        configurationBuilder.UseUtcDateTimes();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

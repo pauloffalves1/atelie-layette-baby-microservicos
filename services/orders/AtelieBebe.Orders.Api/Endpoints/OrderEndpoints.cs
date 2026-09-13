@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using AtelieBebe.SharedKernel.Common;
 using AtelieBebe.SharedKernel.Web;
 using AtelieBebe.SharedKernel.Auth;
 using AtelieBebe.SharedKernel.Messaging;
@@ -92,7 +93,7 @@ public static class OrderEndpoints
         {
             var orders = await service.ExportAsync(status, paymentStatus, search, ct);
             var csv = BuildCsv(orders);
-            var fileName = $"encomendas-{DateTime.UtcNow:yyyy-MM-dd}.csv";
+            var fileName = $"encomendas-{BrasiliaTime.FromUtc(DateTime.UtcNow):yyyy-MM-dd}.csv";
             return Results.File(new UTF8Encoding(true).GetBytes(csv), "text/csv", fileName);
         });
     }
@@ -113,7 +114,7 @@ public static class OrderEndpoints
             var orderColumns = new[]
             {
                 o.Id.ToString()[..8],
-                o.CreatedAt.ToString("dd/MM/yyyy HH:mm", culture),
+                BrasiliaTime.FromUtc(o.CreatedAt).ToString("dd/MM/yyyy HH:mm", culture),
                 Escape(o.CustomerName),
                 Escape(o.CustomerEmail),
                 Escape(o.CustomerPhone ?? ""),

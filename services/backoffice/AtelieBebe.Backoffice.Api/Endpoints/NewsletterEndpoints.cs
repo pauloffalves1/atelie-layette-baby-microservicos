@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using AtelieBebe.Backoffice.Core.Application.Newsletter;
 using AtelieBebe.SharedKernel.Auth;
+using AtelieBebe.SharedKernel.Common;
 
 namespace AtelieBebe.Backoffice.Api.Endpoints;
 
@@ -29,9 +30,9 @@ public static class NewsletterEndpoints
             var sb = new StringBuilder();
             sb.AppendLine("E-mail;Inscrito em");
             foreach (var s in subscribers)
-                sb.AppendLine($"{s.Email};{s.CreatedAt.ToString("dd/MM/yyyy HH:mm", culture)}");
+                sb.AppendLine($"{s.Email};{BrasiliaTime.FromUtc(s.CreatedAt).ToString("dd/MM/yyyy HH:mm", culture)}");
 
-            var fileName = $"newsletter-{DateTime.UtcNow:yyyy-MM-dd}.csv";
+            var fileName = $"newsletter-{BrasiliaTime.FromUtc(DateTime.UtcNow):yyyy-MM-dd}.csv";
             return Results.File(new UTF8Encoding(true).GetBytes(sb.ToString()), "text/csv", fileName);
         });
     }

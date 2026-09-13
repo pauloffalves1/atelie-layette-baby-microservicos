@@ -883,11 +883,21 @@ contra o Gateway via `docker run --network host`).
       seguindo a skill de dataviz — escala com valores, 30 colunas, tooltip por mouse, toque e
       teclado (tabindex móvel + setas), destaque de hoje e visão em tabela; cor da série `#c9727f`
       validada pelo validador de paleta (o rosa da marca reprovou em contraste); estado de erro com
-      "Tentar de novo", horário da última atualização e recarga sem piscar. **Achado, não corrigido
-      nesta rodada:** as APIs serializam `DateTime` vindos do EF sem fuso (`Kind=Unspecified`, sem
-      `Z`), então todas as datas/horas exibidas em loja e admin aparecem 3h adiantadas em Brasília —
-      corrigido só nos horários do dashboard; a correção geral exige revisar também datas digitadas
-      pelo usuário (promoções, cupons) e fica para uma rodada própria.
+      "Tentar de novo", horário da última atualização e recarga sem piscar. O problema geral de datas 3h adiantadas encontrado aqui foi corrigido na rodada seguinte (ver abaixo).
+- [x] **Datas e horas 3h adiantadas em todo o sistema** (2026-09-13) — todo `DateTime` gravado é UTC
+      (o backend só usa `DateTime.UtcNow`; os campos de data do admin — promoção e validade de cupom —
+      já eram enviados com `toISOString()`), mas o SQL Server (`datetime2`) não guarda o "tipo" e o
+      EF devolvia `Kind=Unspecified`, que o `System.Text.Json` serializa sem `Z`; o navegador lia
+      esse horário UTC como local, então pedidos, avaliações, clientes, auditoria etc. apareciam 3h
+      adiantados em Brasília. Correção na origem: `UtcDateTimeConventions.UseUtcDateTimes()`
+      (SharedKernel) aplicado no `ConfigureConventions` dos 4 `DbContext`s, marcando como UTC o que é
+      lido do banco — as APIs passam a emitir `...Z` e o `DatePipe` converte para o horário local.
+      Sem migration (`dotnet ef migrations has-pending-model-changes` limpo nos 4 serviços) e sem
+      mexer em consultas (só há comparações simples de data). Efeito colateral corrigido de quebra: o
+      formulário de promoção lia a data sem fuso e **somava 3h a cada vez que era salvo de novo**;
+      validado ida e volta pela API (grava 13:00Z, lê 13:00Z). CSVs de encomendas e newsletter, que
+      formatam a data no servidor, agora convertem para Brasília (`BrasiliaTime`, compartilhado com o
+      dashboard), inclusive a data do nome do arquivo. 4 testes novos no SharedKernel.
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
       nos manifests; falta aplicar num cluster ativo e uma license key real. **Não avancei aqui** —
       exige um cluster de verdade e uma license key real da New Relic, que eu não tenho como

@@ -43,13 +43,9 @@ public static class OrdersDashboardStatsCalculator
     private static readonly OrderStatus[] StatusFlow =
         [OrderStatus.Recebido, OrderStatus.EmProducao, OrderStatus.Pronto, OrderStatus.Enviado, OrderStatus.Entregue];
 
-    /// <summary>Brazil has had no daylight saving since 2019, so a fixed UTC-3 is a safe fallback when
-    /// the container image has no tz database.</summary>
-    public static TimeZoneInfo BrasiliaTimeZone { get; } = ResolveBrasiliaTimeZone();
-
     public static OrdersDashboardStatsDto Calculate(IEnumerable<DashboardOrderSnapshot> allOrders, DateTime utcNow, TimeZoneInfo? zone = null)
     {
-        zone ??= BrasiliaTimeZone;
+        zone ??= BrasiliaTime.Zone;
         var orders = allOrders.Where(o => o.Status != OrderStatus.Cancelado).ToList();
 
         DateTime ToLocal(DateTime utc) => TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), zone);
@@ -127,17 +123,8 @@ public static class OrdersDashboardStatsCalculator
             FlaggedOrders: flagged.Take(FlaggedOrdersListed).Select(ToSummary).ToList());
     }
 
-    // EF hands back CreatedAt with Kind=Unspecified, which serializes without an offset and makes the
-    // browser read a UTC clock time as local (3h ahead in Brasília). Marking it UTC emits the "Z".
+    // The snapshot may come from anywhere (tests build them by hand), so stamp UTC explicitly rather
+    // than relying on UtcDateTimeConventions having already done it for EF-loaded orders.
     private static RecentOrderSummaryDto ToSummary(DashboardOrderSnapshot o) =>
         new(o.Id, o.CustomerName, o.Status.ToString(), o.Total, DateTime.SpecifyKind(o.CreatedAtUtc, DateTimeKind.Utc));
-
-    private static TimeZoneInfo ResolveBrasiliaTimeZone()
-    {
-        foreach (var id in new[] { "America/Sao_Paulo", "E. South America Standard Time" })
-        {
-            if (TimeZoneInfo.TryFindSystemTimeZoneById(id, out var zone)) return zone;
-        }
-        return TimeZoneInfo.CreateCustomTimeZone("Brasilia-fixed", TimeSpan.FromHours(-3), "Brasília", "Brasília");
-    }
 }

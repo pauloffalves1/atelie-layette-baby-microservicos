@@ -130,6 +130,9 @@ substituição daquele relato.
       restaurou os 4 bancos de verdade, com contagens de linha plausíveis em cada um. Ver README →
       Status para o relato completo.
 - [x] Interface e dados semeados 100% em pt-BR.
+- [x] **Datas em UTC de ponta a ponta** (2026-09-13) — `UseUtcDateTimes()` nos 4 `DbContext`s faz as APIs
+      emitirem `...Z` (antes as datas apareciam 3h adiantadas no navegador e o formulário de promoção
+      somava 3h a cada salvamento); CSVs convertem para Brasília. Ver README → Status.
 - [x] Segredos só via `.env`/variáveis de ambiente, nunca commitados.
 
 ## Requisito 19 — Busca semântica no catálogo público (RF28)
