@@ -1,9 +1,9 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { DatePipe } from '@angular/common';
 import { AdminPermissionName, AdminSummary } from '@shared/core/models/auth.model';
 import { AdminManagementService } from '@shared/core/services/admin-management.service';
 import { AdminAuthService } from '@shared/core/services/admin-auth.service';
+import { PasswordToggleDirective } from '@shared/shared/directives/password-toggle.directive';
 
 /** One entry per AdminPermission flag (backend enum) — label is what the checkbox shows in Portuguese. */
 export const PERMISSION_OPTIONS: { value: AdminPermissionName; label: string }[] = [
@@ -22,7 +22,7 @@ export const PERMISSION_OPTIONS: { value: AdminPermissionName; label: string }[]
 @Component({
   selector: 'app-admin-admin-list',
   standalone: true,
-  imports: [ReactiveFormsModule, DatePipe],
+  imports: [ReactiveFormsModule, PasswordToggleDirective],
   templateUrl: './admin-admin-list.html',
 })
 export class AdminAdminList implements OnInit {
@@ -37,6 +37,7 @@ export class AdminAdminList implements OnInit {
 
   readonly creating = signal(false);
   readonly createError = signal<string | null>(null);
+  readonly created = signal<string | null>(null);
 
   /** id of the admin whose permissions are being edited inline, or null when none is. */
   readonly editingId = signal<string | null>(null);
@@ -97,12 +98,14 @@ export class AdminAdminList implements OnInit {
     const value = this.form.getRawValue();
     this.creating.set(true);
     this.createError.set(null);
+    this.created.set(null);
 
     this.service
       .create({ name: value.name, email: value.email, password: value.password, permissions: [...this.newAdminPermissions()] })
       .subscribe({
         next: () => {
           this.creating.set(false);
+          this.created.set(value.name);
           this.form.reset({ name: '', email: '', password: '' });
           this.newAdminPermissions.set(new Set());
           this.load();
@@ -150,6 +153,8 @@ export class AdminAdminList implements OnInit {
   }
 
   remove(admin: AdminSummary): void {
+    // Removing an account is irreversible and used to happen on a single click.
+    if (!confirm(`Remover a conta de administrador de "${admin.name}" (${admin.email})? Ela perde o acesso ao painel imediatamente.`)) return;
     this.removingId.set(admin.id);
     this.removeError.set(null);
 

@@ -1,16 +1,27 @@
 <div class="app-shell">
-  <nav class="navbar navbar-expand-lg sticky-top bg-white shadow-sm py-3">
+  <nav class="navbar navbar-expand-xl sticky-top bg-white shadow-sm py-3">
     <div class="container">
       <a class="navbar-brand py-0 brand-logo" routerLink="/">
         <img src="/images/logo-atelie-crop.png" alt="Ateliê Layette Baby">
       </a>
 
-      <button class="navbar-toggler border-0" type="button" (click)="toggleMobileMenu()" aria-label="Alternar navegação">
+      <!-- Below xl the nav collapses, and the cart used to live only inside it — invisible on phones and
+           tablets until the menu was opened. This compact copy stays next to the toggler. -->
+      <button type="button" class="btn btn-primary rounded-circle position-relative ms-auto me-2 d-xl-none" style="width: 2.75rem; height: 2.75rem; padding: 0;"
+        (click)="checkoutModal.open('cart')"
+        [attr.aria-label]="cart.totalItems() === 0 ? 'Carrinho vazio' : 'Carrinho, ' + cart.totalItems() + (cart.totalItems() === 1 ? ' item' : ' itens')">
+        <i class="bi bi-bag-heart" aria-hidden="true"></i>
+        @if (cart.totalItems() > 0) {
+          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-sage" aria-hidden="true">{{ cart.totalItems() }}</span>
+        }
+      </button>
+
+      <button class="navbar-toggler border-0" type="button" (click)="toggleMobileMenu()" aria-label="Abrir menu" aria-controls="mainNav" [attr.aria-expanded]="mobileMenuOpen()">
         <span class="navbar-toggler-icon"></span>
       </button>
 
       <div class="collapse navbar-collapse" [class.show]="mobileMenuOpen()" id="mainNav">
-        <ul class="navbar-nav mx-auto gap-lg-5 nav-links-lg" style="column-gap: 4.5rem;">
+        <ul class="navbar-nav mx-auto nav-links-lg">
           <li class="nav-item">
             <a class="nav-link" routerLink="/" routerLinkActive="active fw-bold text-blush" [routerLinkActiveOptions]="{ exact: true }">Início</a>
           </li>
@@ -28,7 +39,7 @@
           </li>
         </ul>
 
-        <div class="d-flex align-items-center gap-4 mt-3 mt-lg-0" style="column-gap: 1.5rem;">
+        <div class="d-flex align-items-center gap-3 mt-3 mt-xl-0">
           @if (auth.isAuthenticated()) {
             <div class="dropdown account-dropdown">
               <button class="btn btn-lg btn-outline-secondary dropdown-toggle rounded-pill" type="button" (click)="toggleAccountMenu()">
@@ -45,7 +56,7 @@
             <a routerLink="/entrar" class="btn btn-lg btn-primary rounded-pill">Entrar</a>
           }
 
-          <button type="button" class="btn btn-lg btn-primary rounded-pill position-relative" (click)="checkoutModal.open('cart')"
+          <button type="button" class="btn btn-lg btn-primary rounded-pill position-relative d-none d-xl-inline-block" (click)="checkoutModal.open('cart')"
             [attr.aria-label]="cart.totalItems() === 0 ? 'Carrinho vazio' : 'Carrinho, ' + cart.totalItems() + (cart.totalItems() === 1 ? ' item' : ' itens')">
             <i class="bi bi-bag-heart" aria-hidden="true"></i>
             @if (cart.totalItems() > 0) {
@@ -63,16 +74,16 @@
     <router-outlet />
   </main>
 
-  <footer class="bg-gold-light pt-5 pb-4 mt-5">
+  <footer class="site-footer bg-gold-light pt-5 pb-4 mt-5">
     <div class="container">
       <div class="row gy-4">
-        <div class="col-md-3">
-          <h5 class="fw-script text-blush fs-2 mb-3 brand-embroidered text-nowrap">Ateliê Layette Baby</h5>
+        <div class="col-12 col-xl-4">
+          <h5 class="fw-script text-blush fs-3 mb-3 brand-embroidered text-nowrap">Ateliê Layette Baby</h5>
           <p class="text-secondary small">
             Fraldas de ombro e boca bordadas com muito carinho para os primeiros dias do seu bebê.
           </p>
         </div>
-        <div class="col-md-3">
+        <div class="col-sm-6 col-md-4 col-xl-2">
           <h6 class="text-uppercase small fw-bold mb-3">Navegação</h6>
           <ul class="list-unstyled small">
             <li class="mb-2"><a routerLink="/loja" class="text-secondary">Loja</a></li>
@@ -83,7 +94,7 @@
             <li class="mb-2"><a routerLink="/perguntas-frequentes" class="text-secondary">Perguntas frequentes</a></li>
           </ul>
         </div>
-        <div class="col-md-3">
+        <div class="col-sm-6 col-md-4 col-xl-3">
           <h6 class="text-uppercase small fw-bold mb-3">Fale conosco</h6>
           <ul class="list-unstyled small text-secondary">
             <li class="mb-2">
@@ -94,7 +105,7 @@
             <li class="mb-2"><i class="bi bi-geo-alt me-2"></i>São Bernardo do Campo · SP</li>
           </ul>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4 col-xl-3">
           <h6 class="text-uppercase small fw-bold mb-3">Novidades por e-mail</h6>
           @if (newsletterSubscribed()) {
             <p class="small text-secondary mb-0"><i class="bi bi-check-circle me-1"></i>Inscrição confirmada!</p>
@@ -134,7 +145,7 @@
         <span class="mx-2">·</span>
         <a routerLink="/politica-de-envio" class="text-secondary">Política de Envio</a>
       </p>
-      <p class="text-center small text-secondary mb-0">&copy; {{ currentYear }} Ateliê Layette Baby. Feito à mão, com amor.</p>
+      <p class="text-center small text-secondary mb-0">&copy; 2013 Ateliê Layette Baby. Feito à mão, com amor.</p>
       <p class="text-center small text-secondary mb-0">CNPJ {{ siteCnpj }}</p>
     </div>
   </footer>

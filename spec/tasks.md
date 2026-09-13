@@ -279,3 +279,7 @@ substituição daquele relato.
   novo" em 16 telas (inclusive impedindo salvar formulário de edição carregado vazio), página "não
   encontrada" na loja e no admin, confirmação com link de reserva no contato; sem regra de negócio
   nova, ver README → Status.
+- Layout responsivo, fotos ampliáveis e admin restante (2026-09-13) — menu/carrinho entre 992 e
+  1400px, rodapé e botão do WhatsApp, alinhamento do hero, `ImageLightbox` no produto e na galeria,
+  permissões de novo administrador, confirmações de remoção e envio múltiplo na galeria; sem regra
+  de negócio nova, ver README → Status.

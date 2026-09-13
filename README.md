@@ -941,6 +941,29 @@ contra o Gateway via `docker run --network host`).
       mensagem no painel já era calculado mas nunca aparecia na tela — agora aparece. Rolagem até o
       primeiro erro e `autocomplete` em nome/e-mail/telefone. Newsletter do admin no mesmo padrão
       visual das outras telas.
+- [x] **Layout responsivo, fotos ampliáveis e admin restante** (2026-09-13) — encontrado com uma
+      auditoria de larguras (390/768/1024/1280/1440px) no site de produção. *Layout:* entre 992 e
+      ~1100px os links do menu quebravam em duas linhas e empurravam o botão do carrinho para fora da
+      tela (50px de transbordo horizontal), e até 1400px "Produção e Envio"/"Contato e Encomendas"
+      ainda quebravam — o menu agora recolhe até `xl` (1200px), links não quebram e o espaçamento
+      cresce só quando cabe; o carrinho, que no celular só existia dentro do menu recolhido, ganhou
+      um botão sempre visível ao lado do menu. No rodapé, o nome "Ateliê Layette Baby" invadia a
+      coluna "Navegação" a partir de 768px (grade refeita), e no celular o botão flutuante do WhatsApp
+      cobria as últimas linhas (espaço extra embaixo). Na home, o parágrafo principal estava
+      justificado (espaços enormes entre palavras) e o selo centralizado sobre um título alinhado à
+      esquerda — agora tudo centralizado no celular e à esquerda no desktop. Copyright do rodapé fixo
+      em "© 2013". *Fotos:* `ImageLightbox` compartilhado (tela cheia, setas, teclado, deslizar no
+      celular, contador "2 de 5", tocar para ampliar 2,5× no ponto tocado e arrastar para ver o
+      detalhe, trava a rolagem e devolve o foco) usado na página do produto — foto principal
+      clicável, setas e deslizar trocam a foto no lugar — e na página "Dicas para o casal", cujas
+      miniaturas viraram botões acessíveis por teclado. *Admin:* **bug** — depois de cadastrar um
+      administrador, as caixas de permissão continuavam marcadas mas a seleção interna era zerada, e o
+      próximo cadastro saía sem nenhuma permissão; remover administrador, foto da galeria ou foto do
+      carrossel acontecia com um clique sem confirmação; o formulário de novo administrador não
+      bloqueava o autopreenchimento (o navegador podia preencher o e-mail/senha da própria
+      administradora logada); Imagens do site mostrava as imagens padrão como se fossem as atuais
+      enquanto carregava ou se falhasse; a Galeria ainda citava a página "/galeria" (renomeada) e
+      agora aceita várias fotos de uma vez, com progresso e link "Ver na loja".
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
       nos manifests; falta aplicar num cluster ativo e uma license key real. **Não avancei aqui** —
       exige um cluster de verdade e uma license key real da New Relic, que eu não tenho como

@@ -1,8 +1,9 @@
-import { Component, HostListener, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { GalleryImageService } from '@shared/core/services/gallery-image.service';
 import { SeoService } from '@shared/core/services/seo.service';
 import { resolveAssetUrl } from '@shared/core/utils/asset-url';
+import { ImageLightbox } from '@shared/shared/components/image-lightbox/image-lightbox';
 
 const FALLBACK_IMAGES = Array.from(
   { length: 12 },
@@ -12,6 +13,7 @@ const FALLBACK_IMAGES = Array.from(
 @Component({
   selector: 'app-gallery',
   standalone: true,
+  imports: [ImageLightbox],
   templateUrl: './gallery.html',
 })
 export class Gallery implements OnInit {
@@ -58,26 +60,5 @@ export class Gallery implements OnInit {
 
   close(): void {
     this.selectedIndex.set(null);
-  }
-
-  next(): void {
-    const index = this.selectedIndex();
-    if (index === null) return;
-    this.selectedIndex.set((index + 1) % this.images().length);
-  }
-
-  previous(): void {
-    const index = this.selectedIndex();
-    if (index === null) return;
-    this.selectedIndex.set((index - 1 + this.images().length) % this.images().length);
-  }
-
-  @HostListener('document:keydown', ['$event'])
-  onKeydown(event: KeyboardEvent): void {
-    if (this.selectedIndex() === null) return;
-
-    if (event.key === 'Escape') this.close();
-    if (event.key === 'ArrowRight') this.next();
-    if (event.key === 'ArrowLeft') this.previous();
   }
 }

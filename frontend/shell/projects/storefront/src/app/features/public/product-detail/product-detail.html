@@ -15,8 +15,25 @@
 
       <div class="row g-4 g-lg-5 align-items-start">
         <div class="col-lg-6">
-          <div class="ratio ratio-1x1 rounded-5 overflow-hidden shadow-sm">
-            <img [src]="galleryUrls()[activeImageIndex()] | assetUrl" [alt]="p.name" class="w-100 h-100 object-fit-cover">
+          <div class="product-photo" (pointerdown)="onPhotoPointerDown($event)" (pointerup)="onPhotoPointerUp($event)">
+            <div class="ratio ratio-1x1 rounded-5 overflow-hidden shadow-sm">
+              <img [src]="galleryUrls()[activeImageIndex()] | assetUrl" [alt]="p.name + (galleryUrls().length > 1 ? ' — foto ' + (activeImageIndex() + 1) + ' de ' + galleryUrls().length : '')"
+                class="w-100 h-100 object-fit-cover" draggable="false">
+            </div>
+            <button type="button" class="position-absolute top-0 start-0 w-100 h-100 border-0 bg-transparent p-0 rounded-5" style="z-index: 1;"
+              [attr.aria-label]="'Ampliar foto de ' + p.name" (click)="openLightbox()"></button>
+            @if (galleryUrls().length > 1) {
+              <button type="button" class="product-photo-nav prev" aria-label="Foto anterior" (click)="changePhoto(-1); $event.stopPropagation()">
+                <i class="bi bi-chevron-left" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="product-photo-nav next" aria-label="Próxima foto" (click)="changePhoto(1); $event.stopPropagation()">
+                <i class="bi bi-chevron-right" aria-hidden="true"></i>
+              </button>
+            }
+            <span class="product-photo-hint" aria-hidden="true">
+              <i class="bi bi-arrows-fullscreen me-1"></i>
+              @if (galleryUrls().length > 1) { {{ activeImageIndex() + 1 }}/{{ galleryUrls().length }} · }Ampliar
+            </span>
           </div>
 
           @if (galleryUrls().length > 1) {
@@ -292,5 +309,10 @@
         </div>
       </div>
     </section>
+  }
+
+  @if (lightboxIndex() !== null) {
+    <app-image-lightbox [images]="resolvedGalleryUrls()" [index]="lightboxIndex()!" (indexChange)="lightboxIndex.set($event); activeImageIndex.set($event)"
+      [alt]="p.name" (closed)="lightboxIndex.set(null)" />
   }
 }

@@ -12,6 +12,7 @@ import { ReviewService } from '@shared/core/services/review.service';
 import { SeoService } from '@shared/core/services/seo.service';
 import { WishlistService } from '@shared/core/services/wishlist.service';
 import { resolveAssetUrl } from '@shared/core/utils/asset-url';
+import { ImageLightbox } from '@shared/shared/components/image-lightbox/image-lightbox';
 import { AssetUrlPipe } from '@shared/shared/pipes/asset-url.pipe';
 
 const MAX_EMBROIDERY_LENGTH = 30;
@@ -61,7 +62,7 @@ export const THREAD_COLOR_SWATCHES: Record<string, string> = {
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CurrencyPipe, DatePipe, DecimalPipe, FormsModule, RouterLink, AssetUrlPipe],
+  imports: [CurrencyPipe, DatePipe, DecimalPipe, FormsModule, RouterLink, AssetUrlPipe, ImageLightbox],
   templateUrl: './product-detail.html',
 })
 export class ProductDetail implements OnInit {
@@ -185,6 +186,42 @@ export class ProductDetail implements OnInit {
 
   selectImage(index: number): void {
     this.activeImageIndex.set(index);
+  }
+
+  /** Index of the photo open in the full-screen viewer, or null when it's closed. */
+  readonly lightboxIndex = signal<number | null>(null);
+  readonly resolvedGalleryUrls = computed(() => this.galleryUrls().map((url) => resolveAssetUrl(url)));
+  private photoPointerStartX: number | null = null;
+  private suppressPhotoClick = false;
+
+  openLightbox(): void {
+    // A swipe ends with a click on the same element — don't open the viewer for it.
+    if (this.suppressPhotoClick) {
+      this.suppressPhotoClick = false;
+      return;
+    }
+    this.lightboxIndex.set(this.activeImageIndex());
+  }
+
+  changePhoto(delta: number): void {
+    const count = this.galleryUrls().length;
+    if (count > 1) this.activeImageIndex.set((this.activeImageIndex() + delta + count) % count);
+  }
+
+  onPhotoPointerDown(event: PointerEvent): void {
+    this.photoPointerStartX = event.clientX;
+  }
+
+  /** Swiping the main photo sideways changes it in place, like on any phone gallery. */
+  onPhotoPointerUp(event: PointerEvent): void {
+    const startX = this.photoPointerStartX;
+    this.photoPointerStartX = null;
+    if (startX === null || this.galleryUrls().length < 2) return;
+    const dx = event.clientX - startX;
+    if (Math.abs(dx) > 50) {
+      this.suppressPhotoClick = true;
+      this.changePhoto(dx < 0 ? 1 : -1);
+    }
   }
 
   toggleFavorite(): void {

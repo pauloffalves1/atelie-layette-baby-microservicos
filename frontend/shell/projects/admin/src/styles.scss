@@ -141,9 +141,16 @@ a {
   filter: drop-shadow(0 0 .5rem rgba(217, 164, 65, .45));
 }
 
-@media (max-width: 991.98px) {
+@media (max-width: 1199.98px) {
   .brand-logo img {
     height: 72px;
+  }
+}
+
+// The floating WhatsApp button (56px, fixed bottom-right) covered the footer's last lines on phones.
+@media (max-width: 767.98px) {
+  .site-footer {
+    padding-bottom: 6rem !important;
   }
 }
 
@@ -179,10 +186,36 @@ a {
   max-width: 760px;
 }
 
+// Main nav expands at xl (1200px). Between lg and xl the five links plus the account/cart buttons
+// didn't fit: links wrapped to two lines and the cart button was pushed off-screen (horizontal
+// overflow) — so the hamburger now stays until xl, links never wrap, and spacing scales up only
+// once there is room for it.
 .nav-links-lg .nav-link {
   font-size: 1.25rem;
   font-weight: 600;
   padding-inline: .6rem;
+  white-space: nowrap;
+}
+
+@media (min-width: 1200px) {
+  .nav-links-lg {
+    column-gap: .25rem;
+  }
+
+  .nav-links-lg .nav-link {
+    font-size: 1.05rem;
+    padding-inline: .55rem;
+  }
+}
+
+@media (min-width: 1400px) {
+  .nav-links-lg {
+    column-gap: 1.25rem;
+  }
+
+  .nav-links-lg .nav-link {
+    font-size: 1.2rem;
+  }
 }
 
 .btn-primary {

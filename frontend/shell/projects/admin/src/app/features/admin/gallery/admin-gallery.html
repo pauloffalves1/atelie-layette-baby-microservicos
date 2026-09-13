@@ -2,22 +2,28 @@
   <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
     <div>
       <h2 class="mb-1">Galeria</h2>
-      <p class="text-secondary mb-0">Fotos exibidas na página pública /galeria.</p>
+      <p class="text-secondary mb-0">
+        Fotos exibidas na página pública "Dicas para o casal".
+        <a href="/dicas-para-o-casal" target="_blank" rel="noopener" class="text-nowrap">Ver na loja <i class="bi bi-box-arrow-up-right small" aria-hidden="true"></i></a>
+      </p>
     </div>
 
     <label class="btn btn-primary rounded-pill" [class.disabled]="uploading()">
-      @if (uploading()) {
-        <span class="spinner-border spinner-border-sm me-2"></span>Enviando...
+      @if (uploadProgress(); as progress) {
+        <span class="spinner-border spinner-border-sm me-2"></span>Enviando {{ progress.done + 1 }} de {{ progress.total }}...
       } @else {
-        <i class="bi bi-plus-lg me-1"></i>Adicionar foto
+        <i class="bi bi-plus-lg me-1"></i>Adicionar fotos
       }
-      <input type="file" accept="image/jpeg,image/png,image/webp" class="d-none"
+      <input type="file" accept="image/jpeg,image/png,image/webp" class="d-none" multiple
         [disabled]="uploading()" (change)="onFileSelected($event)">
     </label>
   </div>
 
   @if (error()) {
-    <div class="alert alert-danger small rounded-4">{{ error() }}</div>
+    <div class="alert alert-danger small rounded-4 d-flex justify-content-between align-items-center gap-2" role="alert">
+      <span>{{ error() }}</span>
+      <button type="button" class="btn-close" aria-label="Fechar" (click)="error.set(null)"></button>
+    </div>
   }
 
   @if (loading()) {
@@ -25,7 +31,10 @@
   } @else if (loadError()) {
     <app-load-error (retry)="load()" />
   } @else if (images().length === 0) {
-    <p class="text-secondary">Nenhuma foto enviada ainda. Clique em "Adicionar foto" para começar.</p>
+    <div class="stat-card text-center text-secondary py-5">
+      <i class="bi bi-images fs-1 d-block mb-3" aria-hidden="true"></i>
+      Nenhuma foto enviada ainda. Use "Adicionar fotos" — dá para escolher várias de uma vez.
+    </div>
   } @else {
     <div class="row g-3">
       @for (image of images(); track image.id) {
@@ -33,7 +42,7 @@
           <div class="position-relative rounded-4 overflow-hidden shadow-sm" style="aspect-ratio: 4/5;">
             <img [src]="image.displayUrl" alt="Foto da galeria" class="w-100 h-100 object-fit-cover">
             <button type="button" class="btn btn-sm btn-danger rounded-circle position-absolute top-0 end-0 m-2"
-              [disabled]="image.deleting" (click)="deleteImage(image.id)" aria-label="Remover foto" title="Remover foto da galeria">
+              [disabled]="image.deleting" (click)="deleteImage(image.id)" [attr.aria-label]="'Remover foto ' + ($index + 1)" title="Remover foto da galeria">
               @if (image.deleting) {
                 <span class="spinner-border spinner-border-sm"></span>
               } @else {

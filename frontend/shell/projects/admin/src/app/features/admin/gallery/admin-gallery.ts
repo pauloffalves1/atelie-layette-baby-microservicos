@@ -20,6 +20,7 @@ export class AdminGallery implements OnInit {
   readonly loading = signal(true);
   readonly loadError = signal(false);
   readonly uploading = signal(false);
+  readonly uploadProgress = signal<{ done: number; total: number } | null>(null);
   readonly error = signal<string | null>(null);
 
   constructor(private readonly galleryImageService: GalleryImageService) {}
@@ -28,29 +29,45 @@ export class AdminGallery implements OnInit {
     this.load();
   }
 
+  /** Several photos can be picked at once; they upload one after another so the progress label
+   * stays meaningful and a single failure doesn't stop the rest. */
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) return;
+    const files = Array.from(input.files ?? []);
+    input.value = '';
+    if (files.length === 0) return;
 
     this.uploading.set(true);
     this.error.set(null);
+    const failed: string[] = [];
 
-    this.galleryImageService.upload(file).subscribe({
-      next: (image) => {
-        this.images.update((rows) => [{ ...image, displayUrl: resolveAssetUrl(image.url), deleting: false }, ...rows]);
+    const uploadNext = (i: number): void => {
+      if (i >= files.length) {
         this.uploading.set(false);
-      },
-      error: (err) => {
-        this.uploading.set(false);
-        this.error.set(err?.error?.detail ?? 'Não foi possível enviar a imagem.');
-      },
-    });
-
-    input.value = '';
+        this.uploadProgress.set(null);
+        if (failed.length > 0) {
+          this.error.set(`Não foi possível enviar ${failed.length === 1 ? 'a foto' : 'as fotos'}: ${failed.join(', ')}.`);
+        }
+        return;
+      }
+      this.uploadProgress.set({ done: i, total: files.length });
+      this.galleryImageService.upload(files[i]).subscribe({
+        next: (image) => {
+          this.images.update((rows) => [{ ...image, displayUrl: resolveAssetUrl(image.url), deleting: false }, ...rows]);
+          uploadNext(i + 1);
+        },
+        error: () => {
+          failed.push(files[i].name);
+          uploadNext(i + 1);
+        },
+      });
+    };
+    uploadNext(0);
   }
 
   deleteImage(id: string): void {
+    // The photo disappears from the public page immediately and can't be restored from here.
+    if (!confirm('Remover esta foto da galeria? Ela sai da página pública na hora.')) return;
     this.patchRow(id, { deleting: true });
 
     this.galleryImageService.delete(id).subscribe({

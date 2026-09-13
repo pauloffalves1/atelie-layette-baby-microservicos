@@ -14,22 +14,33 @@
         <div class="alert alert-danger small rounded-4">{{ createError() }}</div>
       }
 
-      <form [formGroup]="form" (ngSubmit)="create()">
+      <!-- autocomplete off / new-password: without it the browser fills in the logged-in admin's own
+           saved e-mail and password here, silently creating an account with her credentials. -->
+      <form [formGroup]="form" (ngSubmit)="create()" autocomplete="off" novalidate>
         <div class="row g-3 mb-3">
           <div class="col-md-4">
-            <label class="form-label small fw-semibold">Nome</label>
-            <input type="text" class="form-control" formControlName="name"
+            <label for="new-admin-name" class="form-label small fw-semibold">Nome</label>
+            <input type="text" id="new-admin-name" class="form-control" formControlName="name" autocomplete="off"
               [class.is-invalid]="form.controls.name.invalid && form.controls.name.touched">
+            <div class="invalid-feedback">Informe o nome.</div>
           </div>
           <div class="col-md-4">
-            <label class="form-label small fw-semibold">E-mail</label>
-            <input type="email" class="form-control" formControlName="email"
+            <label for="new-admin-email" class="form-label small fw-semibold">E-mail</label>
+            <input type="email" id="new-admin-email" class="form-control" formControlName="email" autocomplete="off"
               [class.is-invalid]="form.controls.email.invalid && form.controls.email.touched">
+            <div class="invalid-feedback">Informe um e-mail válido.</div>
           </div>
           <div class="col-md-4">
-            <label class="form-label small fw-semibold">Senha</label>
-            <input type="password" class="form-control" formControlName="password"
-              [class.is-invalid]="form.controls.password.invalid && form.controls.password.touched">
+            <label for="new-admin-password" class="form-label small fw-semibold">Senha inicial</label>
+            <div class="input-group has-validation">
+              <input type="password" id="new-admin-password" class="form-control" formControlName="password" autocomplete="new-password" appPasswordToggle
+                [class.is-invalid]="form.controls.password.invalid && form.controls.password.touched">
+            </div>
+            @if (form.controls.password.invalid && form.controls.password.touched) {
+              <div class="invalid-feedback d-block">Mínimo de 6 caracteres.</div>
+            } @else {
+              <span class="form-text">Mínimo de 6 caracteres — ela pode trocar depois em Segurança.</span>
+            }
           </div>
         </div>
 
@@ -39,6 +50,7 @@
             <div class="col-md-4">
               <div class="form-check">
                 <input class="form-check-input" type="checkbox" [id]="'new-perm-' + option.value"
+                  [checked]="newAdminPermissions().has(option.value)"
                   (change)="toggleNewAdminPermission(option.value, $any($event.target).checked)">
                 <label class="form-check-label small" [for]="'new-perm-' + option.value">{{ option.label }}</label>
               </div>
@@ -46,6 +58,12 @@
           }
         </div>
 
+        @if (newAdminPermissions().size === 0) {
+          <p class="small text-warning-emphasis mb-2"><i class="bi bi-exclamation-circle me-1"></i>Sem nenhuma permissão, a conta entra no painel mas não vê nenhuma área.</p>
+        }
+        @if (created(); as name) {
+          <div class="alert alert-success small rounded-4 py-2" role="status"><i class="bi bi-check-circle me-1"></i>{{ name }} foi cadastrada.</div>
+        }
         <button type="submit" class="btn btn-primary rounded-pill" [disabled]="creating()">
           @if (creating()) {
             <span class="spinner-border spinner-border-sm me-2"></span>

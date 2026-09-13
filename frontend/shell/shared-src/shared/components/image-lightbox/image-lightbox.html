@@ -1,0 +1,32 @@
+<div class="lightbox-overlay" role="dialog" aria-modal="true" [attr.aria-label]="alt() + ' ampliada'" (click)="close()">
+  <button #closeButton type="button" class="lightbox-close" (click)="close(); $event.stopPropagation()" aria-label="Fechar">
+    <i class="bi bi-x-lg" aria-hidden="true"></i>
+  </button>
+
+  @if (hasMany()) {
+    <button type="button" class="lightbox-nav lightbox-prev" (click)="previous(); $event.stopPropagation()" aria-label="Foto anterior">
+      <i class="bi bi-chevron-left" aria-hidden="true"></i>
+    </button>
+  }
+
+  <div class="lightbox-stage" [class.is-zoomed]="zoomed()" (click)="$event.stopPropagation()"
+    (pointerdown)="onPointerDown($event)" (pointermove)="onPointerMove($event)" (pointerup)="onPointerUp($event)"
+    (pointercancel)="onPointerUp($event)">
+    <img [src]="current()" [alt]="alt() + (hasMany() ? ' — foto ' + (index() + 1) + ' de ' + images().length : '')" class="lightbox-image" draggable="false"
+      [style.transform]="zoomed() ? 'scale(' + zoomScale + ')' : null" [style.transform-origin]="origin()">
+  </div>
+
+  @if (hasMany()) {
+    <button type="button" class="lightbox-nav lightbox-next" (click)="next(); $event.stopPropagation()" aria-label="Próxima foto">
+      <i class="bi bi-chevron-right" aria-hidden="true"></i>
+    </button>
+  }
+
+  <div class="lightbox-caption" (click)="$event.stopPropagation()" aria-live="polite">
+    @if (hasMany()) {
+      <span>{{ index() + 1 }} de {{ images().length }}</span>
+      <span class="mx-2" aria-hidden="true">·</span>
+    }
+    <span>{{ zoomed() ? 'Toque para afastar' : 'Toque na foto para ampliar' }}</span>
+  </div>
+</div>

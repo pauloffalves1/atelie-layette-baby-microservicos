@@ -143,9 +143,16 @@ a {
   filter: drop-shadow(0 0 .5rem rgba(217, 164, 65, .45));
 }
 
-@media (max-width: 991.98px) {
+@media (max-width: 1199.98px) {
   .brand-logo img {
     height: 72px;
+  }
+}
+
+// The floating WhatsApp button (56px, fixed bottom-right) covered the footer's last lines on phones.
+@media (max-width: 767.98px) {
+  .site-footer {
+    padding-bottom: 6rem !important;
   }
 }
 
@@ -181,10 +188,36 @@ a {
   max-width: 760px;
 }
 
+// Main nav expands at xl (1200px). Between lg and xl the five links plus the account/cart buttons
+// didn't fit: links wrapped to two lines and the cart button was pushed off-screen (horizontal
+// overflow) — so the hamburger now stays until xl, links never wrap, and spacing scales up only
+// once there is room for it.
 .nav-links-lg .nav-link {
   font-size: 1.25rem;
   font-weight: 600;
   padding-inline: .6rem;
+  white-space: nowrap;
+}
+
+@media (min-width: 1200px) {
+  .nav-links-lg {
+    column-gap: .25rem;
+  }
+
+  .nav-links-lg .nav-link {
+    font-size: 1.05rem;
+    padding-inline: .55rem;
+  }
+}
+
+@media (min-width: 1400px) {
+  .nav-links-lg {
+    column-gap: 1.25rem;
+  }
+
+  .nav-links-lg .nav-link {
+    font-size: 1.2rem;
+  }
 }
 
 .btn-primary {
@@ -875,4 +908,90 @@ a.status-row:focus-visible .status-row-fill {
 
 .input-group > .form-control.is-invalid + .password-toggle {
   border-color: var(--bs-form-invalid-border-color);
+}
+
+// ImageLightbox: the stage clips the zoomed photo; pointer events drive swipe/zoom/pan, so the
+// browser's own touch gestures are disabled inside it (page scroll is locked while open anyway).
+.lightbox-stage {
+  overflow: hidden;
+  border-radius: $border-radius;
+  touch-action: none;
+  cursor: zoom-in;
+  max-width: min(90vw, 900px);
+  max-height: 85vh;
+}
+
+.lightbox-stage.is-zoomed {
+  cursor: move;
+}
+
+.lightbox-stage .lightbox-image {
+  display: block;
+  box-shadow: none;
+  border-radius: 0;
+  transition: transform .25s ease;
+  user-select: none;
+}
+
+.lightbox-caption {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: .35rem .9rem;
+  border-radius: 50rem;
+  background: rgba(255, 255, 255, .15);
+  color: var(--atelie-cream);
+  font-size: .85rem;
+  white-space: nowrap;
+}
+
+// Product page main photo: opens the lightbox; arrows + swipe change photo in place.
+.product-photo {
+  position: relative;
+  cursor: zoom-in;
+  touch-action: pan-y;
+}
+
+.product-photo-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .85);
+  color: var(--atelie-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.product-photo-nav.prev {
+  left: .75rem;
+}
+
+.product-photo-nav.next {
+  right: .75rem;
+}
+
+.product-photo-hint {
+  position: absolute;
+  right: .75rem;
+  bottom: .75rem;
+  z-index: 2;
+  padding: .3rem .7rem;
+  border-radius: 50rem;
+  background: rgba(255, 255, 255, .85);
+  color: var(--atelie-text);
+  font-size: .8rem;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lightbox-stage .lightbox-image {
+    transition: none;
+  }
 }

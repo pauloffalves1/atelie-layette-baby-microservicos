@@ -20,7 +20,6 @@ import { WhatsappButton } from '@shared/shared/components/whatsapp-button/whatsa
   templateUrl: './public-layout.html',
 })
 export class PublicLayout {
-  readonly currentYear = new Date().getFullYear();
   readonly siteCnpj = SITE_CNPJ;
 
   readonly newsletterEmail = signal('');
