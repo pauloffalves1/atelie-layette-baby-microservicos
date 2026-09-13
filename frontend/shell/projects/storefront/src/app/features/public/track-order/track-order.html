@@ -13,6 +13,7 @@
             <div class="mb-3">
               <label for="track-order-number" class="form-label small fw-semibold">Número do pedido</label>
               <input type="text" id="track-order-number" class="form-control" formControlName="orderNumber" placeholder="Ex: 722ee49d"
+                autocomplete="off" autocapitalize="off" spellcheck="false"
                 [class.is-invalid]="form.controls.orderNumber.invalid && form.controls.orderNumber.touched">
               @if (form.controls.orderNumber.invalid && form.controls.orderNumber.touched) {
                 <div class="invalid-feedback">Número do pedido é obrigatório.</div>
@@ -21,7 +22,7 @@
             </div>
             <div class="mb-3">
               <label for="track-order-email" class="form-label small fw-semibold">E-mail</label>
-              <input type="email" id="track-order-email" class="form-control" formControlName="email"
+              <input type="email" id="track-order-email" class="form-control" formControlName="email" autocomplete="email"
                 [class.is-invalid]="form.controls.email.invalid && form.controls.email.touched">
               @if (form.controls.email.invalid && form.controls.email.touched) {
                 <div class="invalid-feedback">Informe um e-mail válido.</div>

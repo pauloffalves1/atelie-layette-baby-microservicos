@@ -1,5 +1,17 @@
 import { CurrencyPipe } from '@angular/common';
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  HostListener,
+  Injector,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+  viewChild,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { catchError, debounceTime, distinctUntilChanged, filter, firstValueFrom, map, of, switchMap, tap } from 'rxjs';
@@ -65,6 +77,12 @@ function parsePhone(phone: string): ParsedPhone | null {
 const PAGBANK_SDK_URL = 'https://assets.pagseguro.com.br/checkout-sdk-js/rc/dist/browser/pagseguro.min.js';
 const KIT_CATEGORY = 'Kit Ombro e Boca';
 
+const CHECKOUT_STEPS = [
+  { id: 'cart', label: 'Carrinho' },
+  { id: 'delivery', label: 'Entrega' },
+  { id: 'payment', label: 'Pagamento' },
+] as const;
+
 /**
  * Cart → Entrega → Pagamento → Confirmação as steps of one modal instead of three full pages.
  * Mounted once in PublicLayout (like CookieBanner) and driven by CheckoutModalService, so it
@@ -90,8 +108,15 @@ export class CheckoutModal {
   private readonly productService = inject(ProductService);
   private readonly orderService = inject(OrderService);
   private readonly router = inject(Router);
+  private readonly injector = inject(Injector);
   readonly auth = inject(AuthService);
   readonly cart = inject(CartService);
+
+  private readonly modalBody = viewChild<ElementRef<HTMLElement>>('modalBody');
+  private readonly modalTitle = viewChild<ElementRef<HTMLElement>>('modalTitle');
+
+  readonly checkoutSteps = CHECKOUT_STEPS;
+  readonly currentStepIndex = computed(() => CHECKOUT_STEPS.findIndex((s) => s.id === this.modal.step()));
 
   readonly kitSuggestions = signal<Product[]>([]);
   readonly addedKitId = signal<string | null>(null);
@@ -147,6 +172,11 @@ export class CheckoutModal {
   readonly freeShippingRemaining = computed(() => {
     const threshold = this.freeShippingThreshold();
     return threshold === null ? null : Math.max(0, threshold - this.cart.totalPrice());
+  });
+
+  readonly freeShippingProgress = computed(() => {
+    const threshold = this.freeShippingThreshold();
+    return threshold ? Math.min(100, Math.round((this.cart.totalPrice() / threshold) * 100)) : 0;
   });
 
   readonly total = computed(() => Math.max(0, this.cart.totalPrice() + this.shippingCost() - this.couponDiscountAmount()));
@@ -219,6 +249,24 @@ export class CheckoutModal {
       if (this.modal.isOpen()) this.initDeliveryStepOnce();
     });
 
+    // The page behind the modal shouldn't scroll along with it (especially on mobile, where the
+    // modal body's own scroll otherwise "leaks" into the page once it reaches the end).
+    effect(() => {
+      document.body.classList.toggle('overflow-hidden', this.modal.isOpen());
+    });
+
+    // Each step is a fresh screen: start it at the top instead of wherever the previous step's
+    // scroll position was, and move focus to the title so screen readers announce the new step.
+    effect(() => {
+      this.modal.step();
+      const body = this.modalBody()?.nativeElement;
+      const title = this.modalTitle()?.nativeElement;
+      untracked(() => {
+        if (body) body.scrollTop = 0;
+        title?.focus({ preventScroll: true });
+      });
+    });
+
     this.form.controls.state.valueChanges.subscribe((state) => this.destinationState.set(state));
     this.form.controls.city.valueChanges.subscribe((city) => this.destinationCity.set(city));
 
@@ -246,7 +294,17 @@ export class CheckoutModal {
           city: address.localidade,
           state: address.uf,
         });
+
+        // The CEP fills everything except the house number — jump straight there.
+        if (this.modal.step() === 'delivery' && !this.form.controls.number.value) {
+          document.getElementById('modal-number')?.focus();
+        }
       });
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.modal.isOpen() && !this.submitting()) this.modal.close();
   }
 
   increment(productId: string, current: number, embroideryText?: string | null, threadColor?: string | null): void {
@@ -300,7 +358,10 @@ export class CheckoutModal {
 
     const invalid = controls.some((c) => c.invalid);
     controls.forEach((c) => c.markAsTouched());
-    if (invalid) return;
+    if (invalid) {
+      this.revealFirstInvalidField();
+      return;
+    }
 
     this.modal.goTo('payment');
     this.loadPagBankSdk();
@@ -447,9 +508,26 @@ export class CheckoutModal {
     this.couponError.set(null);
   }
 
+  /** Scrolls the modal body to the first field showing an error and focuses it, after the
+   * `is-invalid` classes from markAsTouched have rendered. */
+  private revealFirstInvalidField(): void {
+    afterNextRender(
+      () => {
+        const field = this.modalBody()?.nativeElement.querySelector<HTMLElement>('.is-invalid');
+        if (!field) return;
+        field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        field.focus({ preventScroll: true });
+      },
+      { injector: this.injector },
+    );
+  }
+
   submit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      // Only the delivery step's fields can be invalid here — send the customer back to fix them.
+      this.modal.goTo('delivery');
+      this.revealFirstInvalidField();
       return;
     }
 

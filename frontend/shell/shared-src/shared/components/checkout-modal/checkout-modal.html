@@ -1,11 +1,11 @@
 @if (modal.isOpen()) {
   <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,.5);" (click)="modal.close()">
-    <div class="modal-dialog modal-dialog-centered modal-lg" (click)="$event.stopPropagation()">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="dialog" aria-modal="true" aria-labelledby="checkout-modal-title" (click)="$event.stopPropagation()">
       <div class="modal-content rounded-4 overflow-hidden">
         <div class="modal-header border-0 pb-0">
           <div class="w-100">
             <div class="d-flex justify-content-between align-items-center mb-3">
-              <h5 class="mb-0">
+              <h5 class="mb-0" id="checkout-modal-title" tabindex="-1" #modalTitle>
                 @switch (modal.step()) {
                   @case ('cart') { <i class="bi bi-bag-heart me-2"></i>Seu carrinho }
                   @case ('delivery') { <i class="bi bi-geo-alt me-2"></i>Entrega }
@@ -17,37 +17,41 @@
             </div>
 
             @if (modal.step() !== 'confirmation') {
-              <div class="d-flex justify-content-between position-relative mb-2">
-                @for (step of ['cart', 'delivery', 'payment']; track step; let i = $index) {
-                  <div class="text-center flex-fill">
-                    <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-1"
+              <ol class="list-unstyled d-flex justify-content-between position-relative mb-2" aria-label="Etapas da compra">
+                @for (step of checkoutSteps; track step.id; let i = $index) {
+                  <li class="text-center flex-fill" [attr.aria-current]="i === currentStepIndex() ? 'step' : null">
+                    <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-1 small fw-semibold"
                          style="width: 1.75rem; height: 1.75rem;"
-                         [class.bg-primary]="i <= ['cart','delivery','payment'].indexOf(modal.step())"
-                         [class.text-white]="i <= ['cart','delivery','payment'].indexOf(modal.step())"
-                         [class.bg-light]="i > ['cart','delivery','payment'].indexOf(modal.step())">
-                      <i class="bi bi-check-lg small" [class.invisible]="i > ['cart','delivery','payment'].indexOf(modal.step())"></i>
-                    </div>
-                    <span class="small d-none d-md-block text-secondary">
-                      @switch (step) {
-                        @case ('cart') { Carrinho }
-                        @case ('delivery') { Entrega }
-                        @case ('payment') { Pagamento }
+                         [class.bg-primary]="i <= currentStepIndex()"
+                         [class.bg-light]="i > currentStepIndex()"
+                         [class.text-secondary]="i > currentStepIndex()">
+                      @if (i < currentStepIndex()) {
+                        <i class="bi bi-check-lg" aria-hidden="true"></i>
+                      } @else {
+                        {{ i + 1 }}
                       }
-                    </span>
-                  </div>
+                    </div>
+                    <span class="small" [class.fw-semibold]="i === currentStepIndex()" [class.text-secondary]="i !== currentStepIndex()">{{ step.label }}</span>
+                  </li>
                 }
-              </div>
+              </ol>
             }
           </div>
         </div>
 
-        <div class="modal-body" style="max-height: 75vh; overflow-y: auto;">
+        <div class="modal-body" style="max-height: 75vh; max-height: 75dvh; overflow-y: auto;" #modalBody>
           @switch (modal.step()) {
             @case ('cart') {
               @if (cart.items().length === 0) {
                 <div class="text-center py-5 text-secondary">
                   <i class="bi bi-bag-x fs-1 d-block mb-3"></i>
                   <p>Seu carrinho está vazio.</p>
+                  @if (cart.lastRemoved(); as removed) {
+                    <p class="small">
+                      {{ removed.item.product.name }} removido.
+                      <button type="button" class="btn btn-sm btn-link p-0 align-baseline fw-semibold" (click)="cart.undoRemove()">Desfazer</button>
+                    </p>
+                  }
                   <button type="button" class="btn btn-primary rounded-pill mt-2" (click)="modal.close()">Ir para a loja</button>
                 </div>
               } @else {
@@ -71,11 +75,15 @@
                         </div>
                         <div class="col-6 col-md-3">
                           <div class="input-group input-group-sm">
-                            <button class="btn btn-outline-secondary" type="button" (click)="decrement(item.product.id, item.quantity, item.embroideryText, item.threadColor)">
+                            <button class="btn btn-outline-secondary" type="button"
+                              [attr.aria-label]="item.quantity === 1 ? 'Remover ' + item.product.name : 'Diminuir quantidade de ' + item.product.name"
+                              (click)="decrement(item.product.id, item.quantity, item.embroideryText, item.threadColor)">
                               <i class="bi bi-dash"></i>
                             </button>
-                            <span class="input-group-text bg-white">{{ item.quantity }}</span>
-                            <button class="btn btn-outline-secondary" type="button" (click)="increment(item.product.id, item.quantity, item.embroideryText, item.threadColor)">
+                            <span class="input-group-text bg-white" aria-live="polite">{{ item.quantity }}</span>
+                            <button class="btn btn-outline-secondary" type="button"
+                              [attr.aria-label]="'Aumentar quantidade de ' + item.product.name"
+                              (click)="increment(item.product.id, item.quantity, item.embroideryText, item.threadColor)">
                               <i class="bi bi-plus"></i>
                             </button>
                           </div>
@@ -84,7 +92,9 @@
                           {{ item.product.effectivePrice * item.quantity | currency:'BRL' }}
                         </div>
                         <div class="col-2 col-md-1 text-end">
-                          <button class="btn btn-sm btn-link text-danger" type="button" (click)="cart.remove(item.product.id, item.embroideryText, item.threadColor)">
+                          <button class="btn btn-sm btn-link text-danger" type="button"
+                            [attr.aria-label]="'Remover ' + item.product.name" title="Remover"
+                            (click)="cart.remove(item.product.id, item.embroideryText, item.threadColor)">
                             <i class="bi bi-trash"></i>
                           </button>
                         </div>
@@ -93,7 +103,31 @@
                   }
                 </div>
 
-                @if (kitSuggestions().length > 0) {
+                @if (cart.lastRemoved(); as removed) {
+                  <div class="alert alert-light border rounded-4 small py-2 d-flex justify-content-between align-items-center gap-2 mb-3" role="status">
+                    <span><i class="bi bi-trash me-1"></i>{{ removed.item.product.name }} removido do carrinho.</span>
+                    <button type="button" class="btn btn-sm btn-link p-0 fw-semibold" (click)="cart.undoRemove()">Desfazer</button>
+                  </div>
+                }
+
+                @if (freeShippingRemaining() !== null) {
+                  <div class="mb-3">
+                    <div class="small mb-1">
+                      <i class="bi bi-truck me-1"></i>
+                      @if (freeShippingRemaining() === 0) {
+                        <strong>Você ganhou frete grátis!</strong>
+                      } @else {
+                        Faltam <strong>{{ freeShippingRemaining() | currency:'BRL' }}</strong> para ganhar frete grátis
+                      }
+                    </div>
+                    <div class="progress" style="height: .4rem" role="progressbar"
+                      aria-label="Progresso até o frete grátis" [attr.aria-valuenow]="freeShippingProgress()" aria-valuemin="0" aria-valuemax="100">
+                      <div class="progress-bar bg-success" [style.width.%]="freeShippingProgress()"></div>
+                    </div>
+                  </div>
+                }
+
+                @if (showKitSuggestion() && kitSuggestions().length > 0) {
                   <div class="stat-card mb-3">
                     <h6 class="mb-3"><i class="bi bi-gift me-2"></i>Complete o kit e economize</h6>
                     <p class="small text-secondary mb-3">Toque em um kit para adicionar direto ao carrinho.</p>
@@ -130,24 +164,30 @@
                 <h6 class="mb-3"><i class="bi bi-person me-2"></i>Seus dados</h6>
                 <div class="row g-3 mb-4">
                   <div class="col-md-6">
-                    <label class="form-label small fw-semibold">Nome completo</label>
-                    <input type="text" class="form-control" formControlName="customerName"
+                    <label for="modal-customerName" class="form-label small fw-semibold">Nome completo</label>
+                    <input type="text" id="modal-customerName" class="form-control" formControlName="customerName" autocomplete="name"
                       [class.is-invalid]="form.controls.customerName.invalid && form.controls.customerName.touched">
+                    <div class="invalid-feedback">Nome é obrigatório.</div>
                   </div>
                   <div class="col-md-6">
-                    <label class="form-label small fw-semibold">E-mail</label>
-                    <input type="email" class="form-control" formControlName="customerEmail"
+                    <label for="modal-customerEmail" class="form-label small fw-semibold">E-mail</label>
+                    <input type="email" id="modal-customerEmail" class="form-control" formControlName="customerEmail" autocomplete="email"
                       [class.is-invalid]="form.controls.customerEmail.invalid && form.controls.customerEmail.touched">
+                    <div class="invalid-feedback">Informe um e-mail válido.</div>
                   </div>
                   <div class="col-md-6">
-                    <label class="form-label small fw-semibold">Telefone / WhatsApp</label>
-                    <input type="text" class="form-control" formControlName="customerPhone" appPhoneMask placeholder="(11) 91234-5678"
+                    <label for="modal-customerPhone" class="form-label small fw-semibold">Telefone / WhatsApp</label>
+                    <input type="tel" id="modal-customerPhone" class="form-control" formControlName="customerPhone" appPhoneMask placeholder="(11) 91234-5678"
+                      autocomplete="tel-national" inputmode="tel"
                       [class.is-invalid]="form.controls.customerPhone.invalid && form.controls.customerPhone.touched">
+                    <div class="invalid-feedback">É por ele que avisamos sobre o pedido.</div>
                   </div>
                   <div class="col-md-6">
-                    <label class="form-label small fw-semibold">CPF</label>
-                    <input type="text" class="form-control" formControlName="customerCpf" placeholder="000.000.000-00"
+                    <label for="modal-customerCpf" class="form-label small fw-semibold">CPF</label>
+                    <input type="text" id="modal-customerCpf" class="form-control" formControlName="customerCpf" placeholder="000.000.000-00"
+                      inputmode="numeric"
                       [class.is-invalid]="form.controls.customerCpf.invalid && form.controls.customerCpf.touched">
+                    <div class="invalid-feedback">Informe um CPF válido.</div>
                   </div>
                 </div>
 
@@ -200,9 +240,10 @@
 
                   <div class="row g-3">
                     <div class="col-md-4">
-                      <label class="form-label small fw-semibold">CEP</label>
+                      <label for="modal-zipCode" class="form-label small fw-semibold">CEP</label>
                       <div class="position-relative">
-                        <input type="text" class="form-control" formControlName="zipCode" placeholder="00000-000" maxlength="9"
+                        <input type="text" id="modal-zipCode" class="form-control" formControlName="zipCode" placeholder="00000-000" maxlength="9"
+                          autocomplete="postal-code" inputmode="numeric"
                           [class.is-invalid]="(form.controls.zipCode.invalid && form.controls.zipCode.touched) || cepError()">
                         @if (cepLoading()) {
                           <span class="spinner-border spinner-border-sm position-absolute top-50 end-0 translate-middle-y me-3 text-secondary"></span>
@@ -210,36 +251,46 @@
                       </div>
                       @if (cepError()) {
                         <div class="invalid-feedback d-block">{{ cepError() }}</div>
+                      } @else if (form.controls.zipCode.invalid && form.controls.zipCode.touched) {
+                        <div class="invalid-feedback d-block">CEP é obrigatório.</div>
+                      } @else {
+                        <span class="form-text">Preenchemos o endereço pelo CEP.</span>
                       }
                     </div>
                     <div class="col-md-8">
-                      <label class="form-label small fw-semibold">Rua</label>
-                      <input type="text" class="form-control" formControlName="street"
+                      <label for="modal-street" class="form-label small fw-semibold">Rua</label>
+                      <input type="text" id="modal-street" class="form-control" formControlName="street" autocomplete="address-line1"
                         [class.is-invalid]="form.controls.street.invalid && form.controls.street.touched">
+                      <div class="invalid-feedback">Rua é obrigatória.</div>
                     </div>
                     <div class="col-md-4">
-                      <label class="form-label small fw-semibold">Número</label>
-                      <input type="text" class="form-control" formControlName="number"
+                      <label for="modal-number" class="form-label small fw-semibold">Número</label>
+                      <input type="text" id="modal-number" class="form-control" formControlName="number"
                         [class.is-invalid]="form.controls.number.invalid && form.controls.number.touched">
+                      <div class="invalid-feedback">Número é obrigatório.</div>
                     </div>
                     <div class="col-md-8">
-                      <label class="form-label small fw-semibold">Complemento</label>
-                      <input type="text" class="form-control" formControlName="complement">
+                      <label for="modal-complement" class="form-label small fw-semibold">Complemento</label>
+                      <input type="text" id="modal-complement" class="form-control" formControlName="complement" autocomplete="address-line2">
                     </div>
                     <div class="col-md-6">
-                      <label class="form-label small fw-semibold">Bairro</label>
-                      <input type="text" class="form-control" formControlName="neighborhood"
+                      <label for="modal-neighborhood" class="form-label small fw-semibold">Bairro</label>
+                      <input type="text" id="modal-neighborhood" class="form-control" formControlName="neighborhood" autocomplete="address-level3"
                         [class.is-invalid]="form.controls.neighborhood.invalid && form.controls.neighborhood.touched">
+                      <div class="invalid-feedback">Bairro é obrigatório.</div>
                     </div>
                     <div class="col-md-4">
-                      <label class="form-label small fw-semibold">Cidade</label>
-                      <input type="text" class="form-control" formControlName="city"
+                      <label for="modal-city" class="form-label small fw-semibold">Cidade</label>
+                      <input type="text" id="modal-city" class="form-control" formControlName="city" autocomplete="address-level2"
                         [class.is-invalid]="form.controls.city.invalid && form.controls.city.touched">
+                      <div class="invalid-feedback">Cidade é obrigatória.</div>
                     </div>
                     <div class="col-md-2">
-                      <label class="form-label small fw-semibold">UF</label>
-                      <input type="text" class="form-control" formControlName="state" maxlength="2" placeholder="UF"
+                      <label for="modal-state" class="form-label small fw-semibold">UF</label>
+                      <input type="text" id="modal-state" class="form-control text-uppercase" formControlName="state" maxlength="2" placeholder="UF"
+                        autocomplete="address-level1"
                         [class.is-invalid]="form.controls.state.invalid && form.controls.state.touched">
+                      <div class="invalid-feedback">Obrigatório.</div>
                     </div>
                   </div>
                 }
@@ -291,36 +342,39 @@
                 } @else {
                   <div class="row g-3 mb-4">
                     <div class="col-12">
-                      <label class="form-label small fw-semibold">Número do cartão</label>
-                      <input type="text" class="form-control" formControlName="cardNumber" placeholder="0000 0000 0000 0000" autocomplete="cc-number">
+                      <label for="modal-cardNumber" class="form-label small fw-semibold">Número do cartão</label>
+                      <input type="text" id="modal-cardNumber" class="form-control" formControlName="cardNumber" placeholder="0000 0000 0000 0000"
+                        autocomplete="cc-number" inputmode="numeric">
                     </div>
                     <div class="col-md-8">
-                      <label class="form-label small fw-semibold">Nome no cartão</label>
-                      <input type="text" class="form-control" formControlName="cardHolder" autocomplete="cc-name">
+                      <label for="modal-cardHolder" class="form-label small fw-semibold">Nome no cartão</label>
+                      <input type="text" id="modal-cardHolder" class="form-control" formControlName="cardHolder" autocomplete="cc-name">
                     </div>
                     <div class="col-md-4">
-                      <label class="form-label small fw-semibold">Parcelas</label>
-                      <select class="form-select" formControlName="installments">
+                      <label for="modal-installments" class="form-label small fw-semibold">Parcelas</label>
+                      <select id="modal-installments" class="form-select" formControlName="installments">
                         @for (n of [1,2,3,4,5,6]; track n) {
                           <option [value]="n">{{ n }}x</option>
                         }
                       </select>
                     </div>
-                    <div class="col-md-6">
-                      <label class="form-label small fw-semibold">Validade</label>
-                      <input type="text" class="form-control" formControlName="cardExpiry" placeholder="MM/AA" autocomplete="cc-exp">
+                    <div class="col-6">
+                      <label for="modal-cardExpiry" class="form-label small fw-semibold">Validade</label>
+                      <input type="text" id="modal-cardExpiry" class="form-control" formControlName="cardExpiry" placeholder="MM/AA"
+                        autocomplete="cc-exp" inputmode="numeric" maxlength="5">
                     </div>
-                    <div class="col-md-6">
-                      <label class="form-label small fw-semibold">CVV</label>
-                      <input type="text" class="form-control" formControlName="cardCvv" placeholder="123" autocomplete="cc-csc">
+                    <div class="col-6">
+                      <label for="modal-cardCvv" class="form-label small fw-semibold">CVV</label>
+                      <input type="text" id="modal-cardCvv" class="form-control" formControlName="cardCvv" placeholder="123"
+                        autocomplete="cc-csc" inputmode="numeric" maxlength="4">
                     </div>
                   </div>
                 }
                 }
 
                 <div class="mb-3">
-                  <label class="form-label small fw-semibold">Observações (opcional)</label>
-                  <textarea class="form-control" rows="2" formControlName="notes" placeholder="Alguma instrução especial?"></textarea>
+                  <label for="modal-notes" class="form-label small fw-semibold">Observações (opcional)</label>
+                  <textarea id="modal-notes" class="form-control" rows="2" formControlName="notes" placeholder="Alguma instrução especial?"></textarea>
                 </div>
 
                 <div class="form-check mb-3">
@@ -331,9 +385,11 @@
                 </div>
                 @if (form.controls.isGift.value) {
                   <div class="mb-4">
-                    <input type="text" class="form-control mb-2" formControlName="recipientName" placeholder="Nome de quem vai receber (opcional)">
-                    <textarea class="form-control" rows="2" formControlName="giftMessage" maxlength="300"
+                    <input type="text" class="form-control mb-2" formControlName="recipientName" placeholder="Nome de quem vai receber (opcional)"
+                      aria-label="Nome de quem vai receber (opcional)">
+                    <textarea class="form-control" rows="2" formControlName="giftMessage" maxlength="300" aria-label="Recado do presente"
                       placeholder="Escreva o recado que vai junto com a peça."></textarea>
+                    <div class="form-text text-end">{{ form.controls.giftMessage.value.length }}/300</div>
                   </div>
                 }
 
@@ -347,8 +403,9 @@
                     </div>
                   } @else {
                     <div class="input-group input-group-sm">
-                      <input type="text" class="form-control text-uppercase" placeholder="Cupom de desconto"
-                        [value]="couponCode()" (input)="couponCode.set($any($event.target).value)">
+                      <input type="text" class="form-control text-uppercase" placeholder="Cupom de desconto" aria-label="Cupom de desconto"
+                        [value]="couponCode()" (input)="couponCode.set($any($event.target).value)"
+                        (keydown.enter)="$event.preventDefault(); applyCoupon()">
                       <button type="button" class="btn btn-outline-primary" [disabled]="couponApplying()" (click)="applyCoupon()">
                         @if (couponApplying()) {
                           <span class="spinner-border spinner-border-sm"></span>
@@ -375,8 +432,19 @@
                 }
                 <div class="d-flex justify-content-between small mb-3">
                   <span>Frete estimado</span>
-                  <span>{{ shippingCost() | currency:'BRL' }}</span>
+                  @if (deliveryMethod() === 'Retirada') {
+                    <span>Retirada no ateliê</span>
+                  } @else if (shippingCost() === 0) {
+                    <span class="text-success fw-semibold">Grátis</span>
+                  } @else {
+                    <span>{{ shippingCost() | currency:'BRL' }}</span>
+                  }
                 </div>
+                @if (freeShippingRemaining()) {
+                  <p class="small text-secondary mt-n2 mb-3">
+                    <i class="bi bi-truck me-1"></i>Faltam {{ freeShippingRemaining() | currency:'BRL' }} para ganhar frete grátis.
+                  </p>
+                }
                 <div class="d-flex justify-content-between fw-bold fs-5 mb-3">
                   <span>Total</span>
                   <span class="text-blush">{{ total() | currency:'BRL' }}</span>

@@ -250,6 +250,44 @@ img.rounded-4 {
   border: 2px solid var(--atelie-blush-strong);
 }
 
+// Product-detail live embroidery preview: the typed letters in a script face, tinted with the
+// chosen thread color's swatch, on a soft fabric-like ground. Pale threads get a thin outline so
+// "Branco"/"Bege" stay legible. Purely illustrative — copy under it says so.
+.embroidery-preview {
+  border: 2px dashed var(--atelie-blush-strong);
+  border-radius: $border-radius-lg;
+  background:
+    repeating-linear-gradient(45deg, rgba(232, 162, 173, .06) 0 6px, transparent 6px 12px),
+    var(--atelie-cream);
+  padding: 1rem 1.25rem;
+  text-align: center;
+}
+
+.embroidery-preview-text,
+.embroidery-preview-placeholder {
+  display: block;
+  font-family: "Playfair Display", "Poppins", serif;
+  font-style: italic;
+  font-weight: 600;
+  font-size: clamp(1.75rem, 6vw, 2.5rem);
+  line-height: 1.2;
+  min-height: 1.2em;
+  overflow-wrap: anywhere;
+}
+
+.embroidery-preview-text {
+  color: var(--atelie-text);
+}
+
+.embroidery-preview-light {
+  text-shadow: 0 0 1px rgba(58, 50, 56, .7), 0 0 2px rgba(58, 50, 56, .35);
+}
+
+.embroidery-preview-placeholder {
+  color: rgba(58, 50, 56, .25);
+  font-size: clamp(1.25rem, 4.5vw, 1.6rem);
+}
+
 .badge-soft {
   background: var(--atelie-blush);
   color: #8a6a1f;

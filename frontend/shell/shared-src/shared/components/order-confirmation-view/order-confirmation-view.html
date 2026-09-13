@@ -46,9 +46,17 @@
       </div>
     }
 
+    @if (o.status !== 'Cancelado') {
+      <p class="small text-secondary text-center d-md-none mb-0">Etapa atual: <strong>{{ statusLabels[o.status] }}</strong></p>
+    }
+
     @if (o.trackingCode) {
-      <div class="alert alert-light border rounded-4 mt-3 mb-0 small">
-        <i class="bi bi-truck me-1"></i>Código de rastreio: <strong>{{ o.trackingCode }}</strong>
+      <div class="alert alert-light border rounded-4 mt-3 mb-0 small d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <span><i class="bi bi-truck me-1"></i>Código de rastreio: <strong class="user-select-all">{{ o.trackingCode }}</strong></span>
+        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" (click)="copyTrackingCode()">
+          <i class="bi me-1" [class.bi-clipboard]="!trackingCodeCopied()" [class.bi-clipboard-check]="trackingCodeCopied()"></i>
+          {{ trackingCodeCopied() ? 'Copiado!' : 'Copiar código' }}
+        </button>
       </div>
     }
   </div>
@@ -86,8 +94,11 @@
       <p class="small text-secondary mb-0"><span class="spinner-border spinner-border-sm me-1"></span>Aguardando confirmação do pagamento — pode levar até 2 dias úteis após o pagamento.</p>
     </div>
   } @else if (o.paymentStatus === 'Recusado') {
-    <div class="alert alert-danger rounded-4 mb-4">
-      <i class="bi bi-x-circle me-1"></i>Pagamento recusado. Entre em contato pelo WhatsApp para finalizar sua encomenda.
+    <div class="alert alert-danger rounded-4 mb-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <span><i class="bi bi-x-circle me-1"></i>Pagamento recusado. Fale com a gente pelo WhatsApp para finalizar sua encomenda.</span>
+      <a [href]="whatsappContactUrl" target="_blank" rel="noopener" class="btn btn-success btn-sm rounded-pill">
+        <i class="bi bi-whatsapp me-1"></i>Falar no WhatsApp
+      </a>
     </div>
   }
 
@@ -99,7 +110,14 @@
       </p>
     } @else {
       <h6 class="mb-2"><i class="bi bi-truck me-2"></i>Entrega</h6>
-      <p class="small text-secondary mb-0">Enviaremos para o endereço informado no pedido.</p>
+      @if (shippingAddress(); as address) {
+        <p class="small text-secondary mb-0">
+          {{ address.street }}, {{ address.number }}@if (address.complement) { — {{ address.complement }} }<br>
+          {{ address.neighborhood }} · {{ address.city }}/{{ address.state }} · CEP {{ address.zipCode }}
+        </p>
+      } @else {
+        <p class="small text-secondary mb-0">Enviaremos para o endereço informado no pedido.</p>
+      }
     }
   </div>
 
@@ -119,9 +137,14 @@
     <h5 class="mb-3">Itens</h5>
     <ul class="list-unstyled">
       @for (item of o.items; track item.id) {
-        <li class="d-flex justify-content-between border-bottom py-2">
-          <span>{{ item.quantity }}x {{ item.productName }}</span>
-          <span>{{ item.subtotal | currency:'BRL' }}</span>
+        <li class="d-flex justify-content-between gap-2 border-bottom py-2">
+          <span>
+            {{ item.quantity }}x {{ item.productName }}
+            @if (itemOptions(item); as options) {
+              <span class="d-block small text-secondary"><i class="bi bi-scissors me-1"></i>{{ options }}</span>
+            }
+          </span>
+          <span class="text-nowrap">{{ item.subtotal | currency:'BRL' }}</span>
         </li>
       }
     </ul>

@@ -16,6 +16,12 @@ import { AssetUrlPipe } from '@shared/shared/pipes/asset-url.pipe';
 
 const MAX_EMBROIDERY_LENGTH = 30;
 
+/** Shown when a product has no lead time of its own configured in admin. */
+const DEFAULT_PRODUCTION_LEAD_TIME_DAYS = 7;
+
+/** Thread colors too pale to read against the preview's light fabric background without an outline. */
+const LIGHT_THREAD_COLORS = new Set(['Branco', 'Bege', 'Rosa Bebê', 'Amarelo']);
+
 /** Standard embroidery thread color palette offered on every product. */
 export const THREAD_COLORS = [
   'Branco',
@@ -62,6 +68,8 @@ export class ProductDetail implements OnInit {
   readonly alphabet = [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ"];
   readonly threadColors = THREAD_COLORS;
   readonly threadColorSwatches = THREAD_COLOR_SWATCHES;
+  readonly maxEmbroideryLength = MAX_EMBROIDERY_LENGTH;
+  readonly defaultLeadTimeDays = DEFAULT_PRODUCTION_LEAD_TIME_DAYS;
 
   readonly product = signal<Product | null>(null);
   readonly loading = signal(true);
@@ -73,6 +81,7 @@ export class ProductDetail implements OnInit {
   readonly threadColorTouched = signal(false);
   readonly addedFeedback = signal(false);
   readonly activeImageIndex = signal(0);
+  readonly isLightThread = computed(() => LIGHT_THREAD_COLORS.has(this.threadColor()));
 
   readonly galleryUrls = computed(() => {
     const p = this.product();
@@ -269,20 +278,29 @@ export class ProductDetail implements OnInit {
     this.threadColor.set(color);
   }
 
+  changeQuantity(delta: number): void {
+    this.quantity.update((current) => Math.max(1, current + delta));
+  }
+
   addToCart(): void {
     const product = this.product();
     if (!product) return;
 
-    let blocked = false;
-    if (!this.embroideryText().trim()) {
-      this.embroideryTouched.set(true);
-      blocked = true;
+    const missingText = !this.embroideryText().trim();
+    const missingColor = !this.threadColor();
+    this.embroideryTouched.set(missingText);
+    this.threadColorTouched.set(missingColor);
+
+    // On mobile the add button sits well below both fields (the letter grid alone is several rows),
+    // so the error messages would otherwise render off-screen and the tap would look like it did nothing.
+    if (missingText) {
+      this.revealField('embroidery-text', true);
+      return;
     }
-    if (!this.threadColor()) {
-      this.threadColorTouched.set(true);
-      blocked = true;
+    if (missingColor) {
+      this.revealField('thread-color-group', false);
+      return;
     }
-    if (blocked) return;
 
     this.cart.add(product, this.quantity(), this.embroideryText().trim(), this.threadColor());
     this.addedFeedback.set(true);
@@ -290,6 +308,14 @@ export class ProductDetail implements OnInit {
     this.embroideryTouched.set(false);
     this.threadColor.set('');
     this.threadColorTouched.set(false);
-    setTimeout(() => this.addedFeedback.set(false), 2500);
+    this.quantity.set(1);
+    setTimeout(() => this.addedFeedback.set(false), 5000);
+  }
+
+  private revealField(elementId: string, focus: boolean): void {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (focus) element.focus({ preventScroll: true });
   }
 }

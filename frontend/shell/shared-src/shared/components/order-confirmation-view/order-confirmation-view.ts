@@ -1,8 +1,8 @@
 import { CurrencyPipe } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject, input, output, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { jsPDF } from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
-import { SITE_ADDRESS, SITE_CNPJ, SITE_NAME } from '../../../core/constants/site';
+import { SITE_ADDRESS, SITE_CNPJ, SITE_NAME, WHATSAPP_NUMBER } from '../../../core/constants/site';
 import { Order, OrderItem, ORDER_STATUS_FLOW, ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS, ShippingAddress } from '../../../core/models/order.model';
 import { OrderService } from '../../../core/services/order.service';
 import { PixQrCode } from '../pix-qr-code/pix-qr-code';
@@ -24,10 +24,13 @@ export class OrderConfirmationView implements OnInit, OnDestroy {
   readonly continueShopping = output<void>();
 
   readonly order = signal<Order | null>(null);
+  readonly shippingAddress = computed(() => this.parsedShippingAddress(this.order()?.shippingAddressJson ?? null));
   readonly loading = signal(true);
   readonly notFound = signal(false);
   readonly pixCodeCopied = signal(false);
   readonly boletoBarcodeCopied = signal(false);
+  readonly trackingCodeCopied = signal(false);
+  readonly whatsappContactUrl = `https://wa.me/${WHATSAPP_NUMBER}`;
   readonly canceling = signal(false);
   readonly cancelError = signal<string | null>(null);
   readonly generatingReceipt = signal(false);
@@ -78,6 +81,16 @@ export class OrderConfirmationView implements OnInit, OnDestroy {
     navigator.clipboard.writeText(code).then(() => {
       this.pixCodeCopied.set(true);
       setTimeout(() => this.pixCodeCopied.set(false), 2000);
+    });
+  }
+
+  copyTrackingCode(): void {
+    const code = this.order()?.trackingCode;
+    if (!code) return;
+
+    navigator.clipboard.writeText(code).then(() => {
+      this.trackingCodeCopied.set(true);
+      setTimeout(() => this.trackingCodeCopied.set(false), 2000);
     });
   }
 
@@ -249,16 +262,21 @@ export class OrderConfirmationView implements OnInit, OnDestroy {
   }
 
   private itemDescription(item: OrderItem): string {
-    if (!item.optionsJson) return item.productName;
+    const options = this.itemOptions(item);
+    return options ? `${item.productName}\nBordado: ${options}` : item.productName;
+  }
+
+  /** "ANA — Rosa" from the item's embroidery options, or null when it has none. */
+  itemOptions(item: OrderItem): string | null {
+    if (!item.optionsJson) return null;
     try {
       const options = JSON.parse(item.optionsJson) as { embroideryText?: string; threadColor?: string };
       const parts = [options.embroideryText, options.threadColor].filter(Boolean);
-      return parts.length > 0 ? `${item.productName}\nBordado: ${parts.join(' — ')}` : item.productName;
+      return parts.length > 0 ? parts.join(' — ') : null;
     } catch {
-      return item.productName;
+      return null;
     }
   }
-
   private async loadLogoDataUrl(): Promise<string | null> {
     try {
       const response = await fetch('/images/logo-atelie.png');

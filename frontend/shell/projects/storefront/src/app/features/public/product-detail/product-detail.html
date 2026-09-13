@@ -13,7 +13,7 @@
         <a routerLink="/loja" class="text-secondary">Loja</a> <i class="bi bi-chevron-right small mx-1"></i> {{ p.category }}
       </nav>
 
-      <div class="row g-5 align-items-start">
+      <div class="row g-4 g-lg-5 align-items-start">
         <div class="col-lg-6">
           <div class="ratio ratio-1x1 rounded-5 overflow-hidden shadow-sm">
             <img [src]="galleryUrls()[activeImageIndex()] | assetUrl" [alt]="p.name" class="w-100 h-100 object-fit-cover">
@@ -22,9 +22,11 @@
           @if (galleryUrls().length > 1) {
             <div class="d-flex gap-2 mt-3">
               @for (url of galleryUrls(); track url; let i = $index) {
-                <button type="button" class="btn p-0 border-0 bg-transparent" style="width: 4.5rem; height: 4.5rem;" (click)="selectImage(i)">
+                <button type="button" class="btn p-0 border-0 bg-transparent" style="width: 4.5rem; height: 4.5rem;"
+                  [attr.aria-label]="'Ver foto ' + (i + 1) + ' de ' + galleryUrls().length"
+                  [attr.aria-current]="i === activeImageIndex()" (click)="selectImage(i)">
                   <div class="ratio ratio-1x1 rounded-4 overflow-hidden" [class.border-thumb-active]="i === activeImageIndex()">
-                    <img [src]="url | assetUrl" alt="Miniatura" class="w-100 h-100 object-fit-cover">
+                    <img [src]="url | assetUrl" alt="" class="w-100 h-100 object-fit-cover">
                   </div>
                 </button>
               }
@@ -75,25 +77,22 @@
           }
           <p class="text-secondary fs-5" style="white-space: pre-line;">{{ p.description }}</p>
 
-          @if (p.productionLeadTimeDays) {
-            <p class="small text-secondary mb-4">
-              <i class="bi bi-clock-history me-1"></i>Prazo de produção: {{ p.productionLeadTimeDays }}
-              {{ p.productionLeadTimeDays === 1 ? 'dia útil' : 'dias úteis' }}
-            </p>
-          }
-
           <div class="my-4">
-            <label for="embroidery-text" class="fw-semibold small">Texto para bordar</label>
+            <div class="d-flex justify-content-between align-items-baseline">
+              <label for="embroidery-text" class="fw-semibold small">Texto para bordar</label>
+              <span class="small text-secondary" aria-live="polite">{{ embroideryText().length }}/{{ maxEmbroideryLength }}</span>
+            </div>
             <div class="d-flex gap-2">
-              <input type="text" id="embroidery-text" class="form-control" placeholder="Ex: ANA" maxlength="30"
+              <input type="text" id="embroidery-text" class="form-control" placeholder="Ex: ANA" [maxlength]="maxEmbroideryLength"
                 [class.is-invalid]="embroideryTouched() && !embroideryText().trim()"
+                [attr.aria-describedby]="embroideryTouched() && !embroideryText().trim() ? 'embroidery-text-error' : null"
                 [ngModel]="embroideryText()" (ngModelChange)="embroideryText.set($event)">
-              <button type="button" class="btn btn-outline-secondary flex-shrink-0" title="Apagar última letra" (click)="removeLastLetter()">
+              <button type="button" class="btn btn-outline-secondary flex-shrink-0" title="Apagar última letra" aria-label="Apagar última letra" (click)="removeLastLetter()">
                 <i class="bi bi-backspace"></i>
               </button>
             </div>
             @if (embroideryTouched() && !embroideryText().trim()) {
-              <div class="invalid-feedback d-block">Informe as letras que devem ser bordadas.</div>
+              <div id="embroidery-text-error" class="invalid-feedback d-block">Informe as letras que devem ser bordadas.</div>
             }
 
             <div class="mt-2 p-2 border rounded-4 bg-light">
@@ -109,13 +108,14 @@
             </div>
           </div>
 
-          <div class="my-4">
+          <div class="my-4" id="thread-color-group">
             <label class="fw-semibold small d-block">Cor da linha de bordado</label>
             <div class="d-flex flex-wrap gap-2 mt-2">
               @for (color of threadColors; track color) {
                 <button type="button" class="btn btn-sm rounded-pill d-inline-flex align-items-center gap-2"
                   [class.btn-primary]="threadColor() === color"
                   [class.btn-outline-secondary]="threadColor() !== color"
+                  [attr.aria-pressed]="threadColor() === color"
                   (click)="selectThreadColor(color)">
                   <span class="d-inline-block rounded-circle flex-shrink-0"
                     style="width: 14px; height: 14px; border: 1px solid rgba(0,0,0,.25)"
@@ -129,9 +129,31 @@
             }
           </div>
 
+          <div class="embroidery-preview my-4" aria-live="polite">
+            <span class="small text-secondary d-block mb-1">Prévia do bordado</span>
+            @if (embroideryText().trim()) {
+              <span class="embroidery-preview-text"
+                [class.embroidery-preview-light]="isLightThread()"
+                [style.color]="threadColor() ? threadColorSwatches[threadColor()] : null">{{ embroideryText() }}</span>
+            } @else {
+              <span class="embroidery-preview-placeholder">Seu bordado aparece aqui</span>
+            }
+            <span class="small text-secondary d-block mt-1">
+              @if (threadColor()) { Linha {{ threadColor() }} · } Ilustração aproximada — o bordado real segue o traço do ateliê.
+            </span>
+          </div>
+
           <div class="d-flex align-items-center gap-3 my-4">
-            <label class="fw-semibold small">Quantidade com esse bordado</label>
-            <input type="number" class="form-control" style="width: 90px" [min]="1" [ngModel]="quantity()" (ngModelChange)="quantity.set($event)">
+            <span class="fw-semibold small" id="quantity-label">Quantidade com esse bordado</span>
+            <div class="input-group input-group-sm" style="width: auto" role="group" aria-labelledby="quantity-label">
+              <button type="button" class="btn btn-outline-secondary" aria-label="Diminuir quantidade" [disabled]="quantity() <= 1" (click)="changeQuantity(-1)">
+                <i class="bi bi-dash"></i>
+              </button>
+              <span class="input-group-text bg-white px-3" aria-live="polite">{{ quantity() }}</span>
+              <button type="button" class="btn btn-outline-secondary" aria-label="Aumentar quantidade" (click)="changeQuantity(1)">
+                <i class="bi bi-plus"></i>
+              </button>
+            </div>
           </div>
 
           <button class="btn btn-primary btn-lg rounded-pill px-5" (click)="addToCart()">
@@ -139,14 +161,17 @@
           </button>
 
           @if (addedFeedback()) {
-            <div class="alert alert-success rounded-4 mt-3 py-2 small">
+            <div class="alert alert-success rounded-4 mt-3 py-2 small" role="status">
               <i class="bi bi-check-circle me-2"></i>Adicionado ao carrinho!
               <button type="button" class="btn btn-link alert-link ms-1 p-0 align-baseline" (click)="checkoutModal.open('cart')">Ver carrinho</button>
             </div>
           }
 
           <ul class="list-unstyled small text-secondary mt-4 border-top pt-4">
-            <li class="mb-2"><i class="bi bi-clock-history me-2"></i>Prazo de produção: 7 dias úteis antes do envio</li>
+            <li class="mb-2">
+              <i class="bi bi-clock-history me-2"></i>Prazo de produção: {{ p.productionLeadTimeDays ?? defaultLeadTimeDays }}
+              {{ (p.productionLeadTimeDays ?? defaultLeadTimeDays) === 1 ? 'dia útil' : 'dias úteis' }} antes do envio
+            </li>
             <li class="mb-2"><i class="bi bi-shield-check me-2"></i>Tecidos testados e seguros para bebês</li>
             <li><i class="bi bi-truck me-2"></i>Envio para todo o Brasil</li>
           </ul>
@@ -166,12 +191,15 @@
                   <div class="alert alert-danger small rounded-4">{{ reviewError() }}</div>
                 }
 
-                <div class="mb-3">
-                  <span class="fs-4 text-warning" style="cursor: pointer;">
-                    @for (star of [1, 2, 3, 4, 5]; track star) {
-                      <i class="bi" [class.bi-star-fill]="star <= reviewRating()" [class.bi-star]="star > reviewRating()" (click)="setReviewRating(star)"></i>
-                    }
-                  </span>
+                <div class="mb-3 d-flex gap-1" role="radiogroup" aria-label="Sua nota">
+                  @for (star of [1, 2, 3, 4, 5]; track star) {
+                    <button type="button" class="btn btn-link p-0 fs-4 text-warning lh-1" role="radio"
+                      [attr.aria-checked]="star === reviewRating()"
+                      [attr.aria-label]="star + (star === 1 ? ' estrela' : ' estrelas')"
+                      (click)="setReviewRating(star)">
+                      <i class="bi" [class.bi-star-fill]="star <= reviewRating()" [class.bi-star]="star > reviewRating()"></i>
+                    </button>
+                  }
                 </div>
 
                 <textarea class="form-control mb-3" rows="3" placeholder="Conte como foi sua experiência (opcional)"

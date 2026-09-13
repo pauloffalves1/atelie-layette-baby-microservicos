@@ -21,6 +21,7 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
     promotionEndsAt: null,
     isOnPromotion: false,
     effectivePrice: price,
+    productionLeadTimeDays: null,
     ...overrides,
   };
 }
@@ -116,6 +117,45 @@ describe('CartService', () => {
     service.remove(product.id, 'ANA');
     expect(service.items()).toHaveLength(1);
     expect(service.items()[0].embroideryText).toBe('BIA');
+  });
+
+  it('undoRemove puts the removed line back at its original position', () => {
+    const product = makeProduct({ isExclusive: true });
+    service.add(product, 1, 'ANA', 'Rosa');
+    service.add(product, 2, 'BIA', 'Azul');
+    service.add(product, 1, 'CAU', 'Verde');
+
+    service.remove(product.id, 'BIA', 'Azul');
+    expect(service.lastRemoved()?.item.embroideryText).toBe('BIA');
+
+    service.undoRemove();
+
+    expect(service.items().map((i) => i.embroideryText)).toEqual(['ANA', 'BIA', 'CAU']);
+    expect(service.items()[1].quantity).toBe(2);
+    expect(service.lastRemoved()).toBeNull();
+  });
+
+  it('updateQuantity to zero goes through remove, so it can be undone too', () => {
+    const product = makeProduct();
+    service.add(product, 1);
+
+    service.updateQuantity(product.id, 0);
+    expect(service.lastRemoved()?.item.product.id).toBe(product.id);
+
+    service.undoRemove();
+    expect(service.items()).toHaveLength(1);
+  });
+
+  it('adding or clearing dismisses a pending undo', () => {
+    service.add(makeProduct({ id: 'a' }), 1);
+    service.remove('a');
+
+    service.add(makeProduct({ id: 'b' }), 1);
+    expect(service.lastRemoved()).toBeNull();
+
+    service.remove('b');
+    service.clear();
+    expect(service.lastRemoved()).toBeNull();
   });
 
   it('clear empties the cart', () => {

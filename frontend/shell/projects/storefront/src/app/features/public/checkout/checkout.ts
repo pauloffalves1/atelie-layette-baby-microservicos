@@ -1,5 +1,5 @@
 import { CurrencyPipe } from '@angular/common';
-import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { Component, Injector, OnInit, afterNextRender, computed, effect, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { catchError, debounceTime, distinctUntilChanged, filter, firstValueFrom, map, of, switchMap, tap } from 'rxjs';
@@ -71,6 +71,7 @@ export class Checkout implements OnInit {
   private readonly shippingService = inject(ShippingService);
   private readonly couponService = inject(CouponService);
   private readonly addressService = inject(CustomerAddressService);
+  private readonly injector = inject(Injector);
 
   readonly savedAddresses = signal<CustomerAddress[]>([]);
   readonly selectedAddressId = signal<string | 'new' | null>(null);
@@ -348,6 +349,16 @@ export class Checkout implements OnInit {
   submit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      // "Confirmar pedido" sits at the very bottom on mobile (summary column stacks under the form),
+      // so without this the errors render off-screen and the tap looks like it did nothing.
+      afterNextRender(
+        () => {
+          const field = document.querySelector<HTMLElement>('app-checkout .is-invalid');
+          field?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          field?.focus({ preventScroll: true });
+        },
+        { injector: this.injector },
+      );
       return;
     }
 

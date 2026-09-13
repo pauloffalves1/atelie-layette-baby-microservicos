@@ -2,14 +2,14 @@
   <div class="container">
     <h1 class="section-title fs-1 mb-5">Finalizar compra</h1>
 
-    <form [formGroup]="form" (ngSubmit)="submit()" class="row g-5">
+    <form [formGroup]="form" (ngSubmit)="submit()" class="row g-4 g-lg-5">
       <div class="col-lg-8">
         <div class="stat-card mb-4">
           <h5 class="mb-3"><i class="bi bi-person me-2"></i>Seus dados</h5>
           <div class="row g-3">
             <div class="col-md-6">
               <label for="checkout-customerName" class="form-label small fw-semibold">Nome completo</label>
-              <input type="text" id="checkout-customerName" class="form-control" formControlName="customerName"
+              <input type="text" id="checkout-customerName" class="form-control" formControlName="customerName" autocomplete="name"
                 [class.is-invalid]="form.controls.customerName.invalid && form.controls.customerName.touched">
               @if (form.controls.customerName.invalid && form.controls.customerName.touched) {
                 <div class="invalid-feedback">Nome é obrigatório.</div>
@@ -17,7 +17,7 @@
             </div>
             <div class="col-md-6">
               <label for="checkout-customerEmail" class="form-label small fw-semibold">E-mail</label>
-              <input type="email" id="checkout-customerEmail" class="form-control" formControlName="customerEmail"
+              <input type="email" id="checkout-customerEmail" class="form-control" formControlName="customerEmail" autocomplete="email"
                 [class.is-invalid]="form.controls.customerEmail.invalid && form.controls.customerEmail.touched">
               @if (form.controls.customerEmail.invalid && form.controls.customerEmail.touched) {
                 <div class="invalid-feedback">Informe um e-mail válido.</div>
@@ -25,7 +25,8 @@
             </div>
             <div class="col-md-6">
               <label for="checkout-customerPhone" class="form-label small fw-semibold">Telefone / WhatsApp</label>
-              <input type="text" id="checkout-customerPhone" class="form-control" formControlName="customerPhone" appPhoneMask
+              <input type="tel" id="checkout-customerPhone" class="form-control" formControlName="customerPhone" appPhoneMask
+                autocomplete="tel-national" inputmode="tel"
                 placeholder="(11) 91234-5678"
                 [class.is-invalid]="form.controls.customerPhone.invalid && form.controls.customerPhone.touched">
               @if (form.controls.customerPhone.invalid && form.controls.customerPhone.touched) {
@@ -34,7 +35,7 @@
             </div>
             <div class="col-md-6">
               <label for="checkout-customerCpf" class="form-label small fw-semibold">CPF</label>
-              <input type="text" id="checkout-customerCpf" class="form-control" formControlName="customerCpf"
+              <input type="text" id="checkout-customerCpf" class="form-control" formControlName="customerCpf" inputmode="numeric"
                 placeholder="000.000.000-00"
                 [class.is-invalid]="form.controls.customerCpf.invalid && form.controls.customerCpf.touched">
               @if (form.controls.customerCpf.invalid && form.controls.customerCpf.touched) {
@@ -98,7 +99,7 @@
             <div class="col-md-4">
               <label for="checkout-zipCode" class="form-label small fw-semibold">CEP</label>
               <div class="position-relative">
-                <input type="text" id="checkout-zipCode" class="form-control" formControlName="zipCode"
+                <input type="text" id="checkout-zipCode" class="form-control" formControlName="zipCode" autocomplete="postal-code" inputmode="numeric"
                   placeholder="00000-000" maxlength="9"
                   [class.is-invalid]="(form.controls.zipCode.invalid && form.controls.zipCode.touched) || cepError()">
                 @if (cepLoading()) {
@@ -115,7 +116,7 @@
             </div>
             <div class="col-md-8">
               <label for="checkout-street" class="form-label small fw-semibold">Rua</label>
-              <input type="text" id="checkout-street" class="form-control" formControlName="street"
+              <input type="text" id="checkout-street" class="form-control" formControlName="street" autocomplete="address-line1"
                 [class.is-invalid]="form.controls.street.invalid && form.controls.street.touched">
               @if (form.controls.street.invalid && form.controls.street.touched) {
                 <div class="invalid-feedback">Rua é obrigatória.</div>
@@ -131,11 +132,11 @@
             </div>
             <div class="col-md-8">
               <label for="checkout-complement" class="form-label small fw-semibold">Complemento</label>
-              <input type="text" id="checkout-complement" class="form-control" formControlName="complement">
+              <input type="text" id="checkout-complement" class="form-control" formControlName="complement" autocomplete="address-line2">
             </div>
             <div class="col-md-6">
               <label for="checkout-neighborhood" class="form-label small fw-semibold">Bairro</label>
-              <input type="text" id="checkout-neighborhood" class="form-control" formControlName="neighborhood"
+              <input type="text" id="checkout-neighborhood" class="form-control" formControlName="neighborhood" autocomplete="address-level3"
                 [class.is-invalid]="form.controls.neighborhood.invalid && form.controls.neighborhood.touched">
               @if (form.controls.neighborhood.invalid && form.controls.neighborhood.touched) {
                 <div class="invalid-feedback">Bairro é obrigatório.</div>
@@ -143,7 +144,7 @@
             </div>
             <div class="col-md-4">
               <label for="checkout-city" class="form-label small fw-semibold">Cidade</label>
-              <input type="text" id="checkout-city" class="form-control" formControlName="city"
+              <input type="text" id="checkout-city" class="form-control" formControlName="city" autocomplete="address-level2"
                 [class.is-invalid]="form.controls.city.invalid && form.controls.city.touched">
               @if (form.controls.city.invalid && form.controls.city.touched) {
                 <div class="invalid-feedback">Cidade é obrigatória.</div>
@@ -151,7 +152,7 @@
             </div>
             <div class="col-md-2">
               <label for="checkout-state" class="form-label small fw-semibold">Estado</label>
-              <input type="text" id="checkout-state" class="form-control" formControlName="state" maxlength="2" placeholder="UF"
+              <input type="text" id="checkout-state" class="form-control text-uppercase" formControlName="state" autocomplete="address-level1" maxlength="2" placeholder="UF"
                 [class.is-invalid]="form.controls.state.invalid && form.controls.state.touched">
               @if (form.controls.state.invalid && form.controls.state.touched) {
                 <div class="invalid-feedback">Obrigatório.</div>
@@ -206,7 +207,7 @@
               <div class="col-12">
                 <label for="checkout-cardNumber" class="form-label small fw-semibold">Número do cartão</label>
                 <input type="text" id="checkout-cardNumber" class="form-control" formControlName="cardNumber"
-                  placeholder="0000 0000 0000 0000" autocomplete="cc-number">
+                  placeholder="0000 0000 0000 0000" autocomplete="cc-number" inputmode="numeric">
               </div>
               <div class="col-md-8">
                 <label for="checkout-cardHolder" class="form-label small fw-semibold">Nome no cartão</label>
@@ -224,12 +225,12 @@
               <div class="col-md-6">
                 <label for="checkout-cardExpiry" class="form-label small fw-semibold">Validade</label>
                 <input type="text" id="checkout-cardExpiry" class="form-control" formControlName="cardExpiry"
-                  placeholder="MM/AA" autocomplete="cc-exp">
+                  placeholder="MM/AA" autocomplete="cc-exp" inputmode="numeric" maxlength="5">
               </div>
               <div class="col-md-6">
                 <label for="checkout-cardCvv" class="form-label small fw-semibold">CVV</label>
                 <input type="text" id="checkout-cardCvv" class="form-control" formControlName="cardCvv"
-                  placeholder="123" autocomplete="cc-csc">
+                  placeholder="123" autocomplete="cc-csc" inputmode="numeric" maxlength="4">
               </div>
             </div>
           }
@@ -262,10 +263,17 @@
         <div class="stat-card">
           <h5 class="mb-3">Seu pedido</h5>
           <ul class="list-unstyled small">
-            @for (item of cart.items(); track item.product.id) {
-              <li class="d-flex justify-content-between mb-2">
-                <span>{{ item.quantity }}x {{ item.product.name }}</span>
-                <span>{{ item.product.effectivePrice * item.quantity | currency:'BRL' }}</span>
+            @for (item of cart.items(); track item.product.id + '|' + (item.embroideryText ?? '') + '|' + (item.threadColor ?? '')) {
+              <li class="d-flex justify-content-between gap-2 mb-2">
+                <span>
+                  {{ item.quantity }}x {{ item.product.name }}
+                  @if (item.embroideryText || item.threadColor) {
+                    <span class="d-block text-secondary">
+                      <i class="bi bi-scissors me-1"></i>{{ item.embroideryText }}@if (item.embroideryText && item.threadColor) { · }{{ item.threadColor }}
+                    </span>
+                  }
+                </span>
+                <span class="text-nowrap">{{ item.product.effectivePrice * item.quantity | currency:'BRL' }}</span>
               </li>
             }
           </ul>
@@ -279,8 +287,9 @@
               </div>
             } @else {
               <div class="input-group input-group-sm">
-                <input type="text" class="form-control text-uppercase" placeholder="Cupom de desconto"
-                  [value]="couponCode()" (input)="couponCode.set($any($event.target).value)">
+                <input type="text" class="form-control text-uppercase" placeholder="Cupom de desconto" aria-label="Cupom de desconto"
+                  [value]="couponCode()" (input)="couponCode.set($any($event.target).value)"
+                  (keydown.enter)="$event.preventDefault(); applyCoupon()">
                 <button type="button" class="btn btn-outline-primary" [disabled]="couponApplying()" (click)="applyCoupon()">
                   @if (couponApplying()) {
                     <span class="spinner-border spinner-border-sm"></span>

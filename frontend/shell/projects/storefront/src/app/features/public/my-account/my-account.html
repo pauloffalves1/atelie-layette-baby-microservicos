@@ -109,42 +109,43 @@
         <form [formGroup]="addressForm" (ngSubmit)="saveAddress()" class="stat-card">
           <div class="row g-3">
             <div class="col-12 col-md-6">
-              <label class="form-label small">Nome do endereço (ex: Casa, Trabalho)</label>
-              <input type="text" class="form-control" formControlName="label">
+              <label for="address-label" class="form-label small">Nome do endereço (ex: Casa, Trabalho)</label>
+              <input type="text" id="address-label" class="form-control" formControlName="label">
             </div>
             <div class="col-6 col-md-3">
-              <label class="form-label small">CEP</label>
-              <input type="text" class="form-control" formControlName="zipCode" maxlength="9">
+              <label for="address-zipCode" class="form-label small">CEP</label>
+              <input type="text" id="address-zipCode" class="form-control" formControlName="zipCode" maxlength="9"
+                autocomplete="postal-code" inputmode="numeric">
               @if (cepLoading()) {
                 <span class="small text-secondary">Buscando...</span>
               }
             </div>
             <div class="col-6 col-md-3">
-              <label class="form-label small">UF</label>
-              <input type="text" class="form-control" formControlName="state" maxlength="2">
+              <label for="address-state" class="form-label small">UF</label>
+              <input type="text" id="address-state" class="form-control text-uppercase" formControlName="state" maxlength="2" autocomplete="address-level1">
             </div>
             @if (cepError()) {
               <div class="col-12"><p class="small text-danger mb-0">{{ cepError() }}</p></div>
             }
             <div class="col-12 col-md-8">
-              <label class="form-label small">Rua</label>
-              <input type="text" class="form-control" formControlName="street">
+              <label for="address-street" class="form-label small">Rua</label>
+              <input type="text" id="address-street" class="form-control" formControlName="street" autocomplete="address-line1">
             </div>
             <div class="col-6 col-md-4">
-              <label class="form-label small">Número</label>
-              <input type="text" class="form-control" formControlName="number">
+              <label for="address-number" class="form-label small">Número</label>
+              <input type="text" id="address-number" class="form-control" formControlName="number">
             </div>
             <div class="col-12 col-md-6">
-              <label class="form-label small">Complemento</label>
-              <input type="text" class="form-control" formControlName="complement">
+              <label for="address-complement" class="form-label small">Complemento</label>
+              <input type="text" id="address-complement" class="form-control" formControlName="complement" autocomplete="address-line2">
             </div>
             <div class="col-12 col-md-6">
-              <label class="form-label small">Bairro</label>
-              <input type="text" class="form-control" formControlName="neighborhood">
+              <label for="address-neighborhood" class="form-label small">Bairro</label>
+              <input type="text" id="address-neighborhood" class="form-control" formControlName="neighborhood" autocomplete="address-level3">
             </div>
             <div class="col-12 col-md-6">
-              <label class="form-label small">Cidade</label>
-              <input type="text" class="form-control" formControlName="city">
+              <label for="address-city" class="form-label small">Cidade</label>
+              <input type="text" id="address-city" class="form-control" formControlName="city" autocomplete="address-level2">
             </div>
             <div class="col-12 d-flex align-items-center gap-2">
               <input type="checkbox" class="form-check-input" id="isDefaultAddress" formControlName="isDefault">
@@ -195,6 +196,8 @@
             type="password"
             class="form-control form-control-sm mb-2"
             placeholder="Sua senha"
+            aria-label="Sua senha"
+            autocomplete="current-password"
             [value]="deletePassword()"
             (input)="deletePassword.set($any($event.target).value)">
           @if (deleteError()) {

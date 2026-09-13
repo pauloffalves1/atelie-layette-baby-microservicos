@@ -6,10 +6,16 @@
       <div class="text-center py-5 text-secondary">
         <i class="bi bi-bag-x fs-1 d-block mb-3"></i>
         <p>Seu carrinho está vazio.</p>
+        @if (cart.lastRemoved(); as removed) {
+          <p class="small">
+            {{ removed.item.product.name }} removido.
+            <button type="button" class="btn btn-sm btn-link p-0 align-baseline fw-semibold" (click)="cart.undoRemove()">Desfazer</button>
+          </p>
+        }
         <a routerLink="/loja" class="btn btn-primary rounded-pill mt-2">Ir para a loja</a>
       </div>
     } @else {
-      <div class="row g-5">
+      <div class="row g-4 g-lg-5">
         <div class="col-lg-8">
           <div class="list-group list-group-flush">
             @for (item of cart.items(); track item.product.id + '|' + (item.embroideryText ?? '') + '|' + (item.threadColor ?? '')) {
@@ -35,11 +41,15 @@
                   </div>
                   <div class="col-6 col-md-3">
                     <div class="input-group input-group-sm">
-                      <button class="btn btn-outline-secondary" (click)="decrement(item.product.id, item.quantity, item.embroideryText, item.threadColor)">
+                      <button type="button" class="btn btn-outline-secondary"
+                        [attr.aria-label]="item.quantity === 1 ? 'Remover ' + item.product.name : 'Diminuir quantidade de ' + item.product.name"
+                        (click)="decrement(item.product.id, item.quantity, item.embroideryText, item.threadColor)">
                         <i class="bi bi-dash"></i>
                       </button>
-                      <span class="input-group-text bg-white">{{ item.quantity }}</span>
-                      <button class="btn btn-outline-secondary" (click)="increment(item.product.id, item.quantity, item.embroideryText, item.threadColor)">
+                      <span class="input-group-text bg-white" aria-live="polite">{{ item.quantity }}</span>
+                      <button type="button" class="btn btn-outline-secondary"
+                        [attr.aria-label]="'Aumentar quantidade de ' + item.product.name"
+                        (click)="increment(item.product.id, item.quantity, item.embroideryText, item.threadColor)">
                         <i class="bi bi-plus"></i>
                       </button>
                     </div>
@@ -48,7 +58,9 @@
                     {{ item.product.effectivePrice * item.quantity | currency:'BRL' }}
                   </div>
                   <div class="col-2 col-md-1 text-end">
-                    <button class="btn btn-sm btn-link text-danger" (click)="cart.remove(item.product.id, item.embroideryText, item.threadColor)">
+                    <button type="button" class="btn btn-sm btn-link text-danger" title="Remover"
+                      [attr.aria-label]="'Remover ' + item.product.name"
+                      (click)="cart.remove(item.product.id, item.embroideryText, item.threadColor)">
                       <i class="bi bi-trash"></i>
                     </button>
                   </div>
@@ -57,7 +69,14 @@
             }
           </div>
 
-          @if (kitSuggestions().length > 0) {
+          @if (cart.lastRemoved(); as removed) {
+            <div class="alert alert-light border rounded-4 small py-2 mt-3 d-flex justify-content-between align-items-center gap-2" role="status">
+              <span><i class="bi bi-trash me-1"></i>{{ removed.item.product.name }} removido do carrinho.</span>
+              <button type="button" class="btn btn-sm btn-link p-0 fw-semibold" (click)="cart.undoRemove()">Desfazer</button>
+            </div>
+          }
+
+          @if (showKitSuggestion() && kitSuggestions().length > 0) {
             <div class="stat-card mt-4">
               <h6 class="mb-3"><i class="bi bi-gift me-2"></i>Complete o kit e economize</h6>
               <p class="small text-secondary mb-3">Toque em um kit para adicionar direto ao carrinho.</p>
@@ -95,7 +114,8 @@
               <span class="small text-secondary">Calculado no checkout</span>
             </div>
             <p class="small text-secondary mb-3">
-              <i class="bi bi-truck me-1"></i>Frete grátis para SP acima de R$ 599, demais regiões a partir de R$ 699.
+              <i class="bi bi-truck me-1"></i>Frete grátis a partir de R$ 399, conforme a região —
+              <a routerLink="/politica-de-envio">veja os valores</a>.
             </p>
             <hr>
             <div class="d-flex justify-content-between fw-bold fs-5 mb-4">

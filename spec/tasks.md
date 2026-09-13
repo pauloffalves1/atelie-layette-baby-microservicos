@@ -229,3 +229,6 @@ substituição daquele relato.
 - Ajustes visuais pontuais (rodapé, FAQ, tooltips) sem regra de negócio associada.
 - Segunda leva de polimento visual (2026-09-12) — badges, cards com hover, CTAs de fechamento e
   chevrons do FAQ em Home/Sobre/Loja/Contato/Produção e Envio/FAQ; ver README → Status.
+- Rodada de UX do funil de compra (2026-09-13) — prévia do bordado, desfazer remoção no carrinho,
+  validação/rolagem e autocomplete no checkout, detalhes de bordado/endereço/rastreio no pós-compra;
+  sem regra de negócio nova, ver README → Status.

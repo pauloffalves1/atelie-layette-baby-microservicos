@@ -820,6 +820,28 @@ contra o Gateway via `docker run --network host`).
       própria VPS — ela já tem Node/npm — com backup das pastas antigas antes de sobrescrever as
       servidas pelo Nginx). Confirmado ao vivo via `curl` (200 nas rotas principais, arquivos com
       timestamp fresco) e no navegador (home com o redesenho e o carrossel funcionando).
+- [x] **Rodada de UX do funil de compra** (2026-09-13) — revisão de produto → carrinho → checkout →
+      pós-compra (a rodada anterior tinha coberto só as páginas institucionais). Página do produto:
+      prévia ao vivo do bordado (letras em fonte cursiva na cor da linha escolhida, com contorno
+      para linhas claras e aviso de "ilustração aproximada"), contador de caracteres, quantidade
+      com −/+ (antes aceitava 0/negativo), rolagem até o campo com erro ao tentar adicionar sem
+      bordado/cor, e o prazo de produção do rodapé passou a usar o prazo configurado no produto
+      (antes mostrava um "7 dias úteis" fixo que contradizia o prazo real). Carrinho (modal e
+      `/carrinho`): "Desfazer" ao remover um item (`CartService.lastRemoved`/`undoRemove`, que
+      restaura a linha na posição original), barra de progresso até o frete grátis, sugestão de kit
+      some depois que um kit entra no carrinho, e o texto de frete grátis da página parou de dizer
+      "demais regiões a partir de R$ 699" (Norte/Nordeste é R$ 799). Modal de checkout: mensagens
+      de erro por campo na etapa de entrega + rolagem/foco no primeiro campo inválido, foco no
+      número depois que o CEP preenche o endereço, `autocomplete`/`inputmode` em todos os campos
+      (teclado numérico em CEP/CPF/cartão), Enter aplica o cupom, Esc fecha, a página de fundo não
+      rola junto, cada etapa começa do topo, e o indicador de etapas mostra número na etapa atual
+      e ✓ só nas concluídas. Página `/checkout`: o resumo rastreava itens só por `product.id` (a
+      mesma fralda com dois bordados gerava chave duplicada no `@for`) e agora mostra bordado/cor.
+      Pós-compra: itens mostram bordado/cor, a entrega mostra o endereço, código de rastreio com
+      botão de copiar, pagamento recusado com botão de WhatsApp; rastreio aceita o número colado
+      com `#` e já vem com o e-mail da cliente logada. Também corrigido um transbordo horizontal de
+      8px no celular em produto/carrinho/checkout (`row g-5` → `g-4 g-lg-5`). Validado com build de
+      produção de storefront e shell, e2e 7/7 e checagem visual em viewport de iPhone.
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
       nos manifests; falta aplicar num cluster ativo e uma license key real. **Não avancei aqui** —
       exige um cluster de verdade e uma license key real da New Relic, que eu não tenho como
