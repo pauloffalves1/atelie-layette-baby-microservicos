@@ -405,6 +405,18 @@ img.rounded-4 {
   touch-action: pan-y;
 }
 
+// "Pular para o conteúdo": hidden until focused with Tab, then floats over the header.
+.skip-link.visually-hidden-focusable:focus {
+  position: fixed !important;
+  top: .75rem;
+  left: .75rem;
+  z-index: 1100;
+}
+
+#conteudo:focus {
+  outline: none;
+}
+
 // Shop grid: the previous results stay on screen, dimmed, while a filter/page change loads.
 .shop-grid {
   transition: opacity .2s ease;
@@ -416,7 +428,8 @@ img.rounded-4 {
 }
 
 // "Próxima página" scrolls to the results — keep them clear of the sticky navbar.
-.shop-results-anchor {
+.shop-results-anchor,
+.account-section-anchor {
   scroll-margin-top: 8rem;
 }
 

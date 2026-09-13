@@ -32,4 +32,6 @@ public sealed record CustomerProfileDto(
 public sealed record ForgotPasswordRequest(string Email);
 public sealed record ResetPasswordRequest(string Token, string NewPassword);
 public sealed record DeleteAccountRequest(string Password);
+public sealed record UpdateCustomerProfileRequest(string Name, string Phone);
+public sealed record ChangeCustomerPasswordRequest(string CurrentPassword, string NewPassword);
 public sealed record VerifyEmailRequest(string Token);

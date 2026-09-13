@@ -120,11 +120,7 @@ public sealed class CustomerAuthService : ICustomerAuthService
                 ?? throw new NotFoundException("Cliente", customerId);
 
             _logger.LogInformation("Saindo de {Method}", nameof(GetProfileAsync));
-            return new CustomerProfileDto(
-                customer.Id, customer.Name, customer.Email.Value, customer.Phone, customer.Cpf?.Value,
-                customer.AddressStreet, customer.AddressNumber, customer.AddressComplement,
-                customer.AddressNeighborhood, customer.AddressCity, customer.AddressState, customer.AddressZipCode,
-                customer.EmailVerified);
+            return ToProfileDto(customer);
         }
         catch (Exception ex)
         {
@@ -132,6 +128,61 @@ public sealed class CustomerAuthService : ICustomerAuthService
             throw;
         }
     }
+
+    public async Task<CustomerProfileDto> UpdateProfileAsync(Guid customerId, UpdateCustomerProfileRequest request, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Entrando em {Method} para {CustomerId}", nameof(UpdateProfileAsync), customerId);
+        try
+        {
+            var customer = await _unitOfWork.Customers.GetByIdAsync(customerId, ct)
+                ?? throw new NotFoundException("Cliente", customerId);
+
+            customer.UpdateContactInfo(request.Name, request.Phone);
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            _logger.LogInformation("Saindo de {Method}", nameof(UpdateProfileAsync));
+            return ToProfileDto(customer);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro em {Method}", nameof(UpdateProfileAsync));
+            throw;
+        }
+    }
+
+    public async Task ChangePasswordAsync(Guid customerId, ChangeCustomerPasswordRequest request, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Entrando em {Method} para {CustomerId}", nameof(ChangePasswordAsync), customerId);
+        try
+        {
+            var customer = await _unitOfWork.Customers.GetByIdAsync(customerId, ct)
+                ?? throw new NotFoundException("Cliente", customerId);
+
+            if (customer.IsAnonymized || !_passwordHasher.Verify(request.CurrentPassword, customer.PasswordHash))
+                throw new UnauthorizedAppException("Senha atual incorreta.");
+
+            if (string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < 6)
+                throw new ConflictException("A nova senha deve ter pelo menos 6 caracteres.");
+
+            if (request.NewPassword == request.CurrentPassword)
+                throw new ConflictException("A nova senha precisa ser diferente da atual.");
+
+            customer.UpdatePassword(_passwordHasher.Hash(request.NewPassword));
+            await _unitOfWork.SaveChangesAsync(ct);
+            _logger.LogInformation("Saindo de {Method}", nameof(ChangePasswordAsync));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro em {Method}", nameof(ChangePasswordAsync));
+            throw;
+        }
+    }
+
+    private static CustomerProfileDto ToProfileDto(Customer customer) => new(
+        customer.Id, customer.Name, customer.Email.Value, customer.Phone, customer.Cpf?.Value,
+        customer.AddressStreet, customer.AddressNumber, customer.AddressComplement,
+        customer.AddressNeighborhood, customer.AddressCity, customer.AddressState, customer.AddressZipCode,
+        customer.EmailVerified);
 
     public async Task RequestPasswordResetAsync(string email, CancellationToken ct = default)
     {

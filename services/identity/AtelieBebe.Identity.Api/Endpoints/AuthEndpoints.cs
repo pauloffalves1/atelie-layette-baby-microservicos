@@ -21,6 +21,16 @@ public static class AuthEndpoints
             Results.Ok(await service.GetProfileAsync(http.User.GetUserId(), ct)))
             .RequireAuthorization("CustomerOnly");
 
+        customerGroup.MapPut("/me", async (UpdateCustomerProfileRequest request, HttpContext http, ICustomerAuthService service, CancellationToken ct) =>
+            Results.Ok(await service.UpdateProfileAsync(http.User.GetUserId(), request, ct)))
+            .RequireAuthorization("CustomerOnly");
+
+        customerGroup.MapPost("/change-password", async (ChangeCustomerPasswordRequest request, HttpContext http, ICustomerAuthService service, CancellationToken ct) =>
+        {
+            await service.ChangePasswordAsync(http.User.GetUserId(), request, ct);
+            return Results.NoContent();
+        }).RequireAuthorization("CustomerOnly").RequireRateLimiting("auth");
+
         customerGroup.MapPost("/forgot-password", async (ForgotPasswordRequest request, ICustomerAuthService service, CancellationToken ct) =>
         {
             await service.RequestPasswordResetAsync(request.Email, ct);

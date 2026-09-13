@@ -73,6 +73,23 @@ public sealed class Customer : Entity, IAggregateRoot
         PasswordHash = newPasswordHash;
     }
 
+    /// <summary>
+    /// The customer's own edit from "Minha conta" — only name and phone. E-mail and CPF identify the
+    /// account (login, uniqueness, fiscal records) and stay admin-only via <see cref="UpdateDetails"/>.
+    /// </summary>
+    public void UpdateContactInfo(string name, string phone)
+    {
+        if (IsAnonymized)
+            throw new DomainException("Esta conta foi removida.");
+        if (string.IsNullOrWhiteSpace(name))
+            throw new DomainException("O nome é obrigatório.");
+        if (string.IsNullOrWhiteSpace(phone))
+            throw new DomainException("O telefone/WhatsApp é obrigatório.");
+
+        Name = name.Trim();
+        Phone = phone.Trim();
+    }
+
     /// <summary>Admin-only edit of a customer's own profile fields — uniqueness of email/CPF is checked by the caller before this is invoked, since that requires a repository lookup.</summary>
     public void UpdateDetails(
         string name, Email email, Cpf cpf, string? phone,

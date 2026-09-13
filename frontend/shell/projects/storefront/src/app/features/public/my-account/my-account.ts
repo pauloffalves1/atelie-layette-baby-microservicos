@@ -1,20 +1,29 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { catchError, debounceTime, distinctUntilChanged, filter, map, of, switchMap, tap } from 'rxjs';
+import { Observable, catchError, debounceTime, distinctUntilChanged, filter, map, of, switchMap, tap } from 'rxjs';
 import { Order, ORDER_STATUS_LABELS } from '@shared/core/models/order.model';
 import { CustomerAddress } from '@shared/core/models/customer-address.model';
 import { AuthService } from '@shared/core/services/auth.service';
 import { CepService } from '@shared/core/services/cep.service';
 import { CustomerAddressService } from '@shared/core/services/customer-address.service';
 import { OrderService } from '@shared/core/services/order.service';
+import { httpErrorMessage } from '@shared/core/utils/http-error-message';
 import { LoadError } from '@shared/shared/components/load-error/load-error';
+import { PasswordToggleDirective } from '@shared/shared/directives/password-toggle.directive';
+import { PhoneMaskDirective } from '@shared/shared/directives/phone-mask.directive';
+
+/** At least 10 digits (DDD + number) — the mask alone lets "(11) 9" through. */
+function phoneDigits(control: AbstractControl): ValidationErrors | null {
+  const digits = String(control.value ?? '').replace(/\D/g, '');
+  return digits.length === 0 || digits.length >= 10 ? null : { phoneDigits: true };
+}
 
 @Component({
   selector: 'app-my-account',
   standalone: true,
-  imports: [CurrencyPipe, DatePipe, RouterLink, ReactiveFormsModule, LoadError],
+  imports: [CurrencyPipe, DatePipe, RouterLink, ReactiveFormsModule, LoadError, PasswordToggleDirective, PhoneMaskDirective],
   templateUrl: './my-account.html',
 })
 export class MyAccount implements OnInit {
@@ -33,6 +42,40 @@ export class MyAccount implements OnInit {
   readonly emailVerified = signal(true);
   readonly resendingVerification = signal(false);
   readonly verificationSent = signal(false);
+  readonly verificationError = signal<string | null>(null);
+
+  /** "Meus dados": until now a typo in the name or an old WhatsApp number could only be fixed by
+   * messaging the ateliê. E-mail and CPF are shown read-only (they identify the account). */
+  readonly profileLoaded = signal(false);
+  readonly profileEmail = signal('');
+  readonly profileCpf = signal<string | null>(null);
+  readonly profileSaving = signal(false);
+  readonly profileSaved = signal(false);
+  readonly profileError = signal<string | null>(null);
+  readonly profileForm = this.fb.nonNullable.group({
+    name: ['', [Validators.required, Validators.maxLength(150)]],
+    phone: ['', [Validators.required, phoneDigits]],
+  });
+
+  readonly passwordSaving = signal(false);
+  readonly passwordSaved = signal(false);
+  readonly passwordError = signal<string | null>(null);
+  readonly passwordForm = this.fb.nonNullable.group(
+    {
+      currentPassword: ['', Validators.required],
+      newPassword: ['', [Validators.required, Validators.minLength(6)]],
+      confirmPassword: ['', Validators.required],
+    },
+    {
+      validators: (group: AbstractControl): ValidationErrors | null =>
+        group.get('confirmPassword')?.value && group.get('newPassword')?.value !== group.get('confirmPassword')?.value
+          ? { mismatch: true }
+          : null,
+    },
+  );
+
+  readonly addressBusyId = signal<string | null>(null);
+  readonly addressActionError = signal<string | null>(null);
 
   readonly confirmingDelete = signal(false);
   readonly deletePassword = signal('');
@@ -70,7 +113,13 @@ export class MyAccount implements OnInit {
     this.loadOrders();
 
     this.auth.getProfile().subscribe({
-      next: (profile) => this.emailVerified.set(profile.emailVerified),
+      next: (profile) => {
+        this.emailVerified.set(profile.emailVerified);
+        this.profileEmail.set(profile.email);
+        this.profileCpf.set(profile.cpf);
+        this.profileForm.reset({ name: profile.name, phone: profile.phone ?? '' });
+        this.profileLoaded.set(true);
+      },
       error: () => {},
     });
 
@@ -224,23 +273,100 @@ export class MyAccount implements OnInit {
   }
 
   removeAddress(address: CustomerAddress): void {
+    if (this.addressBusyId()) return;
     if (!confirm(`Remover o endereço "${address.label}"?`)) return;
-    this.addressService.remove(address.id).subscribe({ next: () => this.loadAddresses() });
+    this.runAddressAction(address, this.addressService.remove(address.id), `Não foi possível remover o endereço "${address.label}".`);
   }
 
   setDefaultAddress(address: CustomerAddress): void {
-    this.addressService.setDefault(address.id).subscribe({ next: () => this.loadAddresses() });
+    if (this.addressBusyId()) return;
+    this.runAddressAction(address, this.addressService.setDefault(address.id), `Não foi possível tornar "${address.label}" o endereço padrão.`);
+  }
+
+  /** Both used to fail silently (the card just stayed as it was) and could be clicked repeatedly. */
+  private runAddressAction(address: CustomerAddress, request: Observable<unknown>, failure: string): void {
+    this.addressBusyId.set(address.id);
+    this.addressActionError.set(null);
+    request.subscribe({
+      next: () => {
+        this.addressBusyId.set(null);
+        this.loadAddresses();
+      },
+      error: (err) => {
+        this.addressBusyId.set(null);
+        this.addressActionError.set(httpErrorMessage(err, failure));
+      },
+    });
+  }
+
+  /** "Fralda de Ombro Nuvem, Kit Ursinho e mais 1" — the card used to say only "3 item(ns)". */
+  itemsSummary(order: Order): string {
+    const names = order.items.map((item) => (item.quantity > 1 ? `${item.quantity}× ${item.productName}` : item.productName));
+    if (names.length <= 2) return names.join(' e ');
+    return `${names.slice(0, 2).join(', ')} e mais ${names.length - 2}`;
+  }
+
+  saveProfile(): void {
+    if (this.profileForm.invalid) {
+      this.profileForm.markAllAsTouched();
+      return;
+    }
+    this.profileSaving.set(true);
+    this.profileSaved.set(false);
+    this.profileError.set(null);
+    const { name, phone } = this.profileForm.getRawValue();
+    this.auth.updateProfile({ name: name.trim(), phone: phone.trim() }).subscribe({
+      next: (profile) => {
+        this.profileSaving.set(false);
+        this.profileForm.reset({ name: profile.name, phone: profile.phone ?? '' });
+        this.profileSaved.set(true);
+      },
+      error: (err) => {
+        this.profileSaving.set(false);
+        this.profileError.set(httpErrorMessage(err, 'Não foi possível salvar seus dados.'));
+      },
+    });
+  }
+
+  changePassword(): void {
+    if (this.passwordForm.invalid) {
+      this.passwordForm.markAllAsTouched();
+      return;
+    }
+    this.passwordSaving.set(true);
+    this.passwordSaved.set(false);
+    this.passwordError.set(null);
+    const { currentPassword, newPassword } = this.passwordForm.getRawValue();
+    this.auth.changePassword(currentPassword, newPassword).subscribe({
+      next: () => {
+        this.passwordSaving.set(false);
+        this.passwordForm.reset();
+        this.passwordSaved.set(true);
+      },
+      error: (err) => {
+        this.passwordSaving.set(false);
+        this.passwordError.set(httpErrorMessage(err, 'Não foi possível alterar a senha.', 'Senha atual incorreta.'));
+      },
+    });
   }
 
   resendVerification(): void {
     this.resendingVerification.set(true);
+    this.verificationError.set(null);
     this.auth.resendVerification().subscribe({
       next: () => {
         this.resendingVerification.set(false);
         this.verificationSent.set(true);
       },
-      error: () => this.resendingVerification.set(false),
+      error: (err) => {
+        this.resendingVerification.set(false);
+        this.verificationError.set(httpErrorMessage(err, 'Não foi possível reenviar agora. Tente de novo em instantes.'));
+      },
     });
+  }
+
+  scrollToSection(id: string): void {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   startDeleteAccount(): void {
@@ -255,6 +381,7 @@ export class MyAccount implements OnInit {
   }
 
   confirmDeleteAccount(): void {
+    if (this.deleting()) return;
     if (!this.deletePassword()) {
       this.deleteError.set('Informe sua senha para confirmar.');
       return;

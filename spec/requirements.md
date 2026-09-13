@@ -469,3 +469,24 @@ Brasília e o que está esperando por mim agora, para decidir o dia sem abrir ca
 6. O dashboard DEVE destacar o que precisa de ação — encomendas a produzir, prontas, com pagamento
    pendente, avaliações a aprovar e encomendas não produzidas com bordado sinalizado pela IA — cada
    item levando à lista já filtrada, e mostrar um estado de erro com opção de tentar de novo.
+
+## Requisito 27: Dados e senha da própria cliente em "Minha conta"
+
+**User Story:** Como cliente logada, quero corrigir meu nome e meu WhatsApp e trocar minha senha na
+própria conta, para não depender de mensagem para o ateliê nem do link de "esqueci minha senha".
+
+**Rastreamento:** RF37
+
+**Acceptance Criteria**
+1. QUANDO a cliente salva nome e telefone em "Minha conta", O SISTEMA (Identity) DEVE atualizar só
+   esses dois campos (sem espaços nas pontas) e devolver o perfil atualizado; nome ou telefone vazio
+   DEVE ser recusado com mensagem.
+2. E-mail e CPF DEVEM aparecer apenas para leitura — continuam alteráveis só pelo painel
+   administrativo, porque identificam a conta (login, unicidade, notas).
+3. QUANDO a cliente troca a senha, O SISTEMA DEVE exigir a senha atual; senha atual incorreta DEVE
+   responder "Senha atual incorreta." sem encerrar a sessão da cliente, e a nova senha DEVE ter pelo
+   menos 6 caracteres e ser diferente da atual.
+4. A troca de senha DEVE passar pelo mesmo limite de tentativas ("auth") do login, no Gateway e no
+   Identity.
+5. Uma conta anonimizada (exclusão LGPD) NÃO DEVE poder alterar dados nem senha.
+6. O nome exibido na saudação e no menu da loja DEVE refletir a alteração sem novo login.

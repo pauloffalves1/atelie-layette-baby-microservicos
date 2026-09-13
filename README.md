@@ -348,6 +348,8 @@ aceite em EARS por requisito, mesmo padrão usado no `spec/` do monólito) vive 
   30 dias corridos (inclusive sem vendas), detalhar o faturamento do mês em pago/pendente, comparar
   com o mesmo período do mês anterior e destacar o que precisa de ação (a produzir, prontas, pagamento
   pendente, avaliações e bordados sinalizados), levando cada item à lista filtrada.
+- **RF37** — Uma cliente logada deve poder alterar o próprio nome e telefone e trocar a senha
+  (informando a atual) em "Minha conta"; e-mail e CPF continuam alteráveis só pelo painel.
 
 ### Não funcionais
 
@@ -984,6 +986,19 @@ contra o Gateway via `docker run --network host`).
       mensagem de confirmação), e falhas que antes eram silenciosas agora aparecem; a foto da avaliação
       abre em tamanho real. Newsletter ganhou busca por e-mail, "Copiar e-mails" (um por linha, para
       colar direto no campo de destinatários) e mensagem de erro quando a exportação do CSV falha.
+- [x] **Minha conta: dados, senha e acessibilidade (RF37)** (2026-09-13) — até aqui uma cliente logada
+      não tinha como corrigir o nome ou trocar o WhatsApp (só pedindo ao ateliê) nem trocar a senha
+      sem passar pelo "esqueci minha senha". *Identity:* `PUT /api/auth/me` (nome e telefone) e
+      `POST /api/auth/change-password` (exige a senha atual, mínimo de 6 caracteres, diferente da
+      atual, com o mesmo rate limit do login no Gateway e no Identity); e-mail e CPF seguem só pelo
+      painel. Senha atual errada responde 401 com `detail`, então não derruba a sessão (ver
+      `isSessionRejected`). *Minha conta:* novas seções "Meus dados" (e-mail/CPF só leitura, telefone
+      com máscara e validação de DDD, saudação atualizada na hora) e "Alterar senha" (mostrar/ocultar,
+      confirmação, gerenciador de senhas associa à conta), botões de atalho para Encomendas/Endereços/
+      Meus dados, cada encomenda lista os itens ("Fralda X, Kit Y e mais 1") em vez de "3 item(ns)",
+      remover/tornar padrão um endereço mostra erro quando falha e não aceita clique duplo, falha ao
+      reenviar o e-mail de verificação aparece, e Enter confirma a senha na exclusão da conta. *Loja:*
+      link "Pular para o conteúdo" (primeiro Tab da página) para quem navega pelo teclado.
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
       nos manifests; falta aplicar num cluster ativo e uma license key real. **Não avancei aqui** —
       exige um cluster de verdade e uma license key real da New Relic, que eu não tenho como

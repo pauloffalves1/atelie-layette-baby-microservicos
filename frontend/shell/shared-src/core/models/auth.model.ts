@@ -75,6 +75,11 @@ export interface CreateAdminRequest {
   permissions: AdminPermissionName[];
 }
 
+export interface UpdateCustomerProfileRequest {
+  name: string;
+  phone: string;
+}
+
 export interface CustomerProfile {
   id: string;
   name: string;

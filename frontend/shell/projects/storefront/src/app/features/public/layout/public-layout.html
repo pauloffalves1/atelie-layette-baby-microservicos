@@ -1,4 +1,6 @@
 <div class="app-shell">
+  <!-- Keyboard users otherwise tab through the whole header (logo, 5 links, cart, account) on every page. -->
+  <button type="button" class="skip-link visually-hidden-focusable btn btn-primary rounded-pill" (click)="skipToContent()">Pular para o conteúdo</button>
   <nav class="navbar navbar-expand-xl sticky-top bg-white shadow-sm py-3">
     <div class="container">
       <a class="navbar-brand py-0 brand-logo" routerLink="/">
@@ -70,7 +72,7 @@
     </div>
   </nav>
 
-  <main class="app-main">
+  <main id="conteudo" class="app-main" tabindex="-1">
     <router-outlet />
   </main>
 

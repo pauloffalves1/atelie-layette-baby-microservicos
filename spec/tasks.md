@@ -288,3 +288,11 @@ substituição daquele relato.
   promocional nos destaques da home, carrosséis que pausam/respeitam "reduzir movimento"/deslizam,
   total e "Finalizar compra" no topo do carrinho no celular, moderação de avaliações sem recarregar
   a lista, busca e cópia de e-mails na newsletter; sem regra de negócio nova, ver README → Status.
+- Minha conta: dados, senha e acessibilidade (2026-09-13) — Requisito 27 / RF37.
+  - [x] `Customer.UpdateContactInfo` (nome/telefone, recusa conta anonimizada) + testes de domínio.
+  - [x] `CustomerAuthService.UpdateProfileAsync` e `ChangePasswordAsync`; `PUT /api/auth/me` e
+    `POST /api/auth/change-password` (`CustomerOnly`, rate limit "auth" no Identity e no Gateway).
+  - [x] "Minha conta": seções "Meus dados" e "Alterar senha", atalhos para as seções, resumo dos
+    itens em cada encomenda, erros e bloqueio de clique duplo em endereços, erro ao reenviar
+    verificação, Enter confirma a exclusão da conta.
+  - [x] Link "Pular para o conteúdo" na loja.

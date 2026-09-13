@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { environment } from '@shared/environment';
-import { AuthResponse, AuthUser, CustomerProfile, LoginRequest, RegisterCustomerRequest } from '../models/auth.model';
+import { AuthResponse, AuthUser, CustomerProfile, LoginRequest, RegisterCustomerRequest, UpdateCustomerProfileRequest } from '../models/auth.model';
 
 const STORAGE_KEY = 'atelie-bebe.customer.token';
 const USER_KEY = 'atelie-bebe.customer.user';
@@ -30,6 +30,23 @@ export class AuthService {
 
   getProfile(): Observable<CustomerProfile> {
     return this.http.get<CustomerProfile>(`${environment.apiUrl}/auth/me`);
+  }
+
+  /** The header greets by the name stored at login — keep it in sync with the edit. */
+  updateProfile(request: UpdateCustomerProfileRequest): Observable<CustomerProfile> {
+    return this.http.put<CustomerProfile>(`${environment.apiUrl}/auth/me`, request).pipe(
+      tap((profile) => {
+        const user = this.userSignal();
+        if (!user) return;
+        const updated: AuthUser = { ...user, name: profile.name };
+        localStorage.setItem(USER_KEY, JSON.stringify(updated));
+        this.userSignal.set(updated);
+      }),
+    );
+  }
+
+  changePassword(currentPassword: string, newPassword: string): Observable<void> {
+    return this.http.post<void>(`${environment.apiUrl}/auth/change-password`, { currentPassword, newPassword });
   }
 
   forgotPassword(email: string): Observable<void> {

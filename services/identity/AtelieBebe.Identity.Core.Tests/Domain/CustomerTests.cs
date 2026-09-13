@@ -57,6 +57,39 @@ public class CustomerTests
     }
 
     [Fact]
+    public void UpdateContactInfo_Valid_TrimsAndKeepsEmailAndVerification()
+    {
+        var customer = RegisterCustomer();
+        customer.VerifyEmail();
+
+        customer.UpdateContactInfo("  Maria Souza ", " 11988887777 ");
+
+        Assert.Equal("Maria Souza", customer.Name);
+        Assert.Equal("11988887777", customer.Phone);
+        Assert.Equal("maria@exemplo.com", customer.Email.Value);
+        Assert.True(customer.EmailVerified);
+    }
+
+    [Theory]
+    [InlineData("", "11999998888")]
+    [InlineData("Maria", " ")]
+    public void UpdateContactInfo_MissingNameOrPhone_ThrowsDomainException(string name, string phone)
+    {
+        var customer = RegisterCustomer();
+
+        Assert.Throws<DomainException>(() => customer.UpdateContactInfo(name, phone));
+    }
+
+    [Fact]
+    public void UpdateContactInfo_AnonymizedAccount_ThrowsDomainException()
+    {
+        var customer = RegisterCustomer();
+        customer.Anonymize("unusable-hash");
+
+        Assert.Throws<DomainException>(() => customer.UpdateContactInfo("Maria", "11999998888"));
+    }
+
+    [Fact]
     public void UpdateDetails_ChangingEmail_ResetsEmailVerified()
     {
         var customer = RegisterCustomer();

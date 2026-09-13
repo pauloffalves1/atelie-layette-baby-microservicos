@@ -3,6 +3,11 @@
     <div class="mb-5">
       <h1 class="section-title fs-1">Minha conta</h1>
       <p class="text-secondary mt-3">Olá, {{ auth.currentUser()?.name }}! Aqui estão suas encomendas.</p>
+      <nav class="d-flex flex-wrap gap-2 mt-3" aria-label="Seções da conta">
+        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" (click)="scrollToSection('minhas-encomendas')">Encomendas</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" (click)="scrollToSection('meus-enderecos')">Endereços</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" (click)="scrollToSection('meus-dados')">Meus dados e senha</button>
+      </nav>
     </div>
 
     @if (!emailVerified()) {
@@ -10,7 +15,12 @@
         @if (verificationSent()) {
           <span>E-mail de verificação reenviado! Confira sua caixa de entrada.</span>
         } @else {
-          <span>Seu e-mail ainda não foi confirmado.</span>
+          <span>
+            Seu e-mail ainda não foi confirmado.
+            @if (verificationError(); as error) {
+              <span class="d-block text-danger mt-1" role="alert">{{ error }}</span>
+            }
+          </span>
           <button type="button" class="btn btn-sm btn-outline-dark rounded-pill" [disabled]="resendingVerification()" (click)="resendVerification()">
             @if (resendingVerification()) {
               <span class="spinner-border spinner-border-sm me-2"></span>
@@ -21,6 +31,7 @@
       </div>
     }
 
+    <h2 id="minhas-encomendas" class="h6 account-section-anchor mb-3">Minhas encomendas</h2>
     @if (loading()) {
       <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
     } @else if (ordersError()) {
@@ -42,7 +53,10 @@
               <div>
                 <span class="status-pill" [class]="'status-' + order.status">{{ statusLabels[order.status] }}</span>
                 <h6 class="mt-2 mb-1">Pedido #{{ order.id.slice(0, 8) }} · {{ order.type === 'Loja' ? 'Compra na loja' : 'Encomenda personalizada' }}</h6>
-                <span class="small text-secondary">{{ order.createdAt | date:'dd/MM/yyyy HH:mm' }} · {{ order.items.length }} item(ns)</span>
+                <span class="small text-secondary d-block">{{ order.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                @if (order.items.length > 0) {
+                  <span class="small text-secondary d-block">{{ itemsSummary(order) }}</span>
+                }
               </div>
               <div class="text-end">
                 <p class="fw-bold text-blush fs-5 mb-1">{{ order.total | currency:'BRL' }}</p>
@@ -63,13 +77,20 @@
 
     <div class="mt-5 pt-4 border-top">
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-        <h6 class="mb-0">Meus endereços</h6>
+        <h2 id="meus-enderecos" class="h6 account-section-anchor mb-0">Meus endereços</h2>
         @if (!addressFormOpen()) {
           <button type="button" class="btn btn-sm btn-outline-dark rounded-pill" (click)="startAddAddress()">
             <i class="bi bi-plus-lg me-1"></i>Adicionar endereço
           </button>
         }
       </div>
+
+      @if (addressActionError(); as error) {
+        <div class="alert alert-danger small rounded-4 d-flex justify-content-between align-items-start gap-2" role="alert">
+          <span>{{ error }}</span>
+          <button type="button" class="btn-close btn-sm" aria-label="Fechar aviso" (click)="addressActionError.set(null)"></button>
+        </div>
+      }
 
       @if (addressesLoading()) {
         <div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div></div>
@@ -102,9 +123,14 @@
                 <div class="d-flex gap-2 mt-3">
                   <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" (click)="startEditAddress(address)">Editar</button>
                   @if (!address.isDefault) {
-                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" (click)="setDefaultAddress(address)">Tornar padrão</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" [disabled]="addressBusyId() === address.id" (click)="setDefaultAddress(address)">Tornar padrão</button>
                   }
-                  <button type="button" class="btn btn-sm btn-outline-danger rounded-pill" (click)="removeAddress(address)">Remover</button>
+                  <button type="button" class="btn btn-sm btn-outline-danger rounded-pill" [disabled]="addressBusyId() === address.id" (click)="removeAddress(address)">
+                    @if (addressBusyId() === address.id) {
+                      <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                    }
+                    Remover
+                  </button>
                 </div>
               </div>
             </div>
@@ -180,7 +206,108 @@
     </div>
 
     <div class="mt-5 pt-4 border-top">
-      <h6 class="text-danger">Excluir conta</h6>
+      <h2 id="meus-dados" class="h6 account-section-anchor mb-3">Meus dados</h2>
+      @if (!profileLoaded()) {
+        <div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Carregando seus dados...</span></div></div>
+      } @else {
+        <div class="row g-4">
+          <div class="col-12 col-lg-6">
+            <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="stat-card h-100" novalidate>
+              <div class="mb-3">
+                <label for="profile-name" class="form-label small">Nome completo</label>
+                <input type="text" id="profile-name" class="form-control" formControlName="name" autocomplete="name"
+                  [class.is-invalid]="profileForm.controls.name.invalid && profileForm.controls.name.touched">
+                <div class="invalid-feedback">Informe seu nome.</div>
+              </div>
+              <div class="mb-3">
+                <label for="profile-phone" class="form-label small">Telefone / WhatsApp</label>
+                <input type="tel" id="profile-phone" class="form-control" formControlName="phone" appPhoneMask autocomplete="tel-national" inputmode="tel"
+                  [class.is-invalid]="profileForm.controls.phone.invalid && profileForm.controls.phone.touched">
+                <div class="invalid-feedback">Informe um telefone com DDD.</div>
+              </div>
+              <div class="row g-3 mb-3">
+                <div class="col-sm-7">
+                  <label for="profile-email" class="form-label small">E-mail</label>
+                  <input type="email" id="profile-email" class="form-control" [value]="profileEmail()" readonly disabled>
+                </div>
+                <div class="col-sm-5">
+                  <label for="profile-cpf" class="form-label small">CPF</label>
+                  <input type="text" id="profile-cpf" class="form-control" [value]="profileCpf() ?? '—'" readonly disabled>
+                </div>
+                <div class="col-12">
+                  <p class="small text-secondary mb-0">
+                    Para trocar o e-mail ou o CPF, <a routerLink="/contato">fale com o ateliê</a> — eles identificam sua conta e suas notas.
+                  </p>
+                </div>
+              </div>
+              @if (profileError(); as error) {
+                <p class="small text-danger mb-2" role="alert">{{ error }}</p>
+              }
+              @if (profileSaved() && profileForm.pristine) {
+                <p class="small text-success mb-2" role="status"><i class="bi bi-check-circle me-1"></i>Dados atualizados.</p>
+              }
+              <button type="submit" class="btn btn-sm btn-primary rounded-pill" [disabled]="profileSaving() || profileForm.pristine">
+                @if (profileSaving()) {
+                  <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                }
+                Salvar dados
+              </button>
+            </form>
+          </div>
+
+          <div class="col-12 col-lg-6">
+            <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="stat-card h-100" novalidate>
+              <h3 class="h6 mb-3">Alterar senha</h3>
+              <!-- Hidden username so password managers file the new password under the right account. -->
+              <input type="email" class="d-none" autocomplete="username" [value]="profileEmail()" tabindex="-1" aria-hidden="true">
+              <div class="mb-3">
+                <label for="current-password" class="form-label small">Senha atual</label>
+                <div class="input-group has-validation">
+                  <input type="password" id="current-password" class="form-control" formControlName="currentPassword" autocomplete="current-password" appPasswordToggle
+                    [class.is-invalid]="passwordForm.controls.currentPassword.invalid && passwordForm.controls.currentPassword.touched">
+                </div>
+                @if (passwordForm.controls.currentPassword.invalid && passwordForm.controls.currentPassword.touched) {
+                  <div class="invalid-feedback d-block">Informe sua senha atual.</div>
+                }
+              </div>
+              <div class="mb-3">
+                <label for="new-password" class="form-label small">Nova senha</label>
+                <div class="input-group has-validation">
+                  <input type="password" id="new-password" class="form-control" formControlName="newPassword" autocomplete="new-password" appPasswordToggle
+                    [class.is-invalid]="passwordForm.controls.newPassword.invalid && passwordForm.controls.newPassword.touched">
+                </div>
+                @if (passwordForm.controls.newPassword.invalid && passwordForm.controls.newPassword.touched) {
+                  <div class="invalid-feedback d-block">Use pelo menos 6 caracteres.</div>
+                } @else {
+                  <div class="form-text">Mínimo de 6 caracteres.</div>
+                }
+              </div>
+              <div class="mb-3">
+                <label for="confirm-password" class="form-label small">Confirme a nova senha</label>
+                <input type="password" id="confirm-password" class="form-control" formControlName="confirmPassword" autocomplete="new-password"
+                  [class.is-invalid]="(passwordForm.controls.confirmPassword.touched && (passwordForm.controls.confirmPassword.invalid || passwordForm.hasError('mismatch')))">
+                <div class="invalid-feedback">As senhas não conferem.</div>
+              </div>
+              @if (passwordError(); as error) {
+                <p class="small text-danger mb-2" role="alert">{{ error }}</p>
+              }
+              @if (passwordSaved()) {
+                <p class="small text-success mb-2" role="status"><i class="bi bi-check-circle me-1"></i>Senha alterada. Use a nova senha no próximo login.</p>
+              }
+              <button type="submit" class="btn btn-sm btn-primary rounded-pill" [disabled]="passwordSaving()">
+                @if (passwordSaving()) {
+                  <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                }
+                Alterar senha
+              </button>
+            </form>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="mt-5 pt-4 border-top">
+      <h2 class="h6 text-danger">Excluir conta</h2>
 
       @if (loading() || ordersError()) {
         <!-- the copy below depends on whether there are orders — never guess it from a failed load -->
@@ -200,7 +327,7 @@
           Excluir minha conta
         </button>
       } @else {
-        <div class="alert alert-danger small rounded-4">
+        <form class="alert alert-danger small rounded-4" (submit)="$event.preventDefault(); confirmDeleteAccount()">
           <p class="mb-2">Tem certeza? Essa ação não pode ser desfeita. Digite sua senha para confirmar.</p>
           <input
             type="password"
@@ -214,7 +341,7 @@
             <p class="text-danger mb-2">{{ deleteError() }}</p>
           }
           <div class="d-flex gap-2">
-            <button type="button" class="btn btn-sm btn-danger rounded-pill" [disabled]="deleting()" (click)="confirmDeleteAccount()">
+            <button type="submit" class="btn btn-sm btn-danger rounded-pill" [disabled]="deleting()">
               @if (deleting()) {
                 <span class="spinner-border spinner-border-sm me-2"></span>
               }
@@ -224,7 +351,7 @@
               Cancelar
             </button>
           </div>
-        </div>
+        </form>
       }
     </div>
   </div>

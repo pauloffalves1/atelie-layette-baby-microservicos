@@ -66,6 +66,12 @@ export class PublicLayout {
     });
   }
 
+  skipToContent(): void {
+    const main = document.getElementById('conteudo');
+    main?.focus();
+    main?.scrollIntoView();
+  }
+
   toggleAccountMenu(): void {
     this.accountMenuOpen.update((open) => !open);
   }
