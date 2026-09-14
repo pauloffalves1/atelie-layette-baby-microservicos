@@ -180,14 +180,18 @@
                     <input type="tel" id="modal-customerPhone" class="form-control" formControlName="customerPhone" appPhoneMask placeholder="(11) 91234-5678"
                       autocomplete="tel-national" inputmode="tel"
                       [class.is-invalid]="form.controls.customerPhone.invalid && form.controls.customerPhone.touched">
-                    <div class="invalid-feedback">É por ele que avisamos sobre o pedido.</div>
+                    <div class="invalid-feedback">
+                      {{ form.controls.customerPhone.hasError('required') ? 'É por ele que avisamos sobre o pedido.' : 'Informe o número com DDD.' }}
+                    </div>
                   </div>
                   <div class="col-md-6">
                     <label for="modal-customerCpf" class="form-label small fw-semibold">CPF</label>
                     <input type="text" id="modal-customerCpf" class="form-control" formControlName="customerCpf" placeholder="000.000.000-00"
-                      inputmode="numeric"
+                      appCpfMask
                       [class.is-invalid]="form.controls.customerCpf.invalid && form.controls.customerCpf.touched">
-                    <div class="invalid-feedback">Informe um CPF válido.</div>
+                    <div class="invalid-feedback">
+                      {{ form.controls.customerCpf.hasError('required') ? 'Informe seu CPF.' : 'CPF inválido — confira os números.' }}
+                    </div>
                   </div>
                 </div>
 

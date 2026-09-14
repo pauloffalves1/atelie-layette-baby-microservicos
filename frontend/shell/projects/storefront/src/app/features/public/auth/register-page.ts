@@ -1,18 +1,22 @@
-import { Component, Injector, OnInit, afterNextRender, computed, inject, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, DestroyRef, Injector, OnInit, afterNextRender, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, debounceTime, distinctUntilChanged, filter, map, of, switchMap, tap } from 'rxjs';
 import { AuthService } from '@shared/core/services/auth.service';
 import { CepService } from '@shared/core/services/cep.service';
 import { CheckoutModalService } from '@shared/core/services/checkout-modal.service';
+import { cpfValidator, phoneDigitsValidator } from '@shared/core/utils/br-documents';
 import { httpErrorMessage } from '@shared/core/utils/http-error-message';
+import { CpfMaskDirective } from '@shared/shared/directives/cpf-mask.directive';
 import { PasswordToggleDirective } from '@shared/shared/directives/password-toggle.directive';
 import { PhoneMaskDirective } from '@shared/shared/directives/phone-mask.directive';
 
 @Component({
   selector: 'app-register-page',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, PhoneMaskDirective, PasswordToggleDirective],
+  imports: [ReactiveFormsModule, RouterLink, PhoneMaskDirective, PasswordToggleDirective, CpfMaskDirective],
   templateUrl: './register-page.html',
 })
 export class RegisterPage implements OnInit {
@@ -21,6 +25,10 @@ export class RegisterPage implements OnInit {
   private readonly cepService = inject(CepService);
   private readonly checkoutModal = inject(CheckoutModalService);
   private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
+
+  /** The API said this e-mail already has an account — offer login/reset instead of a dead end. */
+  readonly emailTaken = signal(false);
 
   readonly submitting = signal(false);
   readonly errorMessage = signal<string | null>(null);
@@ -31,17 +39,30 @@ export class RegisterPage implements OnInit {
   readonly form = this.fb.nonNullable.group({
     name: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
-    cpf: ['', [Validators.required, Validators.pattern(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/)]],
-    phone: ['', Validators.required],
+    cpf: ['', [Validators.required, cpfValidator]],
+    phone: ['', [Validators.required, phoneDigitsValidator]],
     password: ['', [Validators.required, Validators.minLength(6)]],
-    zipCode: ['', Validators.required],
-    street: ['', Validators.required],
-    number: ['', Validators.required],
+    // Optional at sign-up (checkout asks for the delivery address anyway) — but once any part is
+    // filled, the rest becomes required so a half address never gets saved. See ngOnInit.
+    zipCode: [''],
+    street: [''],
+    number: [''],
     complement: [''],
-    neighborhood: ['', Validators.required],
-    city: ['', Validators.required],
-    state: ['', Validators.required],
+    neighborhood: [''],
+    city: [''],
+    state: [''],
   });
+
+  private readonly requiredAddressControls = [
+    this.form.controls.zipCode,
+    this.form.controls.street,
+    this.form.controls.number,
+    this.form.controls.neighborhood,
+    this.form.controls.city,
+    this.form.controls.state,
+  ];
+
+  readonly addressStarted = signal(false);
 
   constructor(
     private readonly auth: AuthService,
@@ -67,6 +88,16 @@ export class RegisterPage implements OnInit {
       this.fromCheckoutModal.set(true);
     }
     this.fromCheckout.set(this.resumeCheckoutStep !== null || this.returnUrl() === '/checkout');
+
+    this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      const started = [...this.requiredAddressControls, this.form.controls.complement].some((c) => c.value.trim() !== '');
+      if (started === this.addressStarted()) return;
+      this.addressStarted.set(started);
+      for (const control of this.requiredAddressControls) {
+        control.setValidators(started ? [Validators.required] : []);
+        control.updateValueAndValidity({ emitEvent: false });
+      }
+    });
 
     this.form.controls.zipCode.valueChanges
       .pipe(
@@ -113,6 +144,8 @@ export class RegisterPage implements OnInit {
     const value = this.form.getRawValue();
     this.submitting.set(true);
     this.errorMessage.set(null);
+    this.emailTaken.set(false);
+    const withAddress = this.addressStarted();
 
     this.auth
       .register({
@@ -121,13 +154,13 @@ export class RegisterPage implements OnInit {
         cpf: value.cpf,
         password: value.password,
         phone: value.phone || null,
-        addressStreet: value.street,
-        addressNumber: value.number,
-        addressComplement: value.complement || null,
-        addressNeighborhood: value.neighborhood,
-        addressCity: value.city,
-        addressState: value.state,
-        addressZipCode: value.zipCode,
+        addressStreet: withAddress ? value.street : null,
+        addressNumber: withAddress ? value.number : null,
+        addressComplement: withAddress ? value.complement || null : null,
+        addressNeighborhood: withAddress ? value.neighborhood : null,
+        addressCity: withAddress ? value.city : null,
+        addressState: withAddress ? value.state : null,
+        addressZipCode: withAddress ? value.zipCode : null,
       })
       .subscribe({
         next: () =>
@@ -136,6 +169,8 @@ export class RegisterPage implements OnInit {
           }),
         error: (err) => {
           this.submitting.set(false);
+          const detail = err instanceof HttpErrorResponse ? String(err.error?.detail ?? '') : '';
+          this.emailTaken.set(err instanceof HttpErrorResponse && err.status === 409 && detail.includes('e-mail'));
           this.errorMessage.set(httpErrorMessage(err, 'Não foi possível criar sua conta.'));
         },
       });

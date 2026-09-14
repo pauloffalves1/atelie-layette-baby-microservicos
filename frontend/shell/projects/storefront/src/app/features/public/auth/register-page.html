@@ -33,11 +33,13 @@
             </div>
             <div class="mb-3">
               <label for="register-cpf" class="form-label small fw-semibold">CPF</label>
-              <input type="text" id="register-cpf" class="form-control" formControlName="cpf" inputmode="numeric"
+              <input type="text" id="register-cpf" class="form-control" formControlName="cpf" appCpfMask
                 placeholder="000.000.000-00"
                 [class.is-invalid]="form.controls.cpf.invalid && form.controls.cpf.touched">
               @if (form.controls.cpf.invalid && form.controls.cpf.touched) {
-                <div class="invalid-feedback">Informe um CPF válido.</div>
+                <div class="invalid-feedback">
+                  {{ form.controls.cpf.hasError('required') ? 'CPF é obrigatório.' : 'CPF inválido — confira os números.' }}
+                </div>
               }
             </div>
             <div class="mb-3">
@@ -46,11 +48,14 @@
                 placeholder="(11) 91234-5678"
                 [class.is-invalid]="form.controls.phone.invalid && form.controls.phone.touched">
               @if (form.controls.phone.invalid && form.controls.phone.touched) {
-                <div class="invalid-feedback">Telefone/WhatsApp é obrigatório — usamos para te avisar sobre pedidos.</div>
+                <div class="invalid-feedback">
+                  {{ form.controls.phone.hasError('required') ? 'Telefone/WhatsApp é obrigatório — usamos para te avisar sobre pedidos.' : 'Informe o número com DDD.' }}
+                </div>
               }
             </div>
             <hr class="my-4">
-            <h6 class="small fw-semibold text-secondary mb-3"><i class="bi bi-geo-alt me-1"></i>Endereço</h6>
+            <h6 class="small fw-semibold text-secondary mb-1"><i class="bi bi-geo-alt me-1"></i>Endereço <span class="fw-normal">(opcional)</span></h6>
+            <p class="small text-secondary mb-3">Preencha agora para agilizar a primeira compra, ou deixe para informar na hora de finalizar o pedido.</p>
             <div class="row g-3 mb-3">
               <div class="col-md-4">
                 <label for="register-zipCode" class="form-label small fw-semibold">CEP</label>
@@ -128,7 +133,15 @@
             </div>
 
             @if (errorMessage()) {
-              <div class="alert alert-danger small rounded-4">{{ errorMessage() }}</div>
+              <div class="alert alert-danger small rounded-4" role="alert">
+                {{ errorMessage() }}
+                @if (emailTaken()) {
+                  <span class="d-block mt-1">
+                    <a routerLink="/entrar" [queryParams]="loginQueryParams()" class="alert-link">Entrar com este e-mail</a>
+                    ou <a routerLink="/esqueci-senha" class="alert-link">recuperar a senha</a>.
+                  </span>
+                }
+              </div>
             }
 
             <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill mt-3" [disabled]="submitting()">
@@ -137,6 +150,10 @@
               }
               Criar conta
             </button>
+            <p class="small text-secondary text-center mt-3 mb-0">
+              Ao criar sua conta, você concorda com os <a routerLink="/termos-de-uso">Termos de Uso</a> e a
+              <a routerLink="/politica-de-privacidade">Política de Privacidade</a>.
+            </p>
           </form>
 
           <p class="text-center small text-secondary mt-4 mb-0">

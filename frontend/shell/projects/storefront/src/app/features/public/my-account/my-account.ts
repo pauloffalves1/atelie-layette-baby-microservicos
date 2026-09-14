@@ -9,16 +9,12 @@ import { AuthService } from '@shared/core/services/auth.service';
 import { CepService } from '@shared/core/services/cep.service';
 import { CustomerAddressService } from '@shared/core/services/customer-address.service';
 import { OrderService } from '@shared/core/services/order.service';
+import { phoneDigitsValidator } from '@shared/core/utils/br-documents';
 import { httpErrorMessage } from '@shared/core/utils/http-error-message';
 import { LoadError } from '@shared/shared/components/load-error/load-error';
 import { PasswordToggleDirective } from '@shared/shared/directives/password-toggle.directive';
 import { PhoneMaskDirective } from '@shared/shared/directives/phone-mask.directive';
 
-/** At least 10 digits (DDD + number) — the mask alone lets "(11) 9" through. */
-function phoneDigits(control: AbstractControl): ValidationErrors | null {
-  const digits = String(control.value ?? '').replace(/\D/g, '');
-  return digits.length === 0 || digits.length >= 10 ? null : { phoneDigits: true };
-}
 
 @Component({
   selector: 'app-my-account',
@@ -54,7 +50,7 @@ export class MyAccount implements OnInit {
   readonly profileError = signal<string | null>(null);
   readonly profileForm = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(150)]],
-    phone: ['', [Validators.required, phoneDigits]],
+    phone: ['', [Validators.required, phoneDigitsValidator]],
   });
 
   readonly passwordSaving = signal(false);

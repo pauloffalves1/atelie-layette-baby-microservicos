@@ -13,6 +13,8 @@ import { ShippingService } from '@shared/core/services/shipping.service';
 import { CustomerAddress } from '@shared/core/models/customer-address.model';
 import { ShippingAddress } from '@shared/core/models/order.model';
 import { formatCpf } from '@shared/core/utils/format-cpf';
+import { cpfValidator, phoneDigitsValidator } from '@shared/core/utils/br-documents';
+import { CpfMaskDirective } from '@shared/shared/directives/cpf-mask.directive';
 import { PhoneMaskDirective } from '@shared/shared/directives/phone-mask.directive';
 import { WHATSAPP_NUMBER } from '@shared/core/constants/site';
 import { buildWhatsappOrderMessage } from '@shared/core/utils/whatsapp-order-message';
@@ -65,7 +67,7 @@ const PAGBANK_SDK_URL = 'https://assets.pagseguro.com.br/checkout-sdk-js/rc/dist
 @Component({
   selector: 'app-checkout',
   standalone: true,
-  imports: [CurrencyPipe, ReactiveFormsModule, RouterLink, PhoneMaskDirective],
+  imports: [CurrencyPipe, ReactiveFormsModule, RouterLink, PhoneMaskDirective, CpfMaskDirective],
   templateUrl: './checkout.html',
 })
 export class Checkout implements OnInit {
@@ -128,8 +130,8 @@ export class Checkout implements OnInit {
   readonly form = this.fb.nonNullable.group({
     customerName: ['', Validators.required],
     customerEmail: ['', [Validators.required, Validators.email]],
-    customerPhone: ['', Validators.required],
-    customerCpf: ['', [Validators.required, Validators.pattern(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/)]],
+    customerPhone: ['', [Validators.required, phoneDigitsValidator]],
+    customerCpf: ['', [Validators.required, cpfValidator]],
     zipCode: ['', Validators.required],
     street: ['', Validators.required],
     number: ['', Validators.required],

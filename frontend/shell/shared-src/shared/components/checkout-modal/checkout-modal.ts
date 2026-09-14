@@ -28,6 +28,8 @@ import { CustomerAddress } from '../../../core/models/customer-address.model';
 import { Product } from '../../../core/models/product.model';
 import { ShippingAddress } from '../../../core/models/order.model';
 import { formatCpf } from '../../../core/utils/format-cpf';
+import { cpfValidator, phoneDigitsValidator } from '../../../core/utils/br-documents';
+import { CpfMaskDirective } from '../../directives/cpf-mask.directive';
 import { PhoneMaskDirective } from '../../directives/phone-mask.directive';
 import { AssetUrlPipe } from '../../pipes/asset-url.pipe';
 import { OrderConfirmationView } from '../order-confirmation-view/order-confirmation-view';
@@ -96,7 +98,7 @@ const CHECKOUT_STEPS = [
 @Component({
   selector: 'app-checkout-modal',
   standalone: true,
-  imports: [CurrencyPipe, ReactiveFormsModule, PhoneMaskDirective, AssetUrlPipe, OrderConfirmationView],
+  imports: [CurrencyPipe, ReactiveFormsModule, PhoneMaskDirective, CpfMaskDirective, AssetUrlPipe, OrderConfirmationView],
   templateUrl: './checkout-modal.html',
 })
 export class CheckoutModal {
@@ -191,8 +193,8 @@ export class CheckoutModal {
   readonly form = this.fb.nonNullable.group({
     customerName: ['', Validators.required],
     customerEmail: ['', [Validators.required, Validators.email]],
-    customerPhone: ['', Validators.required],
-    customerCpf: ['', [Validators.required, Validators.pattern(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/)]],
+    customerPhone: ['', [Validators.required, phoneDigitsValidator]],
+    customerCpf: ['', [Validators.required, cpfValidator]],
     zipCode: ['', Validators.required],
     street: ['', Validators.required],
     number: ['', Validators.required],

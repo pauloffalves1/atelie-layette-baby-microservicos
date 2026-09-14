@@ -30,16 +30,20 @@
                 placeholder="(11) 91234-5678"
                 [class.is-invalid]="form.controls.customerPhone.invalid && form.controls.customerPhone.touched">
               @if (form.controls.customerPhone.invalid && form.controls.customerPhone.touched) {
-                <div class="invalid-feedback">Telefone/WhatsApp é obrigatório — é por ele que avisamos sobre o pedido.</div>
+                <div class="invalid-feedback">
+                  {{ form.controls.customerPhone.hasError('required') ? 'Telefone/WhatsApp é obrigatório — é por ele que avisamos sobre o pedido.' : 'Informe o número com DDD.' }}
+                </div>
               }
             </div>
             <div class="col-md-6">
               <label for="checkout-customerCpf" class="form-label small fw-semibold">CPF</label>
-              <input type="text" id="checkout-customerCpf" class="form-control" formControlName="customerCpf" inputmode="numeric"
+              <input type="text" id="checkout-customerCpf" class="form-control" formControlName="customerCpf" appCpfMask
                 placeholder="000.000.000-00"
                 [class.is-invalid]="form.controls.customerCpf.invalid && form.controls.customerCpf.touched">
               @if (form.controls.customerCpf.invalid && form.controls.customerCpf.touched) {
-                <div class="invalid-feedback">Informe um CPF válido.</div>
+                <div class="invalid-feedback">
+                  {{ form.controls.customerCpf.hasError('required') ? 'CPF é obrigatório.' : 'CPF inválido — confira os números.' }}
+                </div>
               }
             </div>
           </div>
