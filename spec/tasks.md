@@ -305,3 +305,13 @@ substituição daquele relato.
   pedido (`whatsapp-order-message.ts` + spec), carrinho mantido com opção de esvaziar, botão
   flutuante oculto com o modal aberto, trava de clique duplo no cartão durante o 3DS; sem regra de
   negócio nova, ver README → Status.
+- Cadastro sem atrito (2026-09-14) — máscara e validação de CPF (`br-documents.ts` + spec), telefone com
+  DDD no cadastro/checkout/Minha conta, endereço opcional no cadastro, atalhos quando o e-mail já
+  existe, aviso de Termos/Privacidade; sem regra de negócio nova, ver README → Status.
+- SEO para buscadores (2026-09-14) — Requisito 28 / RNF08.
+  - [x] `SeoService`: JSON-LD genérico (Product enriquecido, BreadcrumbList, FAQPage), `og:locale`, corte
+    de descrição (+ spec); Store/WebSite e defaults no `index.html`.
+  - [x] Loja: categorias como links reais com SEO próprio; FAQ gera FAQPage a partir do HTML renderizado.
+  - [x] `SitemapXmlBuilder` (lastmod, imagens, categorias) + testes; `/internal/products/sitemap-entries`.
+  - [x] `scripts/prerender.mjs` + `ops/seo` (Nginx, cron, Docker Playwright); regras validadas em container.
+  - [x] Home carrega as fotos do carrossel sob demanda.

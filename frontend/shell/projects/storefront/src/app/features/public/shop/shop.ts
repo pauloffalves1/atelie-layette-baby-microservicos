@@ -73,12 +73,6 @@ export class Shop implements OnInit {
         }
       });
 
-    this.seo.update({
-      title: 'Loja',
-      description: 'Fraldas de ombro e boca prontas para comprar, com opção de bordado personalizado — Kit Ombro e Boca, Fralda de Ombro e Fralda de Boca.',
-      path: '/loja',
-    });
-
     this.productService.listCategories().subscribe((categories) => this.categories.set(categories));
 
     this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
@@ -86,11 +80,52 @@ export class Shop implements OnInit {
       const search = params.get('busca') ?? '';
       const page = Number(params.get('pagina')) || 1;
       this.activeCategory.set(category);
+      this.updateSeo(category);
       this.searchTerm.set(search);
       this.page.set(page);
       this.activeSemanticQuery.set(null);
       this.load(category, page, search);
     });
+  }
+
+  /** A category URL is its own indexable page ("Fralda de Boca" search intent) with its own title and canonical. */
+  private updateSeo(category: string | null): void {
+    // After render: the router's TitleStrategy re-applies the route's static title ("Loja") when the
+    // navigation ends, which comes after this query-param emission and would overwrite ours.
+    afterNextRender(() => this.applySeo(category), { injector: this.injector });
+  }
+
+  private applySeo(category: string | null): void {
+    if (category) {
+      this.seo.update({
+        title: `${category} com bordado personalizado`,
+        description: `${category} em algodão com bordado personalizado do nome do bebê — feita à mão sob encomenda pelo Ateliê Layette Baby, com entrega para todo o Brasil.`,
+        path: `/loja?categoria=${encodeURIComponent(category)}`,
+      });
+      this.seo.setBreadcrumbs([
+        { name: 'Início', path: '/' },
+        { name: 'Loja', path: '/loja' },
+        { name: category, path: `/loja?categoria=${encodeURIComponent(category)}` },
+      ]);
+      return;
+    }
+    this.seo.update({
+      title: 'Loja — fraldas de ombro e boca bordadas',
+      description: 'Fraldas de ombro e boca prontas para comprar, com opção de bordado personalizado — Kit Ombro e Boca, Fralda de Ombro e Fralda de Boca.',
+      path: '/loja',
+    });
+  }
+
+  /** Plain clicks filter in place; Ctrl/Cmd/middle-click keep the browser's "open in new tab". */
+  onCategoryClick(event: MouseEvent, category: string | null): void {
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.button !== 0) return;
+    event.preventDefault();
+    this.selectCategory(category);
+  }
+
+  /** Real hrefs so crawlers can follow each category; clicks still go through selectCategory(). */
+  categoryHref(category: string | null): string {
+    return category ? `/loja?categoria=${encodeURIComponent(category)}` : '/loja';
   }
 
   onSearchInput(value: string): void {

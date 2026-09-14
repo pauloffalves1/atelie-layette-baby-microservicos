@@ -375,6 +375,10 @@ aceite em EARS por requisito, mesmo padrão usado no `spec/` do monólito) vive 
 - **RNF07** — O Gateway deve aplicar um rate limiting dedicado (`ai-cost`, 20 requisições/minuto por
   IP+rota) nas rotas que acionam chamadas pagas à API da Anthropic, à parte do rate limiting geral
   — para conter o custo e o abuso dessas rotas especificamente.
+- **RNF08** — Buscadores (Googlebot, Bingbot etc.) devem receber cada página pública já renderizada
+  — título, descrição, canonical, conteúdo, links e dados estruturados (Store/WebSite, Product,
+  BreadcrumbList, FAQPage) — a partir de snapshots gerados a partir do sitemap, com o mesmo conteúdo
+  exibido às pessoas; o sitemap deve informar `lastmod`, fotos dos produtos e as páginas de categoria.
 
 ## Autenticação e Autorização
 
@@ -1027,6 +1031,35 @@ contra o Gateway via `docker run --network host`).
       pedido" durante a etapa de 3DS do PagBank iniciava outro pedido (o botão só travava depois) —
       agora trava na hora. Opções de entrega/pagamento quebram linha no celular, recado do presente
       com rótulo e contador na página `/checkout`, erros com `role="alert"`.
+- [x] **Cadastro sem atrito** (2026-09-14) — CPF com máscara e validação dos dígitos verificadores
+      (mesma regra do `Cpf.Create` do backend: antes "000.000.000-00" com qualquer número passava e o
+      erro só aparecia depois de enviar — no checkout, depois de preencher o endereço todo), telefone
+      exige DDD + número (a máscara deixava "(11) 9" passar) — no cadastro, no modal e na página de
+      checkout e em "Meus dados". Endereço opcional no cadastro (o checkout pede o endereço de entrega
+      de qualquer forma); preencher qualquer parte torna o resto obrigatório, para nunca salvar meio
+      endereço. E-mail já cadastrado mostra "Entrar com este e-mail" e "recuperar a senha"; aviso de
+      Termos de Uso e Política de Privacidade ao criar a conta. Home: título "Especialistas em fraldas
+      de ombro e boca personalizadas" (concordância corrigida, também no `<title>`).
+- [x] **SEO para buscadores (RNF08)** (2026-09-14) — o site é renderizado no navegador: sem
+      JavaScript, toda URL devolvia o mesmo `index.html` com título genérico, sem texto nem links
+      (Googlebot só renderiza JS numa segunda passada, e Bing/DuckDuckGo frequentemente não renderizam).
+      *Snapshots para buscadores:* `frontend/shell/scripts/prerender.mjs` percorre o sitemap num
+      Chromium headless (imagem oficial do Playwright via `ops/seo/prerender.sh`, cron a cada 6 h e
+      após cada deploy), grava o HTML renderizado sem os scripts do app (mantendo o JSON-LD) e o Nginx
+      entrega esses arquivos só a crawlers de busca, só para rotas de página (arquivos e imagens seguem
+      normais), com fallback para o SPA — detalhes e config em `ops/seo/README.md`, validada num Nginx
+      em container antes de ir para produção. *Dados estruturados:* Store + WebSite sitewide (CNPJ,
+      telefone, cidade, fundação 2013), Product com todas as fotos, marca, SKU, categoria, condição,
+      vendedor, validade da promoção, nota média e até 5 avaliações, BreadcrumbList no produto e nas
+      categorias, FAQPage gerado a partir das perguntas renderizadas. *Metatags:* `og:locale`,
+      `robots` com `max-image-preview:large`, descrição cortada em 160 caracteres na última palavra,
+      defaults de OG/canonical no `index.html`. *Categorias indexáveis:* os filtros da loja viraram
+      links reais (`/loja?categoria=...`) com título, H1, canonical e breadcrumb próprios, e entram no
+      sitemap. *Sitemap* (`SitemapXmlBuilder` + testes): `lastmod` por produto/categoria, `image:image`
+      com cada foto, via novo `/internal/products/sitemap-entries` do Catalog (`ProductDto` ganhou
+      `UpdatedAt`). *Nginx:* `www` → domínio principal (301) e cache de 30 dias para
+      `/api/uploads/` (nomes únicos). *Desempenho:* a home baixava as 7 fotos do carrossel (uma com
+      1,7 MB) antes de mostrar a primeira — agora só a atual e a próxima, com `fetchpriority` na primeira.
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
       nos manifests; falta aplicar num cluster ativo e uma license key real. **Não avancei aqui** —
       exige um cluster de verdade e uma license key real da New Relic, que eu não tenho como

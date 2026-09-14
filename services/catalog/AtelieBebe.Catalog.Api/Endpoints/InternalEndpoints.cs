@@ -47,5 +47,28 @@ public static class InternalEndpoints
             }
             return Results.Ok(slugs);
         });
+
+        // Backoffice's sitemap: slug plus what it needs for <lastmod>, category landing URLs and
+        // <image:image> entries. Same "active and publicly listed" set as active-slugs above.
+        app.MapGet("/internal/products/sitemap-entries", async (IProductService service, CancellationToken ct) =>
+        {
+            const int pageSize = 200;
+            var entries = new List<object>();
+            var page = 1;
+            while (true)
+            {
+                var result = await service.ListAsync(category: null, onlyActive: true, page: page, pageSize: pageSize, ct: ct);
+                entries.AddRange(result.Items.Select(p => new
+                {
+                    p.Slug,
+                    p.Category,
+                    p.UpdatedAt,
+                    ImageUrls = (p.ImageUrl is null ? Array.Empty<string>() : [p.ImageUrl]).Concat(p.ImageUrls).ToList(),
+                }));
+                if (entries.Count >= result.TotalItems || result.Items.Count == 0) break;
+                page++;
+            }
+            return Results.Ok(entries);
+        });
     }
 }

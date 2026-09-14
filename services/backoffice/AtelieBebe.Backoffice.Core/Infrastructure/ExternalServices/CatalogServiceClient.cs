@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using AtelieBebe.Backoffice.Core.Application.Abstractions;
+using AtelieBebe.Backoffice.Core.Application.Sitemap;
 
 namespace AtelieBebe.Backoffice.Core.Infrastructure.ExternalServices;
 
@@ -15,9 +16,9 @@ public sealed class CatalogServiceClient : ICatalogServiceClient
         return result?.Count ?? 0;
     }
 
-    public async Task<IReadOnlyList<string>> GetActiveProductSlugsAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<SitemapProduct>> GetSitemapProductsAsync(CancellationToken ct = default)
     {
-        var result = await _httpClient.GetFromJsonAsync<List<string>>("/internal/products/active-slugs", ct);
+        var result = await _httpClient.GetFromJsonAsync<List<SitemapProduct>>("/internal/products/sitemap-entries", ct);
         return result ?? [];
     }
 

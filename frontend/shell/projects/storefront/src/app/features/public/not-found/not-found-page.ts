@@ -23,6 +23,6 @@ export class NotFoundPage implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.meta.removeTag('name="robots"');
+    this.meta.updateTag({ name: 'robots', content: 'index, follow, max-image-preview:large' });
   }
 }

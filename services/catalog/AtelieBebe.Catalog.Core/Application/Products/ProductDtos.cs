@@ -17,7 +17,8 @@ public sealed record ProductDto(
     DateTime? PromotionEndsAt,
     bool IsOnPromotion,
     decimal EffectivePrice,
-    int? ProductionLeadTimeDays);
+    int? ProductionLeadTimeDays,
+    DateTime UpdatedAt);
 
 public sealed record AdminProductDto(
     Guid Id,

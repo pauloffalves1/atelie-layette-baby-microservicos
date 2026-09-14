@@ -400,7 +400,7 @@ public sealed class ProductService : IProductService
 
     private static ProductDto ToDto(Product p) => new(
         p.Id, p.Name, p.Slug, p.Description, p.Price.Amount, p.Category, p.ImageUrl, p.Active, p.Featured, p.IsExclusive, p.ImageUrls,
-        p.DiscountPercentage, p.PromotionStartsAt, p.PromotionEndsAt, p.IsOnPromotion, p.EffectivePrice.Amount, p.ProductionLeadTimeDays);
+        p.DiscountPercentage, p.PromotionStartsAt, p.PromotionEndsAt, p.IsOnPromotion, p.EffectivePrice.Amount, p.ProductionLeadTimeDays, p.UpdatedAt);
 
     private static AdminProductDto ToAdminDto(Product p) => new(
         p.Id, p.Name, p.Slug, p.Description, p.Price.Amount, p.Category, p.ImageUrl, p.Active, p.Featured, p.IsExclusive, p.AllowedCustomerIds, p.ImageUrls,

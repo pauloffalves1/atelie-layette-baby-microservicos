@@ -6,6 +6,16 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Ateliê Layette Baby — especialistas em fraldas de ombro e boca bordadas, com kits e encomendas personalizadas.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://layettebaby.com.br/">
+  <meta property="og:site_name" content="Ateliê Layette Baby">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Ateliê Layette Baby — Fraldas de ombro e boca bordadas">
+  <meta property="og:description" content="Especialistas em fraldas de ombro e boca bordadas, com kits e encomendas personalizadas.">
+  <meta property="og:url" content="https://layettebaby.com.br/">
+  <meta property="og:image" content="https://layettebaby.com.br/images/hero-fraldas.jpg">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
   <link rel="alternate icon" href="favicon.ico">
@@ -18,23 +28,46 @@
   <script type="application/ld+json" data-seo="organization">
     {
       "@context": "https://schema.org/",
-      "@type": "Organization",
-      "name": "Ateliê Layette Baby",
-      "url": "https://layettebaby.com.br",
-      "description": "Especialistas em fraldas de ombro e boca bordadas, com kits e encomendas personalizadas.",
-      "address": {
-        "@type": "PostalAddress",
-        "addressLocality": "São Bernardo do Campo",
-        "addressRegion": "SP",
-        "addressCountry": "BR"
-      },
-      "contactPoint": {
-        "@type": "ContactPoint",
-        "telephone": "+55-11-91313-0481",
-        "contactType": "customer service",
-        "areaServed": "BR",
-        "availableLanguage": "Portuguese"
-      }
+      "@graph": [
+        {
+          "@type": "Store",
+          "@id": "https://layettebaby.com.br/#store",
+          "name": "Ateliê Layette Baby",
+          "alternateName": "Layette Baby",
+          "url": "https://layettebaby.com.br/",
+          "logo": "https://layettebaby.com.br/images/logo-atelie-crop.png",
+          "image": "https://layettebaby.com.br/images/hero-fraldas.jpg",
+          "description": "Especialistas em fraldas de ombro e boca bordadas à mão, com kits para o enxoval do bebê e encomendas personalizadas.",
+          "foundingDate": "2013",
+          "taxID": "19.322.493/0001-04",
+          "telephone": "+55-11-91313-0481",
+          "priceRange": "R$",
+          "currenciesAccepted": "BRL",
+          "paymentAccepted": "PIX, Cartão de crédito",
+          "areaServed": { "@type": "Country", "name": "Brasil" },
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "São Bernardo do Campo",
+            "addressRegion": "SP",
+            "addressCountry": "BR"
+          },
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "telephone": "+55-11-91313-0481",
+            "contactType": "customer service",
+            "areaServed": "BR",
+            "availableLanguage": "Portuguese"
+          }
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://layettebaby.com.br/#website",
+          "url": "https://layettebaby.com.br/",
+          "name": "Ateliê Layette Baby",
+          "inLanguage": "pt-BR",
+          "publisher": { "@id": "https://layettebaby.com.br/#store" }
+        }
+      ]
     }
   </script>
 </head>

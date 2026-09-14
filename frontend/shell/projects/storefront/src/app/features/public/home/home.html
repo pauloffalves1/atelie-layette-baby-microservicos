@@ -3,7 +3,7 @@
     <div class="row align-items-center gy-5">
       <div class="col-lg-6 text-center text-lg-start">
         <span class="badge-soft mb-3 d-inline-block"><i class="bi bi-stars me-1"></i>Feito com muito amor</span>
-        <h1 class="display-3 fw-bold mb-3">Especialistas em fraldas de ombro e boca personalizados</h1>
+        <h1 class="display-3 fw-bold mb-3">Especialistas em fraldas de ombro e boca personalizadas</h1>
         <p class="lead text-secondary-emphasis mb-4 fs-4">
           Fraldas de ombro, fraldas de boca e kits combinando as duas, em algodão macio e bordado
           — pensadas nos mínimos detalhes para o dia a dia do seu bebê.
@@ -27,12 +27,14 @@
           (pointerdown)="onHeroPointerDown($event)" (pointerup)="onHeroPointerUp($event)">
           <div class="ratio ratio-1x1">
             @for (url of heroImages(); track url; let i = $index) {
-              <img [src]="url"
+              @if (heroLoaded().has(i)) {
+              <img [src]="url" [attr.fetchpriority]="i === 0 ? 'high' : null"
                 [alt]="heroImages().length > 1 ? 'Fraldas de ombro e boca bordadas com monograma — foto ' + (i + 1) + ' de ' + heroImages().length : 'Fraldas de ombro e boca bordadas com monograma'"
                 class="w-100 h-100 object-fit-cover hero-carousel-slide"
                 [class.active]="i === activeHeroIndex()"
                 [attr.aria-hidden]="i === activeHeroIndex() ? null : 'true'"
                 draggable="false">
+              }
             }
           </div>
 

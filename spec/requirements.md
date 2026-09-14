@@ -490,3 +490,26 @@ própria conta, para não depender de mensagem para o ateliê nem do link de "es
    Identity.
 5. Uma conta anonimizada (exclusão LGPD) NÃO DEVE poder alterar dados nem senha.
 6. O nome exibido na saudação e no menu da loja DEVE refletir a alteração sem novo login.
+
+## Requisito 28: Páginas públicas legíveis por buscadores
+
+**User Story:** Como dona do ateliê, quero que o Google e o Bing indexem cada produto, categoria e
+página do site com o título, a descrição e o conteúdo certos, para aparecer melhor nas buscas por
+fraldas de ombro e boca bordadas.
+
+**Rastreamento:** RNF08
+
+**Acceptance Criteria**
+1. QUANDO um crawler de busca conhecido pede uma página pública listada no sitemap, O SISTEMA DEVE
+   responder com o HTML já renderizado dessa página (título, meta descrição, canonical, conteúdo,
+   links e JSON-LD), com o mesmo conteúdo mostrado a uma pessoa.
+2. Pedidos de arquivos (imagens, CSS, JS) e de páginas sem snapshot DEVEM seguir o comportamento normal
+   do site; visitantes comuns e bots de prévia de link NÃO DEVEM receber os snapshots.
+3. A geração dos snapshots NÃO DEVE substituir o conjunto anterior quando mais de 20% das páginas
+   falharem ao renderizar.
+4. Cada produto DEVE ter dados estruturados Product (fotos, preço em BRL, disponibilidade, marca, SKU e,
+   quando houver, nota média e avaliações) e BreadcrumbList; a FAQ DEVE ter FAQPage; o site DEVE ter
+   Store e WebSite.
+5. O sitemap DEVE incluir a data da última alteração de cada produto, as fotos de cada produto e uma
+   URL por categoria; cada categoria DEVE ter título, H1 e canonical próprios.
+6. `www.layettebaby.com.br` DEVE redirecionar (301) para `layettebaby.com.br`.

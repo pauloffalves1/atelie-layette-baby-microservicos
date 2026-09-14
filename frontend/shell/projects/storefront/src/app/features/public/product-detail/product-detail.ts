@@ -169,28 +169,38 @@ export class ProductDetail implements OnInit {
           image: product.imageUrl ? resolveAssetUrl(product.imageUrl) : undefined,
           type: 'product',
         });
-        this.seo.setProductStructuredData({
+        // Structured data always uses the public site paths ("/api/uploads/..."), never the dev
+        // API origin resolveAssetUrl() adds locally — SeoService makes them absolute on the site URL.
+        const productData = {
           name: product.name,
           description,
-          image: product.imageUrl ? resolveAssetUrl(product.imageUrl) : '/images/hero-fraldas.jpg',
+          images: [...(product.imageUrl ? [product.imageUrl] : []), ...product.imageUrls].concat(
+            product.imageUrl || product.imageUrls.length ? [] : ['/images/hero-fraldas.jpg'],
+          ),
           url: `/produto/${product.slug}`,
+          sku: product.slug,
+          category: product.category,
           price: product.effectivePrice,
           inStock: product.active,
-        });
+          priceValidUntil: product.isOnPromotion ? product.promotionEndsAt : null,
+        };
+        this.seo.setProductStructuredData(productData);
+        this.seo.setBreadcrumbs([
+          { name: 'Início', path: '/' },
+          { name: 'Loja', path: '/loja' },
+          { name: product.category, path: `/loja?categoria=${encodeURIComponent(product.category)}` },
+          { name: product.name, path: `/produto/${product.slug}` },
+        ]);
 
         this.reviewService.listByProduct(product.id).subscribe((reviews) => {
           if (!isCurrent()) return;
           this.reviews.set(reviews);
           if (reviews.length > 0) {
             this.seo.setProductStructuredData({
-              name: product.name,
-              description,
-              image: product.imageUrl ? resolveAssetUrl(product.imageUrl) : '/images/hero-fraldas.jpg',
-              url: `/produto/${product.slug}`,
-              price: product.effectivePrice,
-              inStock: product.active,
+              ...productData,
               ratingValue: reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length,
               reviewCount: reviews.length,
+              reviews: reviews.slice(0, 5).map((r) => ({ author: r.customerName, rating: r.rating, comment: r.comment, date: r.createdAt })),
             });
           }
         });

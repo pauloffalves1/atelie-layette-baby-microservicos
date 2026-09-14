@@ -29,6 +29,10 @@ export class Home implements OnInit, OnDestroy {
   // Admin can register one or several "home-hero" images — several render as a carousel.
   readonly heroImages = signal<string[]>([]);
   readonly activeHeroIndex = signal(0);
+  /** Slides whose photo has been requested. All of them used to download on page load (seven
+   * photos, one a 1.7 MB PNG) before the first was even visible — now the active slide and the
+   * next one, so the crossfade never shows a blank. */
+  readonly heroLoaded = signal<ReadonlySet<number>>(new Set([0]));
   private heroAutoAdvanceHandle: ReturnType<typeof setInterval> | null = null;
 
   // Empty until there's at least one approved review with a comment — hides the whole section
@@ -57,7 +61,7 @@ export class Home implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.seo.update({
-      title: 'Fraldas de ombro e boca personalizados',
+      title: 'Fraldas de ombro e boca personalizadas',
       description: 'Fraldas de ombro e boca bordadas à mão para o enxoval do bebê — kits e encomendas personalizadas, feitas com carinho pelo Ateliê Layette Baby.',
       path: '/',
     });
@@ -71,6 +75,7 @@ export class Home implements OnInit, OnDestroy {
           .sort((a, b) => a.sortOrder - b.sortOrder)
           .map((i) => resolveAssetUrl(i.url));
         this.heroImages.set(heroImages.length > 0 ? heroImages : ['/images/hero-fraldas.jpg']);
+        this.markHeroLoaded(0);
         if (heroImages.length > 1) this.startHeroAutoAdvance();
       },
       error: () => this.heroImages.set(['/images/hero-fraldas.jpg']),
@@ -138,12 +143,23 @@ export class Home implements OnInit, OnDestroy {
 
   goToHeroImage(index: number): void {
     this.activeHeroIndex.set(index);
+    this.markHeroLoaded(index);
     this.restartHeroAutoAdvance();
   }
 
   private advanceHero(step: 1 | -1): void {
     const count = this.heroImages().length;
     this.activeHeroIndex.set((this.activeHeroIndex() + step + count) % count);
+    this.markHeroLoaded(this.activeHeroIndex());
+  }
+
+  private markHeroLoaded(index: number): void {
+    const count = this.heroImages().length;
+    if (count === 0) return;
+    const next = new Set(this.heroLoaded());
+    next.add(index);
+    next.add((index + 1) % count);
+    if (next.size !== this.heroLoaded().size) this.heroLoaded.set(next);
   }
 
   private startHeroAutoAdvance(): void {
