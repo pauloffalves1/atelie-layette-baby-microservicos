@@ -192,7 +192,7 @@
                 </div>
 
                 <h6 class="mb-3"><i class="bi bi-geo-alt me-2"></i>Como você quer receber?</h6>
-                <div class="d-flex gap-3 mb-3">
+                <div class="d-flex flex-wrap column-gap-3 row-gap-1 mb-3">
                   <div class="form-check">
                     <input class="form-check-input" type="radio" name="deliveryMethod" id="modal-delivery-entrega"
                       [checked]="deliveryMethod() === 'Entrega'" (change)="deliveryMethod.set('Entrega')">
@@ -301,18 +301,25 @@
               <form [formGroup]="form">
                 @if (paymentUnderConstruction()) {
                   <div class="alert alert-warning rounded-4">
-                    <h6 class="alert-heading"><i class="bi bi-cone-striped me-2"></i>Pagamento on-line em construção</h6>
+                    <h6 class="alert-heading"><i class="bi bi-whatsapp me-2"></i>Finalize seu pedido pelo WhatsApp</h6>
                     <p class="small mb-2">
-                      Ainda estamos finalizando a liberação dos pagamentos on-line. Pra fechar seu pedido agora,
-                      fale com a gente pelo WhatsApp — combinamos tudo por lá.
+                      Ainda estamos liberando os pagamentos on-line. Toque em <strong>Enviar pelo WhatsApp</strong>, aqui embaixo: a conversa
+                      já abre com o resumo (produtos, bordados, entrega e total) — é só enviar, e combinamos o pagamento por lá.
                     </p>
-                    <a [href]="whatsappContactUrl" target="_blank" rel="noopener" class="btn btn-success btn-sm rounded-pill" (click)="cart.clear()">
-                      <i class="bi bi-whatsapp me-1"></i>Falar no WhatsApp
-                    </a>
+                    @if (whatsappOrderUrl(); as url) {
+                      <div class="small bg-white rounded-3 p-2 mb-2" role="status">
+                        <i class="bi bi-check-circle text-success me-1"></i>Abrimos o WhatsApp com o resumo do pedido.
+                        A conversa não abriu? <a [href]="url" target="_blank" rel="noopener">Abrir de novo</a>.
+                        <span class="d-block mt-1">
+                          Seu carrinho continua salvo. Já enviou?
+                          <button type="button" class="btn btn-link btn-sm p-0 align-baseline" (click)="clearCartAfterWhatsapp()">Esvaziar carrinho</button>
+                        </span>
+                      </div>
+                    }
                   </div>
                 } @else {
                 <h6 class="mb-3"><i class="bi bi-credit-card me-2"></i>Meio de pagamento</h6>
-                <div class="d-flex gap-3 mb-3">
+                <div class="d-flex flex-wrap column-gap-3 row-gap-1 mb-3">
                   <div class="form-check">
                     <input class="form-check-input" type="radio" name="paymentMethod" id="modal-payment-pix"
                       [checked]="paymentMethod() === 'PIX'" (change)="paymentMethod.set('PIX')">
@@ -483,9 +490,9 @@
               @case ('payment') {
                 <button type="button" class="btn btn-outline-secondary rounded-pill" (click)="modal.goTo('delivery')">Voltar</button>
                 @if (paymentUnderConstruction()) {
-                  <a [href]="whatsappContactUrl" target="_blank" rel="noopener" class="btn btn-success rounded-pill flex-fill" (click)="cart.clear()">
-                    <i class="bi bi-whatsapp me-1"></i>Falar no WhatsApp
-                  </a>
+                  <button type="button" class="btn btn-success rounded-pill flex-fill" (click)="sendOrderViaWhatsapp()">
+                    <i class="bi bi-whatsapp me-1"></i>Enviar pelo WhatsApp
+                  </button>
                 } @else {
                   <button type="button" class="btn btn-primary rounded-pill flex-fill" [disabled]="submitting()" (click)="submit()">
                     @if (submitting()) {

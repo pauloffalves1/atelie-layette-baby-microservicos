@@ -31,6 +31,8 @@ import { formatCpf } from '../../../core/utils/format-cpf';
 import { PhoneMaskDirective } from '../../directives/phone-mask.directive';
 import { AssetUrlPipe } from '../../pipes/asset-url.pipe';
 import { OrderConfirmationView } from '../order-confirmation-view/order-confirmation-view';
+import { buildWhatsappOrderMessage } from '../../../core/utils/whatsapp-order-message';
+import { whatsappUrl } from '../../../core/utils/contact-links';
 import { WHATSAPP_NUMBER } from '../../../core/constants/site';
 
 declare const PagSeguro: {
@@ -139,7 +141,6 @@ export class CheckoutModal {
   // True until PagBank hands over a real production token — checkout shows a holding notice
   // instead of the payment form/PIX flow while this is true (see PaymentEndpoints.MapPaymentEndpoints).
   readonly paymentUnderConstruction = signal(false);
-  readonly whatsappContactUrl = `https://wa.me/${WHATSAPP_NUMBER}`;
 
   readonly deliveryMethod = signal<'Entrega' | 'Retirada'>('Entrega');
 
@@ -522,6 +523,53 @@ export class CheckoutModal {
     );
   }
 
+/** Set once the WhatsApp chat was opened with the order summary — keeps a retry link on screen. */
+  readonly whatsappOrderUrl = signal<string | null>(null);
+
+  /**
+   * While on-line payment is off, orders are closed on WhatsApp. This used to open an empty chat and
+   * empty the cart on the same tap: the customer lost what they had picked and had to retype every
+   * product, embroidery and color. Now the chat opens pre-filled and the cart stays until they
+   * choose to empty it.
+   */
+  sendOrderViaWhatsapp(): void {
+    const value = this.form.getRawValue();
+    const delivery = this.deliveryMethod();
+    const shippingKnown = delivery === 'Retirada' || !!this.destinationState();
+    const message = buildWhatsappOrderMessage({
+      items: this.cart.items(),
+      subtotal: this.cart.totalPrice(),
+      couponCode: this.appliedCouponCode(),
+      couponDiscount: this.couponDiscountAmount(),
+      deliveryMethod: delivery,
+      address: delivery === 'Entrega'
+        ? {
+            street: value.street, number: value.number, complement: value.complement, neighborhood: value.neighborhood,
+            city: value.city, state: value.state, zipCode: value.zipCode,
+          }
+        : null,
+      shippingCost: shippingKnown ? this.shippingCost() : null,
+      total: shippingKnown ? this.total() : Math.max(0, this.cart.totalPrice() - this.couponDiscountAmount()),
+      customerName: value.customerName,
+      customerEmail: value.customerEmail,
+      customerPhone: value.customerPhone,
+      notes: value.notes,
+      isGift: value.isGift,
+      recipientName: value.recipientName,
+      giftMessage: value.giftMessage,
+    });
+    const url = whatsappUrl(WHATSAPP_NUMBER, message)!;
+    this.whatsappOrderUrl.set(url);
+    window.open(url, '_blank', 'noopener');
+  }
+
+  clearCartAfterWhatsapp(): void {
+    if (!confirm('Esvaziar o carrinho? Faça isso depois de enviar o pedido pelo WhatsApp.')) return;
+    this.cart.clear();
+    this.whatsappOrderUrl.set(null);
+    this.modal.close();
+  }
+
   submit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -531,6 +579,9 @@ export class CheckoutModal {
       return;
     }
 
+    // The card path awaits PagBank's 3DS step before submitOrder() flips `submitting` — without this a
+    // second tap on "Confirmar pedido" in that window started a second order (and charge).
+    if (this.submitting()) return;
     const value = this.form.getRawValue();
 
     if (this.paymentMethod() === 'CREDIT_CARD') {
@@ -558,6 +609,8 @@ export class CheckoutModal {
         return;
       }
 
+      this.submitting.set(true);
+      this.errorMessage.set(null);
       this.authenticate3ds(value, cardNumber, expMonth || '', expYear)
         .then((threeDsAuthenticationId) =>
           this.submitOrder(value, 'CREDIT_CARD', card.encryptedCard, Number(value.installments) || 1, threeDsAuthenticationId),

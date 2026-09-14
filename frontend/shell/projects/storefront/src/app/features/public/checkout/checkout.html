@@ -47,7 +47,7 @@
 
         <div class="stat-card mb-4">
           <h5 class="mb-3"><i class="bi bi-geo-alt me-2"></i>Como você quer receber?</h5>
-          <div class="d-flex gap-3 mb-3">
+          <div class="d-flex flex-wrap column-gap-3 row-gap-1 mb-3">
             <div class="form-check">
               <input class="form-check-input" type="radio" name="deliveryMethod" id="checkout-delivery-entrega"
                 [checked]="deliveryMethod() === 'Entrega'" (change)="deliveryMethod.set('Entrega')">
@@ -163,19 +163,29 @@
 
         @if (paymentUnderConstruction()) {
           <div class="alert alert-warning rounded-4 mb-4">
-            <h6 class="alert-heading"><i class="bi bi-cone-striped me-2"></i>Pagamento on-line em construção</h6>
+            <h6 class="alert-heading"><i class="bi bi-whatsapp me-2"></i>Finalize seu pedido pelo WhatsApp</h6>
             <p class="small mb-2">
-              Ainda estamos finalizando a liberação dos pagamentos on-line. Pra fechar seu pedido agora,
-              fale com a gente pelo WhatsApp — combinamos tudo por lá.
+              Ainda estamos liberando os pagamentos on-line. Toque em <strong>Enviar pedido pelo WhatsApp</strong>: a conversa
+              já abre com o resumo (produtos, bordados, entrega e total) — é só enviar, e combinamos o pagamento por lá.
             </p>
-            <a [href]="whatsappContactUrl" target="_blank" rel="noopener" class="btn btn-success btn-sm rounded-pill" (click)="cart.clear()">
-              <i class="bi bi-whatsapp me-1"></i>Falar no WhatsApp
-            </a>
+            @if (whatsappOrderUrl(); as url) {
+              <div class="small bg-white rounded-3 p-2 mb-2" role="status">
+                <i class="bi bi-check-circle text-success me-1"></i>Abrimos o WhatsApp com o resumo do pedido.
+                A conversa não abriu? <a [href]="url" target="_blank" rel="noopener">Abrir de novo</a>.
+                <span class="d-block mt-1">
+                  Seu carrinho continua salvo. Já enviou?
+                  <button type="button" class="btn btn-link btn-sm p-0 align-baseline" (click)="clearCartAfterWhatsapp()">Esvaziar carrinho</button>
+                </span>
+              </div>
+            }
+            <button type="button" class="btn btn-success btn-sm rounded-pill" (click)="sendOrderViaWhatsapp()">
+              <i class="bi bi-whatsapp me-1"></i>Enviar pedido pelo WhatsApp
+            </button>
           </div>
         } @else {
         <div class="stat-card mb-4">
           <h5 class="mb-3"><i class="bi bi-credit-card me-2"></i>Meio de pagamento</h5>
-          <div class="d-flex gap-3 mb-3">
+          <div class="d-flex flex-wrap column-gap-3 row-gap-1 mb-3">
             <div class="form-check">
               <input class="form-check-input" type="radio" name="paymentMethod" id="checkout-payment-pix"
                 [checked]="paymentMethod() === 'PIX'" (change)="paymentMethod.set('PIX')">
@@ -253,8 +263,10 @@
             <label for="checkout-recipientName" class="form-label small fw-semibold mt-2">Nome de quem vai receber (opcional)</label>
             <input type="text" id="checkout-recipientName" class="form-control mb-2" formControlName="recipientName"
               placeholder="Se for diferente do seu nome">
-            <textarea class="form-control" rows="3" formControlName="giftMessage" maxlength="300"
+            <label for="checkout-giftMessage" class="form-label small fw-semibold">Recado</label>
+            <textarea id="checkout-giftMessage" class="form-control" rows="3" formControlName="giftMessage" maxlength="300"
               placeholder="Escreva o recado que vai junto com a peça — a gente inclui um cartãozinho na embalagem."></textarea>
+            <div class="form-text text-end">{{ form.controls.giftMessage.value.length }}/300</div>
           }
         </div>
       </div>
@@ -299,7 +311,7 @@
                 </button>
               </div>
               @if (couponError()) {
-                <div class="small text-danger mt-1">{{ couponError() }}</div>
+                <div class="small text-danger mt-1" role="alert">{{ couponError() }}</div>
               }
             }
           </div>
@@ -336,13 +348,13 @@
           </div>
 
           @if (errorMessage()) {
-            <div class="alert alert-danger small rounded-4">{{ errorMessage() }}</div>
+            <div class="alert alert-danger small rounded-4" role="alert">{{ errorMessage() }}</div>
           }
 
           @if (paymentUnderConstruction()) {
-            <a [href]="whatsappContactUrl" target="_blank" rel="noopener" class="btn btn-success btn-lg w-100 rounded-pill" (click)="cart.clear()">
-              <i class="bi bi-whatsapp me-1"></i>Falar no WhatsApp
-            </a>
+            <button type="button" class="btn btn-success btn-lg w-100 rounded-pill" (click)="sendOrderViaWhatsapp()">
+              <i class="bi bi-whatsapp me-1"></i>Enviar pedido pelo WhatsApp
+            </button>
           } @else {
             <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill" [disabled]="submitting()">
               @if (submitting()) {

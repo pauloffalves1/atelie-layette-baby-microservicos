@@ -301,3 +301,7 @@ substituição daquele relato.
   meia estrela e atalho para avaliações, categoria clicável, preço promocional nos relacionados,
   contador do comentário, mensagens de erro reais no rastreio; sem regra de negócio nova, ver
   README → Status.
+- Pedido pelo WhatsApp sem perder o carrinho (2026-09-14) — mensagem pré-preenchida com o resumo do
+  pedido (`whatsapp-order-message.ts` + spec), carrinho mantido com opção de esvaziar, botão
+  flutuante oculto com o modal aberto, trava de clique duplo no cartão durante o 3DS; sem regra de
+  negócio nova, ver README → Status.

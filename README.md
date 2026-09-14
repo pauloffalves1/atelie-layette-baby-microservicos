@@ -1013,6 +1013,20 @@ contra o Gateway via `docker run --network host`).
       a mesma foto depois de removê-la volta a funcionar. *Rastrear pedido:* queda de conexão ou limite
       de tentativas não diz mais "Pedido não encontrado" para um número correto, e quem está logada
       ganha um atalho para "Minhas encomendas".
+- [x] **Pedido pelo WhatsApp sem perder o carrinho** (2026-09-14) — enquanto o PagBank segue em
+      sandbox (o estado atual de produção), todo pedido termina em "Pagamento on-line em construção".
+      **Bug:** o botão "Falar no WhatsApp" abria uma conversa vazia e, no mesmo toque, **esvaziava o
+      carrinho** — a cliente perdia produtos, bordados e cores escolhidos e precisava redigitar tudo, e
+      o ateliê recebia só um "oi". Agora "Enviar pedido pelo WhatsApp" abre a conversa já com o resumo
+      (`buildWhatsappOrderMessage`: itens com quantidade, bordado e cor da linha, subtotal, cupom,
+      endereço ou retirada, frete estimado — ou "frete a calcular" sem CEP —, total, dados de contato,
+      presente e observações), o carrinho continua salvo, aparece um link "Abrir de novo" caso o app não
+      abra e um "Esvaziar carrinho" (com confirmação) para depois do envio — no modal de checkout e na
+      página `/checkout`. O botão flutuante do WhatsApp cobria o botão principal do modal no celular
+      e agora some enquanto o modal está aberto. Pagamento com cartão: um segundo toque em "Confirmar
+      pedido" durante a etapa de 3DS do PagBank iniciava outro pedido (o botão só travava depois) —
+      agora trava na hora. Opções de entrega/pagamento quebram linha no celular, recado do presente
+      com rótulo e contador na página `/checkout`, erros com `role="alert"`.
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
       nos manifests; falta aplicar num cluster ativo e uma license key real. **Não avancei aqui** —
       exige um cluster de verdade e uma license key real da New Relic, que eu não tenho como
