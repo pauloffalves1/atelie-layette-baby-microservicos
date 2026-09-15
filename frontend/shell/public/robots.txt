@@ -13,4 +13,4 @@ Disallow: /carrinho
 Disallow: /pedido/
 Disallow: /pagamento-simulado/
 
-Sitemap: https://layettebaby.com.br/api/sitemap.xml
+Sitemap: https://layettebaby.com.br/sitemap.xml

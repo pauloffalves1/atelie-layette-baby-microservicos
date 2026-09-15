@@ -23,6 +23,15 @@ Cron (root): `15 */6 * * * /var/www/atelie-layette-baby-microservicos/ops/seo/pr
         return 301 https://layettebaby.com.br$request_uri;
     }
 
+    # Conventional sitemap address (what Search Console and Bing try by default) serves the real
+    # sitemap instead of falling through to the SPA index.html ("Sitemap is HTML" in Search Console).
+    location = /sitemap.xml {
+        proxy_pass http://127.0.0.1:5100/api/sitemap.xml;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
     # Uploaded photos have unique (GUID) names and are never overwritten in place.
     location ^~ /api/uploads/ {
         proxy_pass http://127.0.0.1:5100/api/uploads/;
@@ -64,5 +73,5 @@ curl -sI https://www.layettebaby.com.br/loja                                    
 ```
 
 Outside the code (owner's Google account): verify the domain in Google Search Console and Bing
-Webmaster Tools, submit `https://layettebaby.com.br/api/sitemap.xml`, and keep the Google Business
+Webmaster Tools, submit `https://layettebaby.com.br/sitemap.xml` (same content as `/api/sitemap.xml`), and keep the Google Business
 Profile up to date — for a local ateliê that profile weighs as much as the site itself.
