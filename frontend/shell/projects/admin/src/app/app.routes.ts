@@ -115,6 +115,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/admins/admin-admin-list').then((m) => m.AdminAdminList),
       },
       {
+        path: 'testes',
+        title: `Testes — ${SITE_NAME}`,
+        loadComponent: () => import('./features/admin/testing/admin-test-orders').then((m) => m.AdminTestOrders),
+      },
+      {
         path: '**',
         title: `Página não encontrada — ${SITE_NAME}`,
         loadComponent: () => import('./features/admin/not-found/admin-not-found').then((m) => m.AdminNotFound),

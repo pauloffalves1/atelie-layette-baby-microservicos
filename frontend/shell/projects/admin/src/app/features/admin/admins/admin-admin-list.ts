@@ -17,6 +17,7 @@ export const PERMISSION_OPTIONS: { value: AdminPermissionName; label: string }[]
   { value: 'SiteContent', label: 'Imagens do site e galeria' },
   { value: 'Dashboard', label: 'Dashboard e auditoria' },
   { value: 'AdminManagement', label: 'Gerenciar administradores' },
+  { value: 'Testing', label: 'Testes (compras de teste em produção)' },
 ];
 
 @Component({

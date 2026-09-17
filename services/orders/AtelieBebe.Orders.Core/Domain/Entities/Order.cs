@@ -51,6 +51,15 @@ public sealed class Order : Entity, IAggregateRoot
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
 
+    /// <summary>
+    /// A purchase made only to exercise the real checkout in production (RF40) — set when any item is
+    /// a test product, before <see cref="Submit"/>. Test orders stay out of every admin listing,
+    /// export and dashboard figure, and don't alert the ateliê; the customer still gets her own
+    /// e-mails, which is the point of testing. Never flips back: what an order was when it was placed
+    /// is what it stays, so a figure can't change retroactively by editing the product later.
+    /// </summary>
+    public bool IsTest { get; private set; }
+
     private readonly List<OrderItem> _items = new();
     public IReadOnlyCollection<OrderItem> Items => _items.AsReadOnly();
 
@@ -109,13 +118,22 @@ public sealed class Order : Entity, IAggregateRoot
         UpdatedAt = DateTime.UtcNow;
     }
 
+    /// <summary>Marks this order as a test purchase. Idempotent, and deliberately one-way — see <see cref="IsTest"/>.</summary>
+    public void MarkAsTest()
+    {
+        if (IsTest) return;
+
+        IsTest = true;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     /// <summary>Confirms the order after all items were added, raising the creation event with the final total.</summary>
     public void Submit()
     {
         if (_items.Count == 0 && Type == OrderType.Loja)
             throw new DomainException("O pedido precisa ter pelo menos um item.");
 
-        AddDomainEvent(new OrderCreatedDomainEvent(Id, CustomerName, CustomerEmail.Value, CustomerPhone!, Total.Amount));
+        AddDomainEvent(new OrderCreatedDomainEvent(Id, CustomerName, CustomerEmail.Value, CustomerPhone!, Total.Amount, IsTest));
     }
 
     /// <summary>Idempotent — a payment confirmed as paid is never downgraded by a later/duplicate notification.</summary>

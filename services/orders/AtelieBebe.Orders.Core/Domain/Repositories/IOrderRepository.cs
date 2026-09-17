@@ -14,6 +14,9 @@ public interface IOrderRepository
 
     /// <summary>Unpaginated — used only for CSV export, never for a UI listing.</summary>
     Task<IReadOnlyList<Order>> ListAllAsync(OrderStatus? status, PaymentStatus? paymentStatus, string? search = null, CancellationToken ct = default);
+
+    /// <summary>The test screen (RF40): exactly the orders <see cref="ListAsync"/> and <see cref="ListAllAsync"/> leave out, newest first.</summary>
+    Task<(IReadOnlyList<Order> Items, int TotalItems)> ListTestAsync(int page, int pageSize, CancellationToken ct = default);
     Task<IReadOnlyList<Order>> ListByCustomerAsync(Guid customerId, CancellationToken ct = default);
 
     /// <summary>Used to gate product reviews to customers who actually bought the product — any order status counts, not just delivered.</summary>

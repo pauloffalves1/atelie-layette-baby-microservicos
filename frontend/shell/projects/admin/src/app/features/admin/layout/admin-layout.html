@@ -95,6 +95,11 @@
           <i class="bi bi-person-badge"></i> Administradores
         </a>
       }
+      @if (auth.hasPermission('Testing')) {
+        <a class="nav-link d-flex align-items-center gap-2" routerLink="/admin/testes" routerLinkActive="active">
+          <i class="bi bi-bug"></i> Testes
+        </a>
+      }
       <a class="nav-link d-flex align-items-center gap-2" routerLink="/admin/seguranca" routerLinkActive="active">
         <i class="bi bi-shield-lock"></i> Segurança
       </a>

@@ -37,4 +37,10 @@ public interface IOrderService
 
     /// <summary>Permanently removes an order — gated to AdminManagement at the endpoint, since deleting order history is irreversible and not a routine order-management action.</summary>
     Task RemoveAsync(Guid orderId, CancellationToken ct = default);
+
+    /// <summary>Test screen (RF40) — the test purchases every other admin listing hides.</summary>
+    Task<PagedResult<OrderDto>> ListTestAsync(int page, int pageSize, CancellationToken ct = default);
+
+    /// <summary>Cleanup from the test screen. Refuses anything that isn't a test order, so it can't double as an unaudited delete for real orders.</summary>
+    Task RemoveTestAsync(Guid orderId, CancellationToken ct = default);
 }

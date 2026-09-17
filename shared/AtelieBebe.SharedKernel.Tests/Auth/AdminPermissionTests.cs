@@ -57,4 +57,19 @@ public class AdminPermissionTests
     {
         Assert.Throws<DomainException>(() => new[] { name }.ParsePermissions());
     }
+
+    /// <summary>RF40: the test screen is never handed out by "grant everything" — the seeded general
+    /// admin included. It has to be ticked on purpose for the account that tests payments.</summary>
+    [Fact]
+    public void All_DoesNotIncludeTesting()
+    {
+        Assert.False(AdminPermission.All.HasFlag(AdminPermission.Testing));
+        Assert.DoesNotContain("Testing", AdminPermission.All.ToPermissionStrings());
+    }
+
+    [Fact]
+    public void ParsePermissions_AcceptsTesting()
+    {
+        Assert.Equal(AdminPermission.Testing, new[] { "Testing" }.ParsePermissions());
+    }
 }

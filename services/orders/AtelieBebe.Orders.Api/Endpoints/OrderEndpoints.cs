@@ -107,6 +107,22 @@ public static class OrderEndpoints
             var fileName = $"encomendas-{BrasiliaTime.FromUtc(DateTime.UtcNow):yyyy-MM-dd}.csv";
             return Results.File(new UTF8Encoding(true).GetBytes(csv), "text/csv", fileName);
         });
+
+        // The one place test purchases (RF40) are visible. Its own permission, not Orders: whoever
+        // manages real encomendas has no reason to see these, and whoever tests payments in
+        // production has no reason to need the rest of the orders panel.
+        var testGroup = app.MapGroup("/api/admin/test-orders").WithTags("Testes (admin)")
+            .RequireAuthorization(JwtAuthenticationExtensions.PermissionPolicyName(AdminPermission.Testing));
+
+        testGroup.MapGet("/", async (IOrderService service, CancellationToken ct, int page = 1, int pageSize = 20) =>
+            Results.Ok(await service.ListTestAsync(page, pageSize, ct)));
+
+        testGroup.MapDelete("/{id:guid}", async (Guid id, HttpContext http, IOrderService service, AdminAuditPublisher auditPublisher, CancellationToken ct) =>
+        {
+            await service.RemoveTestAsync(id, ct);
+            await auditPublisher.PublishAsync(http.User.GetUserId(), http.User.GetName(), "TestOrderRemoved", $"Pedido de teste #{id.ToString()[..8]} removido", ct);
+            return Results.NoContent();
+        });
     }
 
     /// <summary>

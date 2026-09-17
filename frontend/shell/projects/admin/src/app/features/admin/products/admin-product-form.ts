@@ -89,7 +89,11 @@ export class AdminProductForm implements OnInit {
     description: [''],
     featured: [false],
     productionLeadTimeDays: [null as number | null],
+    isTest: [false],
   });
+
+  /** Last saved value of the test-product switch (RF40) — it has its own endpoint, so it's only sent when it actually changed. */
+  private readonly savedIsTest = signal(false);
 
   constructor(
     private readonly productService: ProductService,
@@ -135,7 +139,9 @@ export class AdminProductForm implements OnInit {
           description: product.description ?? '',
           featured: product.featured,
           productionLeadTimeDays: product.productionLeadTimeDays,
+          isTest: product.isTest ?? false,
         });
+        this.savedIsTest.set(product.isTest ?? false);
         this.form.markAsPristine();
         this.selectedCustomerIds.set(product.allowedCustomerIds);
         this.savedCustomerIds.set(product.allowedCustomerIds);
@@ -405,6 +411,7 @@ export class AdminProductForm implements OnInit {
       const requests: Observable<unknown>[] = [this.productService.update(id, payload)];
       if (this.galleryDirty()) requests.push(this.productService.setImages(id, this.galleryImages()));
       if (this.customersDirty()) requests.push(this.productService.setAllowedCustomers(id, this.selectedCustomerIds()));
+      if (value.isTest !== this.savedIsTest()) requests.push(this.productService.setTest(id, value.isTest));
 
       forkJoin(requests).subscribe({ next: () => this.leaveAfterSave(['/admin/produtos']), error: onError });
     } else {

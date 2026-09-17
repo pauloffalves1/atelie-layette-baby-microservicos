@@ -34,7 +34,7 @@ public static class InternalEndpoints
         {
             var orders = await dbContext.Orders
                 .Include(o => o.Items)
-                .Where(o => o.Status != OrderStatus.Cancelado)
+                .Where(o => o.Status != OrderStatus.Cancelado && !o.IsTest)
                 .ToListAsync(ct);
 
             return Results.Ok(OrdersDashboardStatsCalculator.Calculate(orders.Select(DashboardOrderSnapshot.From), DateTime.UtcNow));

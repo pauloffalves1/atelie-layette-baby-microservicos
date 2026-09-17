@@ -63,6 +63,11 @@ export class ProductService {
     return this.http.put<AdminProduct>(`${this.adminUrl}/${id}/images`, { imageUrls });
   }
 
+  /** RF40 — marks/unmarks a product as a test product (only visible to the customers granted access; its orders stay out of the panel). */
+  setTest(id: string, isTest: boolean): Observable<AdminProduct> {
+    return this.http.patch<AdminProduct>(`${this.adminUrl}/${id}/test`, { isTest });
+  }
+
   setPromotion(id: string, request: SetPromotionRequest): Observable<AdminProduct> {
     return this.http.patch<AdminProduct>(`${this.adminUrl}/${id}/promotion`, request);
   }

@@ -50,9 +50,15 @@ public sealed class NotificationsEventConsumer : RabbitMqEventConsumerBase
             {
                 var e = Deserialize<OrderCreatedEvent>(jsonContent);
                 await TrySendEmailAsync(() => emailSender.SendOrderCreatedAsync(e.OrderId, e.CustomerName, e.CustomerEmail, e.TotalAmount, ct), logger);
-                await TrySendEmailAsync(() => emailSender.SendNewOrderAdminAlertAsync(e.OrderId, e.CustomerName, e.TotalAmount, ct), logger);
                 await sender.SendOrderCreatedAsync(e.OrderId, e.CustomerName, e.CustomerPhone, e.TotalAmount, ct);
-                await sender.SendNewOrderAdminAlertAsync(e.OrderId, e.CustomerName, e.TotalAmount, ct);
+
+                // A test purchase (RF40) is a real order for the customer — she gets the same
+                // confirmation — but the ateliê isn't called to produce anything, so no admin alert.
+                if (!e.IsTest)
+                {
+                    await TrySendEmailAsync(() => emailSender.SendNewOrderAdminAlertAsync(e.OrderId, e.CustomerName, e.TotalAmount, ct), logger);
+                    await sender.SendNewOrderAdminAlertAsync(e.OrderId, e.CustomerName, e.TotalAmount, ct);
+                }
                 break;
             }
             case "PasswordResetRequestedDomainEvent":
@@ -145,7 +151,7 @@ public sealed class NotificationsEventConsumer : RabbitMqEventConsumerBase
         }
     }
 
-    private sealed record OrderCreatedEvent(Guid OrderId, string CustomerName, string CustomerEmail, string CustomerPhone, decimal TotalAmount);
+    private sealed record OrderCreatedEvent(Guid OrderId, string CustomerName, string CustomerEmail, string CustomerPhone, decimal TotalAmount, bool IsTest = false);
     private sealed record OrderStatusChangedEvent(Guid OrderId, string CustomerName, string CustomerEmail, string CustomerPhone, string OldStatus, string NewStatus);
     private sealed record CustomerRegisteredEvent(Guid CustomerId, string Name, string Email, string Phone);
     private sealed record ContactMessageReceivedEvent(Guid MessageId, string Name, string Email, string Phone);

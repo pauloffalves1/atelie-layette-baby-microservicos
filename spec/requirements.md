@@ -553,3 +553,38 @@ avisos de status como qualquer pedido do site.
 2. Toda foto enviada DEVE ser gravada em WebP, em tamanho completo (até 1600 px) e reduzido (até 600 px),
    com orientação aplicada e sem metadados; fotos antigas DEVEM ser convertidas mantendo os originais.
 3. Cards, miniaturas e carrinho DEVEM usar a versão reduzida.
+
+---
+
+## Requisito 32: Compras de teste em produção
+
+**User Story:** Como ateliê, quero conseguir fazer compras de verdade na loja em produção — para
+testar pagamento, e-mails e o fluxo inteiro — sem que essas compras apareçam nos números e nas
+listas do administrativo.
+
+**Rastreamento:** RF40
+
+**Acceptance Criteria**
+
+1. Um produto PODE ser marcado como **produto de teste**. ENQUANTO marcado, ele só DEVE ser visível
+   — na listagem da loja, na busca, nos destaques e na própria página do produto — para clientes com
+   acesso exclusivo concedido a ele (RF02); para visitantes anônimos e para qualquer outra cliente
+   ele NÃO DEVE existir, o que também o mantém fora do sitemap e das páginas pré-renderizadas para
+   buscadores. Um produto de teste sem nenhuma concessão de acesso NÃO DEVE aparecer para ninguém.
+2. QUANDO um pedido contém pelo menos um item de um produto de teste, O SISTEMA DEVE marcá-lo como
+   pedido de teste no momento da criação, e essa marca NÃO DEVE mudar depois.
+3. Pedidos de teste NÃO DEVEM aparecer na listagem de encomendas do painel nem na exportação CSV, e
+   NÃO DEVEM entrar em nenhum número do dashboard (faturamento, contagem de pedidos, ticket médio,
+   vendas por dia, produtos mais vendidos, pedidos por status, pagamentos pendentes, itens sinalizados)
+   nem no resumo gerado por IA.
+4. QUANDO um pedido de teste é criado, O SISTEMA DEVE enviar normalmente os avisos para a cliente
+   (e-mail de pedido recebido, confirmação de pagamento) e NÃO DEVE enviar o aviso de nova encomenda
+   para o ateliê.
+5. Avaliações de um produto de teste NÃO DEVEM aparecer na loja nem na listagem de avaliações do painel.
+6. A contagem de clientes do dashboard NÃO DEVE incluir as contas listadas como contas de teste na
+   configuração do servidor.
+7. O painel DEVE ter uma tela de testes que lista exatamente os pedidos de teste, com situação,
+   forma e situação de pagamento, identificador do PagBank e total, e permite excluir um pedido de
+   teste para limpeza.
+8. A tela e os endpoints de teste DEVEM exigir a permissão "Testes" (`AdminPermission.Testing`), que
+   NÃO DEVE ser concedida por padrão a nenhuma administradora.

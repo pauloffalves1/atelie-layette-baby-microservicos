@@ -44,6 +44,8 @@ export interface Order {
   pixQrCodeImageUrl: string | null;
   boletoBarcode: string | null;
   boletoUrl: string | null;
+  /** A purchase of a test product (RF40) — only the admin's test screen lists these. */
+  isTest?: boolean;
 }
 
 export interface CreateOrderItemRequest {

@@ -330,6 +330,30 @@ public sealed class ProductService : IProductService
         }
     }
 
+    public async Task<AdminProductDto> SetTestAsync(Guid id, SetTestProductRequest request, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Entrando em {Method}", nameof(SetTestAsync));
+        try
+        {
+            var product = await _unitOfWork.Products.GetByIdAsync(id, ct)
+                ?? throw new NotFoundException("Produto", id);
+
+            product.SetTest(request.IsTest);
+            await _unitOfWork.SaveChangesAsync(ct);
+            // The storefront caches product listings; a product that just became (or stopped being) a
+            // test product has to leave/re-enter them right away, not on the next cache expiry.
+            _cacheInvalidator.Invalidate();
+
+            _logger.LogInformation("Saindo de {Method}", nameof(SetTestAsync));
+            return ToAdminDto(product);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro em {Method}", nameof(SetTestAsync));
+            throw;
+        }
+    }
+
     public async Task<AdminProductDto> SetImagesAsync(Guid id, SetProductImagesRequest request, CancellationToken ct = default)
     {
         _logger.LogInformation("Entrando em {Method}", nameof(SetImagesAsync));
@@ -400,9 +424,9 @@ public sealed class ProductService : IProductService
 
     private static ProductDto ToDto(Product p) => new(
         p.Id, p.Name, p.Slug, p.Description, p.Price.Amount, p.Category, p.ImageUrl, p.Active, p.Featured, p.IsExclusive, p.ImageUrls,
-        p.DiscountPercentage, p.PromotionStartsAt, p.PromotionEndsAt, p.IsOnPromotion, p.EffectivePrice.Amount, p.ProductionLeadTimeDays, p.UpdatedAt);
+        p.DiscountPercentage, p.PromotionStartsAt, p.PromotionEndsAt, p.IsOnPromotion, p.EffectivePrice.Amount, p.ProductionLeadTimeDays, p.UpdatedAt, p.IsTest);
 
     private static AdminProductDto ToAdminDto(Product p) => new(
         p.Id, p.Name, p.Slug, p.Description, p.Price.Amount, p.Category, p.ImageUrl, p.Active, p.Featured, p.IsExclusive, p.AllowedCustomerIds, p.ImageUrls,
-        p.DiscountPercentage, p.PromotionStartsAt, p.PromotionEndsAt, p.IsOnPromotion, p.EffectivePrice.Amount, p.ProductionLeadTimeDays);
+        p.DiscountPercentage, p.PromotionStartsAt, p.PromotionEndsAt, p.IsOnPromotion, p.EffectivePrice.Amount, p.ProductionLeadTimeDays, p.IsTest);
 }

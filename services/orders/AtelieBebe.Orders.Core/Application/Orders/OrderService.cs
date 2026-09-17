@@ -68,6 +68,11 @@ public sealed class OrderService : IOrderService
                     var product = await _catalogServiceClient.GetProductAsync(productId, ct)
                         ?? throw new NotFoundException("Produto", productId);
 
+                    // One test item is enough to make the whole order a test purchase (RF40) — it is
+                    // decided here, at creation, from what the catalog says the product is right now.
+                    if (product.IsTest)
+                        order.MarkAsTest();
+
                     order.AddItem(product.Id, product.Name, Money.FromReais(product.EffectivePrice), itemRequest.Quantity, itemRequest.OptionsJson, moderationFlag);
                 }
                 else
@@ -511,6 +516,50 @@ public sealed class OrderService : IOrderService
         }
     }
 
+    public async Task<PagedResult<OrderDto>> ListTestAsync(int page, int pageSize, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Entrando em {Method}", nameof(ListTestAsync));
+        try
+        {
+            var (normalizedPage, normalizedPageSize) = Pagination.Normalize(page, pageSize);
+            var (orders, totalItems) = await _unitOfWork.Orders.ListTestAsync(normalizedPage, normalizedPageSize, ct);
+            var result = new PagedResult<OrderDto>(orders.Select(ToDto).ToList(), normalizedPage, normalizedPageSize, totalItems);
+
+            _logger.LogInformation("Saindo de {Method}", nameof(ListTestAsync));
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro em {Method}", nameof(ListTestAsync));
+            throw;
+        }
+    }
+
+    public async Task RemoveTestAsync(Guid orderId, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Entrando em {Method}", nameof(RemoveTestAsync));
+        try
+        {
+            var order = await _unitOfWork.Orders.GetByIdAsync(orderId, ct)
+                ?? throw new NotFoundException("Pedido", orderId);
+
+            // Guards the test screen against being a second, unaudited way to erase a real order:
+            // the Testing permission only ever reaches orders that are actually test purchases.
+            if (!order.IsTest)
+                throw new ConflictException("Este pedido não é um pedido de teste.");
+
+            _unitOfWork.Orders.Remove(order);
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            _logger.LogInformation("Saindo de {Method}", nameof(RemoveTestAsync));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro em {Method}", nameof(RemoveTestAsync));
+            throw;
+        }
+    }
+
     public async Task RemoveAsync(Guid orderId, CancellationToken ct = default)
     {
         _logger.LogInformation("Entrando em {Method}", nameof(RemoveAsync));
@@ -608,7 +657,8 @@ public sealed class OrderService : IOrderService
         o.CouponDiscountAmount.Amount,
         PixQrCodeText: o.PixQrCodeText,
         BoletoBarcode: o.BoletoBarcode,
-        BoletoUrl: o.BoletoUrl);
+        BoletoUrl: o.BoletoUrl,
+        IsTest: o.IsTest);
 
     /// <summary>Deserializes the same shape the storefront's checkout sends as ShippingAddressJson — needed structured (not as raw JSON) for the boleto holder's address PagBank requires. Returns null when absent or malformed, letting the caller decide that's a hard error for BOLETO specifically.</summary>
     private static BoletoAddress? ParseShippingAddress(string? shippingAddressJson)

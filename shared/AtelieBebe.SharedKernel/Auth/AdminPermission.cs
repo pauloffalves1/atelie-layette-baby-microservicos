@@ -23,6 +23,8 @@ public enum AdminPermission : long
     SiteContent = 1L << 7,
     Dashboard = 1L << 8,
     AdminManagement = 1L << 9,
+    /// <summary>Compras de teste em produção — a tela que lista os pedidos gerados por produtos de teste. Não faz parte de <see cref="All"/>: é concedida explicitamente a quem testa pagamentos, e nem a administradora geral a recebe por padrão.</summary>
+    Testing = 1L << 10,
 
     All = Products | Orders | Coupons | Reviews | ContactMessages | Newsletter | Customers | SiteContent | Dashboard | AdminManagement,
 }

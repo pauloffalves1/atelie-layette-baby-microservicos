@@ -9,7 +9,8 @@ export type AdminPermissionName =
   | 'Customers'
   | 'SiteContent'
   | 'Dashboard'
-  | 'AdminManagement';
+  | 'AdminManagement'
+  | 'Testing';
 
 export interface AuthResponse {
   token: string;

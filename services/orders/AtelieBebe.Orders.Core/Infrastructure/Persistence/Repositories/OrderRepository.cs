@@ -41,9 +41,23 @@ public sealed class OrderRepository : IOrderRepository
     public async Task<IReadOnlyList<Order>> ListAllAsync(OrderStatus? status, PaymentStatus? paymentStatus, string? search = null, CancellationToken ct = default) =>
         await FilteredQuery(status, paymentStatus, search).ToListAsync(ct);
 
+    public async Task<(IReadOnlyList<Order> Items, int TotalItems)> ListTestAsync(int page, int pageSize, CancellationToken ct = default)
+    {
+        var query = _dbContext.Orders.Include(o => o.Items)
+            .Where(o => o.IsTest)
+            .OrderByDescending(o => o.CreatedAt);
+
+        var totalItems = await query.CountAsync(ct);
+        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+
+        return (items, totalItems);
+    }
+
     private IQueryable<Order> FilteredQuery(OrderStatus? status, PaymentStatus? paymentStatus, string? search)
     {
-        var query = _dbContext.Orders.Include(o => o.Items).AsQueryable();
+        // Test purchases (RF40) never appear in an admin listing or in the CSV export — the one place
+        // that lists them is ListTestAsync, behind the Testing permission.
+        var query = _dbContext.Orders.Include(o => o.Items).Where(o => !o.IsTest);
 
         if (status is not null)
             query = query.Where(o => o.Status == status);

@@ -19,6 +19,9 @@ public interface IProductService
     Task DeleteAsync(Guid id, CancellationToken ct = default);
     Task<AdminProductDto> SetAllowedCustomersAsync(Guid id, SetAllowedCustomersRequest request, CancellationToken ct = default);
     Task<AdminProductDto> SetImagesAsync(Guid id, SetProductImagesRequest request, CancellationToken ct = default);
+
+    /// <summary>Marks/unmarks a product as a test product (RF40) — see <see cref="Domain.Entities.Product.IsTest"/>.</summary>
+    Task<AdminProductDto> SetTestAsync(Guid id, SetTestProductRequest request, CancellationToken ct = default);
     Task<AdminProductDto> SetPromotionAsync(Guid id, SetPromotionRequest request, CancellationToken ct = default);
 
     /// <summary>Applies the same discount/window to every product in the list at once — bulk promotion setup.</summary>

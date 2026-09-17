@@ -113,8 +113,11 @@ public sealed class ProductRepository : IProductRepository
     {
         var access = _dbContext.Set<ProductCustomerAccessEntry>();
 
+        // A test product (RF40) is never "public by absence of grants": it is visible only to the
+        // customers explicitly granted access, so forgetting to grant access hides it from everyone
+        // instead of exposing it to the whole store.
         return query.Where(p =>
-            !access.Any(a => EF.Property<Guid>(a, "ProductId") == p.Id) ||
+            (!p.IsTest && !access.Any(a => EF.Property<Guid>(a, "ProductId") == p.Id)) ||
             (customerId != null && access.Any(a => EF.Property<Guid>(a, "ProductId") == p.Id && a.CustomerId == customerId)));
     }
 }

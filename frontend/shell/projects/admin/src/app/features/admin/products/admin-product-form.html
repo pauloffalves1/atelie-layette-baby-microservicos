@@ -64,6 +64,19 @@
                 <label class="form-check-label small fw-semibold" for="featured">Produto em destaque</label>
               </div>
             </div>
+            @if (isEditMode()) {
+              <div class="col-12">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" role="switch" id="isTest" formControlName="isTest">
+                  <label class="form-check-label small fw-semibold" for="isTest">Produto de teste</label>
+                </div>
+                <p class="form-text mb-0">
+                  Fica fora da loja, da busca, dos destaques e do Google: só quem estiver na lista de
+                  acesso exclusivo abaixo consegue ver e comprar. As compras dele não entram nas
+                  encomendas nem no dashboard — aparecem só na tela "Testes".
+                </p>
+              </div>
+            }
             <div class="col-12">
               <label for="product-imageUrl" class="form-label small fw-semibold">URL da imagem</label>
               <div class="d-flex gap-2">

@@ -86,6 +86,17 @@ public static class ProductEndpoints
         adminGroup.MapPut("/{id:guid}/images", async (Guid id, SetProductImagesRequest request, IProductService service, CancellationToken ct) =>
             Results.Ok(await service.SetImagesAsync(id, request, ct)));
 
+        // Audited like the other "who can see this product" changes: turning a product into a test
+        // product takes it out of the store and takes every order for it out of the admin's figures,
+        // so it should be traceable to whoever flipped it.
+        adminGroup.MapPatch("/{id:guid}/test", async (Guid id, SetTestProductRequest request, HttpContext http, IProductService service, AdminAuditPublisher auditPublisher, CancellationToken ct) =>
+        {
+            var updated = await service.SetTestAsync(id, request, ct);
+            var state = request.IsTest ? "marcado como produto de teste" : "deixou de ser produto de teste";
+            await auditPublisher.PublishAsync(http.User.GetUserId(), http.User.GetName(), "ProductTestChanged", $"Produto '{updated.Name}' {state}", ct);
+            return Results.Ok(updated);
+        });
+
         adminGroup.MapPatch("/{id:guid}/promotion", async (Guid id, SetPromotionRequest request, HttpContext http, IProductService service, AdminAuditPublisher auditPublisher, CancellationToken ct) =>
         {
             var before = await service.GetByIdAsync(id, ct);

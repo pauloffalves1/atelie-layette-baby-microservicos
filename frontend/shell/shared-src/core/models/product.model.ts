@@ -16,6 +16,8 @@ export interface Product {
   isOnPromotion: boolean;
   effectivePrice: number;
   productionLeadTimeDays: number | null;
+  /** RF40 — a product that only exists to exercise the real checkout: out of the store, the search and the sitemap, visible only to the customers it was granted to. */
+  isTest?: boolean;
 }
 
 export interface AdminProduct extends Product {

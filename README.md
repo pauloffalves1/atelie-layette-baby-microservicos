@@ -356,6 +356,11 @@ aceite em EARS por requisito, mesmo padrão usado no `spec/` do monólito) vive 
   site gera no WhatsApp pode ser colado para preencher o formulário.
 - **RF39** — A auditoria do painel deve poder ser filtrada por administradora, ação, período (dias de
   Brasília) e texto dos detalhes.
+- **RF40** — O sistema deve permitir compras de teste em produção: um produto pode ser marcado como
+  produto de teste (invisível na loja, na busca, nos destaques e para buscadores, acessível só a
+  quem tem acesso exclusivo), todo pedido que contenha um item desse produto é marcado como pedido
+  de teste e fica fora da listagem de encomendas, do CSV, do dashboard e do aviso de nova encomenda
+  para o ateliê — aparecendo apenas numa tela de testes protegida pela permissão "Testes".
 
 ### Não funcionais
 
@@ -430,12 +435,16 @@ Desde 2026-09, `AdminOnly` sozinho não basta mais pra distinguir o que cada adm
 fazer — pode existir mais de uma conta administrativa, cada uma com um subconjunto de áreas
 liberadas. `AtelieBebe.SharedKernel.Auth.AdminPermission` é um `[Flags] enum` (Products, Orders,
 Coupons, Reviews, ContactMessages, Newsletter, Customers, SiteContent, Dashboard,
-**AdminManagement**) — cada serviço registra uma policy por flag (`"Admin.Products"`,
+**AdminManagement**, Testing) — cada serviço registra uma policy por flag (`"Admin.Products"`,
 `"Admin.Orders"`, ...) em `JwtAuthenticationExtensions`, e cada grupo de endpoints admin troca
 `RequireAuthorization("AdminOnly")` pela policy da sua área. Identity emite uma claim `permission`
 por flag concedida — o token carrega a lista, nenhum serviço precisa consultar Identity de volta pra
 saber o que aquele admin pode fazer.
 
+- **`Testing`** (RF40) é a única flag fora de `AdminPermission.All`: nem a administradora seedada a
+  recebe. Ela libera só a tela "Testes" (`/api/admin/test-orders`), que lista as compras feitas com
+  um produto de teste — quem cuida das encomendas de verdade não precisa vê-las, e quem testa
+  pagamento em produção não precisa do resto do painel.
 - **`AdminManagement`** é só mais uma flag — quem a possui pode cadastrar novas administradoras
   (`POST /api/admin/admins`) e editar a permissão de qualquer uma, inclusive a própria. Trocar a
   própria senha e ativar/desativar 2FA continuam self-service, sem exigir `AdminManagement`.
@@ -1102,6 +1111,21 @@ contra o Gateway via `docker run --network host`).
       false` e, com isso, o checkout deixou de exibir o aviso de "em construção" e passou a cobrar de
       verdade (RF26): cartão com 3DS (`environment: PROD`), PIX e boleto. O caminho de fechar o
       pedido pelo WhatsApp continua disponível para quem preferir combinar direto com o ateliê.
+
+- [x] **Compras de teste em produção (RF40)** (2026-09-17) — com o PagBank ligado de verdade, testar
+      pagamento passou a significar gerar pedido real no meio dos dados do ateliê. Agora um produto
+      pode ser marcado como **produto de teste** no cadastro: ele sai da loja, da busca, dos
+      destaques, do sitemap e das páginas pré-renderizadas, e só abre para quem estiver no acesso
+      exclusivo dele (`Product.IsTest`, `ApplyVisibility`/`HasAccess` — sem concessão, não aparece
+      para ninguém). Todo pedido com um item desse produto nasce marcado (`Order.IsTest`, decidido
+      na criação e nunca revertido) e fica fora da listagem de encomendas, do CSV e de **todos** os
+      números do dashboard; o aviso de nova encomenda para o ateliê não sai (o evento
+      `OrderCreatedDomainEvent` leva a marca), mas os e-mails da cliente saem normalmente — é o que
+      se quer testar. Avaliações de produto de teste não aparecem na loja nem na moderação, e a
+      contagem de clientes ignora as contas listadas em `TESTING_ACCOUNT_EMAILS`. A tela "Testes"
+      (lista as compras de teste, com identificador do PagBank, e permite excluí-las) exige a nova
+      permissão `Testing`, que não faz parte de `AdminPermission.All` — precisa ser concedida na
+      mão em Administradoras.
 
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
       nos manifests; falta aplicar num cluster ativo e uma license key real. **Não avancei aqui** —

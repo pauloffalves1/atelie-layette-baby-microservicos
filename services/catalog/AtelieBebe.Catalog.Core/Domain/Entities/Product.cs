@@ -15,6 +15,13 @@ public sealed class Product : Entity, IAggregateRoot
     public string? ImageUrl { get; private set; }
     public bool Active { get; private set; }
     public bool Featured { get; private set; }
+    /// <summary>
+    /// Marks a product that only exists to exercise the real checkout in production (RF40): it never
+    /// shows up in the store listing, search, featured row, sitemap or the crawler snapshots, and its
+    /// page only opens for a customer explicitly granted access (see <see cref="AllowedCustomerIds"/>).
+    /// Every order containing one is flagged as a test order and stays out of the admin's lists and figures.
+    /// </summary>
+    public bool IsTest { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
 
@@ -99,6 +106,13 @@ public sealed class Product : Entity, IAggregateRoot
         UpdatedAt = DateTime.UtcNow;
     }
 
+    /// <summary>Turns the test-product marker on or off — deliberately separate from <see cref="UpdateDetails"/>, since it changes who can see the product rather than what it is.</summary>
+    public void SetTest(bool isTest)
+    {
+        IsTest = isTest;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public void SetActive(bool active)
     {
         if (active && !Active)
@@ -116,9 +130,9 @@ public sealed class Product : Entity, IAggregateRoot
         UpdatedAt = DateTime.UtcNow;
     }
 
-    /// <summary>Public products are visible to everyone; exclusive products only to their allowed customers.</summary>
+    /// <summary>Public products are visible to everyone; exclusive products — and test products, granted or not — only to their allowed customers.</summary>
     public bool HasAccess(Guid? customerId) =>
-        !IsExclusive || (customerId is { } id && _allowedCustomerAccess.Any(e => e.CustomerId == id));
+        (!IsExclusive && !IsTest) || (customerId is { } id && _allowedCustomerAccess.Any(e => e.CustomerId == id));
 
     /// <summary>Sets or clears a time-boxed promotional discount. Pass all three as null to clear an existing promotion.</summary>
     public void SetPromotion(decimal? discountPercentage, DateTime? startsAt, DateTime? endsAt)

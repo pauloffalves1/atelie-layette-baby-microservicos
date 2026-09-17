@@ -40,7 +40,9 @@ public sealed record OrderDto(
     string? PixQrCodeText = null,
     string? PixQrCodeImageUrl = null,
     string? BoletoBarcode = null,
-    string? BoletoUrl = null);
+    string? BoletoUrl = null,
+    /// <summary>A test purchase (RF40) — shown only on the test screen, which is the only listing that returns these.</summary>
+    bool IsTest = false);
 
 public sealed record CreateOrderItemRequest(Guid? ProductId, string ProductName, decimal UnitPrice, int Quantity, string? OptionsJson);
 

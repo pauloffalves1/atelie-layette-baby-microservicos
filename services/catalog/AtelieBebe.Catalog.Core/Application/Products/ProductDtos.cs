@@ -18,7 +18,8 @@ public sealed record ProductDto(
     bool IsOnPromotion,
     decimal EffectivePrice,
     int? ProductionLeadTimeDays,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    bool IsTest = false);
 
 public sealed record AdminProductDto(
     Guid Id,
@@ -38,9 +39,13 @@ public sealed record AdminProductDto(
     DateTime? PromotionEndsAt,
     bool IsOnPromotion,
     decimal EffectivePrice,
-    int? ProductionLeadTimeDays);
+    int? ProductionLeadTimeDays,
+    bool IsTest = false);
 
 public sealed record SetPromotionRequest(decimal? DiscountPercentage, DateTime? StartsAt, DateTime? EndsAt);
+
+/// <summary>Flips the test-product marker (RF40) — a product only the customers granted access can see, whose orders stay out of the admin's lists and figures.</summary>
+public sealed record SetTestProductRequest(bool IsTest);
 
 public sealed record BulkApplyPromotionRequest(IReadOnlyCollection<Guid> ProductIds, decimal? DiscountPercentage, DateTime? StartsAt, DateTime? EndsAt);
 

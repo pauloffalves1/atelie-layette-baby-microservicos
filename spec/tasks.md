@@ -326,3 +326,16 @@ substituição daquele relato.
     busca de cliente e colar resumo (`whatsapp-order-parser.ts` + spec).
   - [x] Filtros da auditoria (`AuditLogFilter` + testes, rota do Gateway para subcaminhos).
   - [x] Favoritar nos cards da loja, resumo do endereço salvo no checkout, carrossel de destaques na home.
+
+## Requisito 32 — Compras de teste em produção (RF40)
+
+- [x] `AdminPermission.Testing` + política; rótulo na tela de administradoras.
+- [x] Catalog: `Product.IsTest` (migração, DTO, formulário do painel), invisível na loja/sitemap/
+      pré-render e só acessível por slug para quem tem acesso exclusivo; avaliações de produto de
+      teste fora da loja e do painel.
+- [x] Orders: `Order.IsTest` marcado na criação quando algum item é produto de teste (migração);
+      fora da listagem/CSV do painel e do `/internal/orders/dashboard-stats`.
+- [x] Notificações: `OrderCreatedDomainEvent` leva `IsTest`; aviso de nova encomenda para o ateliê
+      não sai para pedido de teste (e-mails da cliente continuam).
+- [x] Identity: contagem de clientes ignora `Testing:AccountEmails`.
+- [x] Tela "Testes" no painel (lista + exclusão) e rota do Gateway.

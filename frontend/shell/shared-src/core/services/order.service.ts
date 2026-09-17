@@ -9,6 +9,7 @@ import { PagedResult } from '../models/pagination.model';
 export class OrderService {
   private readonly baseUrl = `${environment.apiUrl}/orders`;
   private readonly adminUrl = `${environment.apiUrl}/admin/orders`;
+  private readonly testAdminUrl = `${environment.apiUrl}/admin/test-orders`;
 
   constructor(private readonly http: HttpClient) {}
 
@@ -67,6 +68,18 @@ export class OrderService {
   /** Permanent deletion — backend restricts this to AdminManagement regardless of what the caller sends. */
   remove(id: string): Observable<void> {
     return this.http.delete<void>(`${this.adminUrl}/${id}`);
+  }
+
+  /** Test screen (RF40) — the test purchases every other admin listing leaves out. Requires the Testing permission. */
+  listTest(page = 1, pageSize = 20): Observable<PagedResult<Order>> {
+    return this.http.get<PagedResult<Order>>(this.testAdminUrl, {
+      params: { page: String(page), pageSize: String(pageSize) },
+    });
+  }
+
+  /** Cleanup from the test screen — the backend refuses anything that isn't a test order. */
+  removeTest(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.testAdminUrl}/${id}`);
   }
 
   /** True while PagBank still only has a sandbox token — checkout shows an "em construção" notice instead of a real payment form while this is true. */

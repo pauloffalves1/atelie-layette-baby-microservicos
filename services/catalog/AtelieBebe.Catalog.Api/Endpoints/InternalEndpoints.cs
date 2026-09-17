@@ -21,7 +21,9 @@ public static class InternalEndpoints
         app.MapGet("/internal/products/{id:guid}", async (Guid id, IProductService service, CancellationToken ct) =>
         {
             var product = await service.GetByIdAsync(id, ct);
-            return Results.Ok(new { product.Id, product.Name, product.Slug, product.EffectivePrice, product.Active });
+            // IsTest travels with the product so Orders can flag the order at creation (RF40) without
+            // a second round trip or a copy of the rule.
+            return Results.Ok(new { product.Id, product.Name, product.Slug, product.EffectivePrice, product.Active, product.IsTest });
         });
 
         // Backoffice dashboard's "TotalProducts" figure (API composition).
