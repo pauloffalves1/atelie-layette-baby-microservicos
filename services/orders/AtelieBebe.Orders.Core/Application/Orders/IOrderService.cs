@@ -6,6 +6,9 @@ public interface IOrderService
 {
     Task<OrderDto> CreateStoreOrderAsync(CreateStoreOrderRequest request, Guid? customerId, CancellationToken ct = default);
     Task<OrderDto> CreateCustomOrderAsync(CreateCustomOrderRequest request, Guid? customerId, CancellationToken ct = default);
+
+    /// <summary>Admin registration of an order agreed outside the site (see <see cref="CreateManualOrderRequest"/>).</summary>
+    Task<OrderDto> CreateManualOrderAsync(CreateManualOrderRequest request, CancellationToken ct = default);
     Task<PagedResult<OrderDto>> ListAsync(string? status, string? paymentStatus, int page, int pageSize, string? search = null, CancellationToken ct = default);
 
     /// <summary>Every order matching the filters, unpaginated — backs the admin CSV export.</summary>

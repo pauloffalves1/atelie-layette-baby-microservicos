@@ -54,6 +54,24 @@ export interface CreateOrderItemRequest {
   optionsJson: string | null;
 }
 
+/** Order agreed outside the site (WhatsApp, in person) and typed in the admin panel — prices as agreed. */
+export interface CreateManualOrderRequest {
+  customerId: string | null;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  customerCpf: string;
+  deliveryMethod: 'Entrega' | 'Retirada';
+  shippingAddressJson: string | null;
+  shippingCost: number;
+  items: { productId: string | null; productName: string; unitPrice: number; quantity: number; optionsJson: string | null }[];
+  paymentReceived: boolean;
+  notifyCustomer: boolean;
+  notes: string | null;
+  giftMessage: string | null;
+  recipientName: string | null;
+}
+
 export type PaymentMethod = 'CREDIT_CARD' | 'PIX' | 'BOLETO';
 export type DeliveryMethod = 'Entrega' | 'Retirada';
 

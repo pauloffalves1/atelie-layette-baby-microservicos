@@ -53,6 +53,17 @@ public static class OrderEndpoints
         adminGroup.MapGet("/", async (string? status, string? paymentStatus, string? search, IOrderService service, CancellationToken ct, int page = 1, int pageSize = 20) =>
             Results.Ok(await service.ListAsync(status, paymentStatus, page, pageSize, search, ct)));
 
+        // Orders closed on WhatsApp (while on-line payment is off) or in person, typed in by the admin
+        // so they show up in the dashboard, the orders list and the customer's tracking.
+        adminGroup.MapPost("/", async (CreateManualOrderRequest request, HttpContext http, IOrderService service, AdminAuditPublisher auditPublisher, CancellationToken ct) =>
+        {
+            var created = await service.CreateManualOrderAsync(request, ct);
+            var paid = created.PaymentStatus == "Pago" ? "pago" : "pagamento pendente";
+            await auditPublisher.PublishAsync(http.User.GetUserId(), http.User.GetName(), "OrderCreatedManually",
+                $"Pedido #{created.Id.ToString()[..8]} ({created.CustomerName}) registrado no painel — {created.Total.ToString("C", CultureInfo.GetCultureInfo("pt-BR"))}, {paid}", ct);
+            return Results.Ok(created);
+        });
+
         adminGroup.MapPatch("/{id:guid}/status", async (Guid id, UpdateOrderStatusRequest request, HttpContext http, IOrderService service, AdminAuditPublisher auditPublisher, CancellationToken ct) =>
         {
             var before = await service.GetByIdAsync(id, ct);

@@ -33,13 +33,13 @@ public sealed class AuditLogService : IAuditLogService
         }
     }
 
-    public async Task<PagedResult<AuditLogDto>> ListAsync(int page, int pageSize, CancellationToken ct = default)
+    public async Task<PagedResult<AuditLogDto>> ListAsync(int page, int pageSize, AuditLogFilter? filter = null, CancellationToken ct = default)
     {
         _logger.LogInformation("Entrando em {Method}", nameof(ListAsync));
         try
         {
             var (normalizedPage, normalizedPageSize) = Pagination.Normalize(page, pageSize);
-            var (items, totalItems) = await _unitOfWork.AuditLogs.ListAsync(normalizedPage, normalizedPageSize, ct);
+            var (items, totalItems) = await _unitOfWork.AuditLogs.ListAsync(normalizedPage, normalizedPageSize, filter ?? AuditLogFilter.None, ct);
 
             var result = new PagedResult<AuditLogDto>(
                 items.Select(a => new AuditLogDto(a.Id, a.AdminName, a.Action, a.Details, a.CreatedAt)).ToList(),
@@ -51,6 +51,22 @@ public sealed class AuditLogService : IAuditLogService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro em {Method}", nameof(ListAsync));
+            throw;
+        }
+    }
+
+    public async Task<AuditLogFilterOptionsDto> GetFilterOptionsAsync(CancellationToken ct = default)
+    {
+        _logger.LogInformation("Entrando em {Method}", nameof(GetFilterOptionsAsync));
+        try
+        {
+            var (admins, actions) = await _unitOfWork.AuditLogs.ListFilterOptionsAsync(ct);
+            _logger.LogInformation("Saindo de {Method}", nameof(GetFilterOptionsAsync));
+            return new AuditLogFilterOptionsDto(admins, actions);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro em {Method}", nameof(GetFilterOptionsAsync));
             throw;
         }
     }

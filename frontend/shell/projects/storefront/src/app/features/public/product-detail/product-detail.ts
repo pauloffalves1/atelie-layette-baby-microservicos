@@ -17,6 +17,7 @@ import { resolveAssetUrl } from '@shared/core/utils/asset-url';
 import { ImageLightbox } from '@shared/shared/components/image-lightbox/image-lightbox';
 import { LoadError } from '@shared/shared/components/load-error/load-error';
 import { AssetUrlPipe } from '@shared/shared/pipes/asset-url.pipe';
+import { THREAD_COLORS, THREAD_COLOR_SWATCHES } from '@shared/core/constants/thread-colors';
 
 const MAX_EMBROIDERY_LENGTH = 30;
 
@@ -29,41 +30,7 @@ const DEFAULT_PRODUCTION_LEAD_TIME_DAYS = 7;
 /** Thread colors too pale to read against the preview's light fabric background without an outline. */
 const LIGHT_THREAD_COLORS = new Set(['Branco', 'Bege', 'Rosa Bebê', 'Amarelo']);
 
-/** Standard embroidery thread color palette offered on every product. */
-export const THREAD_COLORS = [
-  'Branco',
-  'Preto',
-  'Rosa',
-  'Rosa Bebê',
-  'Azul',
-  'Azul Bebê',
-  'Amarelo',
-  'Verde',
-  'Vermelho',
-  'Lilás',
-  'Cinza',
-  'Marrom',
-  'Bege',
-  'Vinho',
-];
-
-/** Swatch hex per thread color, for the visual dot on each selection button. */
-export const THREAD_COLOR_SWATCHES: Record<string, string> = {
-  Branco: '#FFFFFF',
-  Preto: '#111111',
-  Rosa: '#EC4899',
-  'Rosa Bebê': '#F9C6D7',
-  Azul: '#1D4ED8',
-  'Azul Bebê': '#A9C6E8',
-  Amarelo: '#F5C518',
-  Verde: '#2F9E44',
-  Vermelho: '#D62828',
-  Lilás: '#B49FCC',
-  Cinza: '#9CA3AF',
-  Marrom: '#7B4B2A',
-  Bege: '#E3D2B4',
-  Vinho: '#722036',
-};
+export { THREAD_COLORS, THREAD_COLOR_SWATCHES };
 
 @Component({
   selector: 'app-product-detail',

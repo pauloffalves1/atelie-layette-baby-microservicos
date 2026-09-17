@@ -1,8 +1,6 @@
 using AtelieBebe.Catalog.Core.Application.Abstractions;
 using Microsoft.Extensions.Configuration;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats.Jpeg;
-using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.Processing;
 
@@ -12,16 +10,17 @@ namespace AtelieBebe.Catalog.Core.Infrastructure.Storage;
 /// Saves uploaded files to a local folder outside the app's publish output, so they survive a
 /// redeploy (`dotnet publish` replaces the publish directory wholesale on every deploy).
 /// Served back via app.UseStaticFiles under the same "Uploads:PublicPath" prefix (Program.cs).
-/// Every caller of this service uploads an image (products/gallery/site photos, validated
-/// upstream by ImageUploadValidator), so SaveAsync always decodes and re-encodes through
-/// ImageSharp — downscaling anything above MaxDimension and re-compressing — instead of writing
-/// the raw bytes straight to disk.
+/// Every caller uploads a photo (products/gallery/site/reviews, validated upstream by
+/// ImageUploadValidator), so each one is decoded and written as WebP in two sizes
+/// (<see cref="ImageVariants"/>): the full image, at most <see cref="MaxDimension"/> px, and a
+/// "-sm" copy for cards and thumbnails. It used to keep the uploaded format, so a PNG photo went out
+/// at 1.7 MB and every card downloaded the 1600 px original.
 /// </summary>
 public sealed class LocalFileStorageService : IFileStorageService
 {
-    private const int MaxDimension = 1600;
-    private const int JpegQuality = 82;
-    private const int WebpQuality = 82;
+    public const int MaxDimension = 1600;
+    public const int SmallDimension = 600;
+    private const int WebpQuality = 80;
 
     private readonly string _rootPath;
     private readonly string _publicBasePath;
@@ -37,42 +36,84 @@ public sealed class LocalFileStorageService : IFileStorageService
         var folderPath = Path.Combine(_rootPath, folder);
         Directory.CreateDirectory(folderPath);
 
-        var filePath = Path.Combine(folderPath, fileName);
-
+        var baseName = Path.GetFileNameWithoutExtension(fileName);
         using var image = await Image.LoadAsync(content, ct);
-        if (image.Width > MaxDimension || image.Height > MaxDimension)
-        {
-            image.Mutate(x => x.Resize(new ResizeOptions
-            {
-                Mode = ResizeMode.Max,
-                Size = new Size(MaxDimension, MaxDimension),
-            }));
-        }
+        await WriteVariantsAsync(image, Path.Combine(folderPath, baseName), ct);
 
-        await image.SaveAsync(filePath, GetEncoder(fileName), ct);
-
-        return $"{_publicBasePath}/{folder}/{fileName}";
+        return $"{_publicBasePath}/{folder}/{baseName}{ImageVariants.Extension}";
     }
 
-    private static SixLabors.ImageSharp.Formats.IImageEncoder GetEncoder(string fileName) =>
-        Path.GetExtension(fileName).ToLowerInvariant() switch
-        {
-            ".png" => new PngEncoder { CompressionLevel = PngCompressionLevel.BestCompression },
-            ".webp" => new WebpEncoder { Quality = WebpQuality },
-            _ => new JpegEncoder { Quality = JpegQuality },
-        };
+    public async Task<string?> OptimizeExistingAsync(string url, CancellationToken ct = default)
+    {
+        var filePath = ToFilePath(url);
+        if (filePath is null || !File.Exists(filePath) || ImageVariants.IsSmallVariant(url)) return null;
+
+        var basePath = Path.Combine(Path.GetDirectoryName(filePath)!, Path.GetFileNameWithoutExtension(filePath));
+        var optimizedUrl = ImageVariants.ToWebpUrl(url);
+        if (ImageVariants.IsWebp(url) && File.Exists(basePath + ImageVariants.SmallSuffix + ImageVariants.Extension))
+            return url; // already done
+
+        using var image = await Image.LoadAsync(filePath, ct);
+        if (ImageVariants.IsWebp(url))
+            await WriteSmallAsync(image, basePath, ct); // the full-size .webp is the file itself — leave it
+        else
+            await WriteVariantsAsync(image, basePath, ct); // original .jpg/.png stays for anything still linking to it
+
+        return optimizedUrl;
+    }
+
+    /// <summary>Writes "<paramref name="basePath"/>.webp" (≤ MaxDimension) and "-sm.webp" (≤ SmallDimension).</summary>
+    public static async Task WriteVariantsAsync(Image image, string basePath, CancellationToken ct = default)
+    {
+        // Phones store the photo sideways with an orientation flag; browsers honour it inconsistently
+        // once it's re-encoded, so bake the rotation in. EXIF/IPTC/XMP go away — they can carry the
+        // GPS location of the ateliê or of a customer's home (review photos).
+        image.Mutate(x => x.AutoOrient());
+        image.Metadata.ExifProfile = null;
+        image.Metadata.IptcProfile = null;
+        image.Metadata.XmpProfile = null;
+
+        ResizeToFit(image, MaxDimension);
+        await image.SaveAsync(basePath + ImageVariants.Extension, new WebpEncoder { Quality = WebpQuality }, ct);
+        await WriteSmallAsync(image, basePath, ct);
+    }
+
+    private static async Task WriteSmallAsync(Image image, string basePath, CancellationToken ct)
+    {
+        using var small = image.Clone(_ => { });
+        small.Mutate(x => x.AutoOrient());
+        ResizeToFit(small, SmallDimension);
+        await small.SaveAsync(basePath + ImageVariants.SmallSuffix + ImageVariants.Extension, new WebpEncoder { Quality = WebpQuality }, ct);
+    }
+
+    private static void ResizeToFit(Image image, int maxDimension)
+    {
+        if (image.Width <= maxDimension && image.Height <= maxDimension) return;
+        image.Mutate(x => x.Resize(new ResizeOptions { Mode = ResizeMode.Max, Size = new Size(maxDimension, maxDimension) }));
+    }
 
     public Task DeleteAsync(string url, CancellationToken ct = default)
     {
-        if (!url.StartsWith(_publicBasePath, StringComparison.OrdinalIgnoreCase))
-            return Task.CompletedTask;
-
-        var relativePath = url[_publicBasePath.Length..].TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
-        var filePath = Path.Combine(_rootPath, relativePath);
+        var filePath = ToFilePath(url);
+        if (filePath is null) return Task.CompletedTask;
 
         if (File.Exists(filePath))
             File.Delete(filePath);
 
+        var smallPath = ToFilePath(ImageVariants.ToSmallUrl(url));
+        if (smallPath is not null && smallPath != filePath && File.Exists(smallPath))
+            File.Delete(smallPath);
+
         return Task.CompletedTask;
+    }
+
+    private string? ToFilePath(string url)
+    {
+        if (!url.StartsWith(_publicBasePath + "/", StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        var relativePath = url[_publicBasePath.Length..].TrimStart('/');
+        if (relativePath.Contains("..", StringComparison.Ordinal)) return null;
+        return Path.Combine(_rootPath, relativePath.Replace('/', Path.DirectorySeparatorChar));
     }
 }

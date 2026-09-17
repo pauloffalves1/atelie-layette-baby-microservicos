@@ -14,6 +14,10 @@ public static class BrasiliaTime
     public static DateTime FromUtc(DateTime utc) =>
         TimeZoneInfo.ConvertTimeFromUtc(utc.Kind == DateTimeKind.Local ? utc.ToUniversalTime() : DateTime.SpecifyKind(utc, DateTimeKind.Utc), Zone);
 
+    /// <summary>Converts a Brasília wall-clock time (e.g. the start of a day picked in the admin) to UTC.</summary>
+    public static DateTime ToUtc(DateTime brasilia) =>
+        TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(brasilia, DateTimeKind.Unspecified), Zone);
+
     private static TimeZoneInfo Resolve()
     {
         foreach (var id in new[] { "America/Sao_Paulo", "E. South America Standard Time" })

@@ -174,6 +174,62 @@ public sealed class OrderService : IOrderService
         }
     }
 
+    /// <summary>External payment id recorded when the admin marks a manual order as already paid.</summary>
+    public const string ManualPaymentReference = "manual";
+
+    public async Task<OrderDto> CreateManualOrderAsync(CreateManualOrderRequest request, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Entrando em {Method}", nameof(CreateManualOrderAsync));
+        try
+        {
+            if (request.Items.Count == 0)
+                throw new ConflictException("A encomenda precisa ter pelo menos um item.");
+            if (request.Items.Any(i => i.UnitPrice < 0))
+                throw new ConflictException("O preço de um item não pode ser negativo.");
+            if (request.ShippingCost < 0)
+                throw new ConflictException("O frete não pode ser negativo.");
+            if (request.DeliveryMethod != "Retirada" && string.IsNullOrWhiteSpace(request.ShippingAddressJson))
+                throw new ConflictException("O endereço de entrega é obrigatório.");
+
+            var order = Order.Create(
+                request.CustomerId,
+                request.CustomerName,
+                Email.Create(request.CustomerEmail),
+                request.CustomerPhone,
+                Cpf.Create(request.CustomerCpf),
+                OrderType.Loja,
+                string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
+                customDetailsJson: null,
+                request.ShippingAddressJson,
+                Money.FromReais(request.ShippingCost),
+                request.GiftMessage,
+                request.DeliveryMethod,
+                request.RecipientName);
+
+            foreach (var item in request.Items)
+                order.AddItem(item.ProductId, item.ProductName, Money.FromReais(item.UnitPrice), item.Quantity, item.OptionsJson);
+
+            if (request.PaymentReceived)
+                order.MarkPaymentApproved(ManualPaymentReference);
+
+            // The "pedido recebido" e-mail/WhatsApp (and the admin alert) come from the creation event —
+            // optional here, since the customer usually just closed the deal in that same chat.
+            if (request.NotifyCustomer)
+                order.Submit();
+
+            _unitOfWork.Orders.Add(order);
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            _logger.LogInformation("Saindo de {Method}", nameof(CreateManualOrderAsync));
+            return ToDto(order);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro em {Method}", nameof(CreateManualOrderAsync));
+            throw;
+        }
+    }
+
     public async Task<OrderDto> CreateCustomOrderAsync(CreateCustomOrderRequest request, Guid? customerId, CancellationToken ct = default)
     {
         _logger.LogInformation("Entrando em {Method}", nameof(CreateCustomOrderAsync));

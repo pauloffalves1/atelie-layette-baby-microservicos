@@ -62,6 +62,7 @@ public static class DependencyInjection
         services.AddSingleton<IProductDescriptionGenerator, AnthropicProductDescriptionGenerator>();
 
         services.AddHostedService<WishlistReminderProcessor>();
+        services.AddHostedService<AtelieBebe.Catalog.Core.Infrastructure.Storage.UploadedImageOptimizer>();
         services.AddOutboxPublishing(configuration);
 
         return services;

@@ -105,7 +105,7 @@
                     (change)="toggleSelected(product.id, $any($event.target).checked)">
                 </td>
                 <td class="d-flex align-items-center gap-3">
-                  <img [src]="product.imageUrl | assetUrl" [alt]="product.name" class="rounded-3" style="width: 48px; height: 48px; object-fit: cover;" loading="lazy">
+                  <img [src]="product.imageUrl | assetUrl:'sm'" [alt]="product.name" class="rounded-3" style="width: 48px; height: 48px; object-fit: cover;" loading="lazy">
                   <span class="fw-semibold">{{ product.name }}</span>
                 </td>
                 <td>{{ product.category }}</td>

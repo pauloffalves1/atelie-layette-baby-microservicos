@@ -72,5 +72,27 @@ public sealed record CreateCustomOrderRequest(
     string CustomDetailsJson,
     decimal EstimatedPrice);
 
+/// <summary>
+/// An order closed outside the site (WhatsApp, in person) and typed into the admin panel. Prices are
+/// the ones agreed with the customer, so they are taken as sent — unlike the storefront checkout,
+/// which always re-reads the catalog price. ProductId is optional (links the item to a catalog
+/// product for reviews and reports).
+/// </summary>
+public sealed record CreateManualOrderRequest(
+    Guid? CustomerId,
+    string CustomerName,
+    string CustomerEmail,
+    string CustomerPhone,
+    string CustomerCpf,
+    string DeliveryMethod,
+    string? ShippingAddressJson,
+    decimal ShippingCost,
+    IReadOnlyList<CreateOrderItemRequest> Items,
+    bool PaymentReceived,
+    bool NotifyCustomer,
+    string? Notes = null,
+    string? GiftMessage = null,
+    string? RecipientName = null);
+
 public sealed record UpdateOrderStatusRequest(string Status);
 public sealed record SetTrackingCodeRequest(string? TrackingCode);

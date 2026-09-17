@@ -49,6 +49,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/orders/admin-order-list').then((m) => m.AdminOrderList),
       },
       {
+        path: 'encomendas/nova',
+        title: `Registrar encomenda — ${SITE_NAME}`,
+        loadComponent: () => import('./features/admin/orders/admin-order-create').then((m) => m.AdminOrderCreate),
+      },
+      {
         path: 'encomendas/:id',
         title: `Detalhe da encomenda — ${SITE_NAME}`,
         loadComponent: () => import('./features/admin/orders/admin-order-detail').then((m) => m.AdminOrderDetail),

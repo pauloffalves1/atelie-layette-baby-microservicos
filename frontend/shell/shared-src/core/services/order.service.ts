@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '@shared/environment';
-import { CreateCustomOrderRequest, CreateStoreOrderRequest, Order } from '../models/order.model';
+import { CreateCustomOrderRequest, CreateManualOrderRequest, CreateStoreOrderRequest, Order } from '../models/order.model';
 import { PagedResult } from '../models/pagination.model';
 
 @Injectable({ providedIn: 'root' })
@@ -11,6 +11,11 @@ export class OrderService {
   private readonly adminUrl = `${environment.apiUrl}/admin/orders`;
 
   constructor(private readonly http: HttpClient) {}
+
+  /** Admin: registers an order closed on WhatsApp or in person. */
+  createManual(request: CreateManualOrderRequest): Observable<Order> {
+    return this.http.post<Order>(`${environment.apiUrl}/admin/orders`, request);
+  }
 
   createStoreOrder(request: CreateStoreOrderRequest): Observable<Order> {
     return this.http.post<Order>(`${this.baseUrl}/store`, request);

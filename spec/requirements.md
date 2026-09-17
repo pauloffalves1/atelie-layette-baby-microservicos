@@ -513,3 +513,43 @@ fraldas de ombro e boca bordadas.
 5. O sitemap DEVE incluir a data da última alteração de cada produto, as fotos de cada produto e uma
    URL por categoria; cada categoria DEVE ter título, H1 e canonical próprios.
 6. `www.layettebaby.com.br` DEVE redirecionar (301) para `layettebaby.com.br`.
+
+## Requisito 29: Registrar no painel encomendas fechadas fora do site
+
+**User Story:** Como dona do ateliê, quero lançar no painel os pedidos que fecho pelo WhatsApp ou
+pessoalmente, para que apareçam no dashboard, na lista de encomendas, no rastreio da cliente e nos
+avisos de status como qualquer pedido do site.
+
+**Rastreamento:** RF38
+
+**Acceptance Criteria**
+1. QUANDO uma administradora com a permissão de Encomendas registra uma encomenda, O SISTEMA (Orders)
+   DEVE criá-la com status "Recebido" e com os preços informados, sem consultar o preço do catálogo.
+2. A encomenda DEVE exigir ao menos um item, preços e frete não negativos, CPF válido e endereço
+   quando a entrega não for retirada; retirada NÃO DEVE ter endereço nem frete.
+3. QUANDO "pagamento já recebido" estiver marcado, O SISTEMA DEVE registrar o pagamento como pago.
+4. QUANDO "enviar pedido recebido" estiver marcado, O SISTEMA DEVE disparar os mesmos avisos de um
+   pedido criado no site; caso contrário, nenhum aviso de criação.
+5. A encomenda PODE ser vinculada a uma conta de cliente, aparecendo em "Minhas encomendas".
+6. O registro DEVE entrar na auditoria.
+7. Colar o resumo gerado pelo botão "Enviar pedido pelo WhatsApp" DEVE preencher itens (com bordado e
+   cor da linha), entrega, frete, contato e presente, e avisar o que precisa ser completado.
+
+## Requisito 30: Auditoria filtrável
+
+**Rastreamento:** RF39
+
+**Acceptance Criteria**
+1. A listagem da auditoria DEVE aceitar filtros por administradora, ação, período e texto dos detalhes,
+   combináveis, com paginação e total calculados sobre o resultado filtrado.
+2. As datas do período DEVEM ser dias do calendário de Brasília ("até 14/09" inclui o dia 14 inteiro).
+
+## Requisito 31: Legibilidade e fotos leves
+
+**Rastreamento:** RNF09, RNF10
+
+**Acceptance Criteria**
+1. Todo texto da loja e do painel DEVE ter contraste mínimo de 4,5:1 (3:1 para ícones significativos).
+2. Toda foto enviada DEVE ser gravada em WebP, em tamanho completo (até 1600 px) e reduzido (até 600 px),
+   com orientação aplicada e sem metadados; fotos antigas DEVEM ser convertidas mantendo os originais.
+3. Cards, miniaturas e carrinho DEVEM usar a versão reduzida.

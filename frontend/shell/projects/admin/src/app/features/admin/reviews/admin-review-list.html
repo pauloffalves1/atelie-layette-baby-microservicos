@@ -66,7 +66,7 @@
             }
             @if (review.photoUrl) {
               <a [href]="review.photoUrl | assetUrl" target="_blank" rel="noopener" class="d-inline-block mb-2" title="Abrir a foto em tamanho real">
-                <img [src]="review.photoUrl | assetUrl" [alt]="'Foto enviada por ' + review.customerName" class="rounded-3" style="width: 96px; height: 96px; object-fit: cover;">
+                <img [src]="review.photoUrl | assetUrl:'sm'" [alt]="'Foto enviada por ' + review.customerName" class="rounded-3" style="width: 96px; height: 96px; object-fit: cover;">
               </a>
             }
 

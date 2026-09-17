@@ -315,3 +315,10 @@ substituição daquele relato.
   - [x] `SitemapXmlBuilder` (lastmod, imagens, categorias) + testes; `/internal/products/sitemap-entries`.
   - [x] `scripts/prerender.mjs` + `ops/seo` (Nginx, cron, Docker Playwright); regras validadas em container.
   - [x] Home carrega as fotos do carrossel sob demanda.
+- Legibilidade, fotos leves, encomendas do WhatsApp e ajustes (2026-09-15) — Requisitos 29–31 / RF38, RF39, RNF09, RNF10.
+  - [x] Tokens de cor de texto com contraste AA nas três folhas de estilo; auditoria automática 0 falhas.
+  - [x] `LocalFileStorageService` WebP + "-sm", `ImageVariants`, `UploadedImageOptimizer` + testes; `assetUrl:'sm'`.
+  - [x] `CreateManualOrderAsync` + `POST /api/admin/orders` + testes; tela "Registrar encomenda" com
+    busca de cliente e colar resumo (`whatsapp-order-parser.ts` + spec).
+  - [x] Filtros da auditoria (`AuditLogFilter` + testes, rota do Gateway para subcaminhos).
+  - [x] Favoritar nos cards da loja, resumo do endereço salvo no checkout, carrossel de destaques na home.

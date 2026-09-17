@@ -117,13 +117,57 @@ a {
   text-decoration: none;
 }
 
-.text-blush { color: var(--atelie-blush-strong) !important; }
-.text-sage { color: var(--atelie-sage) !important; }
+.text-blush { color: var(--atelie-blush-text) !important; }
+.text-sage { color: var(--atelie-sage-text) !important; }
 .text-gold { color: var(--atelie-gold) !important; }
 .bg-blush { background-color: var(--atelie-blush) !important; }
 .bg-sage { background-color: var(--atelie-sage) !important; }
 .bg-sage-light { background-color: var(--atelie-sage-light) !important; }
 .bg-gold-light { background-color: var(--atelie-gold-light) !important; }
+
+// ---- Readable text (WCAG AA) ----
+// The brand pastels (sage #9cb89a, blush #e8a2ad, danger #e2777a, success #8fb996) read at about
+// 2:1 when used as TEXT on the cream/white grounds — an audit of the storefront found 63% of text
+// elements below the 4.5:1 minimum (descriptions, prices, links, hints, errors). They stay as-is for
+// fills, borders and buttons; words use these deeper tones of the same hues, each at least 4.5:1
+// on cream, white, blush and sage-light.
+:root {
+  --atelie-sage-text: #536b51;
+  --atelie-blush-text: #a8485e;
+  --atelie-success-text: #3f7a4a;
+  --atelie-danger-text: #b3363b;
+  --atelie-star: #b7862c;
+  --bs-link-color: #a8485e;
+  --bs-link-color-rgb: 168, 72, 94;
+  --bs-link-hover-color: #8a3a4d;
+  --bs-link-hover-color-rgb: 138, 58, 77;
+  --bs-form-invalid-color: #b3363b;
+}
+
+.text-secondary { color: var(--atelie-sage-text) !important; }
+.text-success { color: var(--atelie-success-text) !important; }
+.text-danger { color: var(--atelie-danger-text) !important; }
+// Star ratings (decorative icons with an aria-label) — 3:1 is the bar for meaningful graphics.
+.text-warning { color: var(--atelie-star) !important; }
+
+.btn-outline-secondary {
+  --bs-btn-color: var(--atelie-sage-text);
+  --bs-btn-hover-color: var(--atelie-text);
+  --bs-btn-active-color: var(--atelie-text);
+  --bs-btn-disabled-color: var(--atelie-sage-text);
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--atelie-blush-text);
+  --bs-btn-hover-color: var(--atelie-text);
+  --bs-btn-active-color: var(--atelie-text);
+  --bs-btn-disabled-color: var(--atelie-blush-text);
+}
+
+.btn-outline-danger {
+  --bs-btn-color: var(--atelie-danger-text);
+  --bs-btn-disabled-color: var(--atelie-danger-text);
+}
 
 .fw-script {
   font-family: "Playfair Display", "Poppins", serif;
@@ -317,13 +361,13 @@ img.rounded-4 {
 }
 
 .embroidery-preview-placeholder {
-  color: rgba(58, 50, 56, .25);
+  color: rgba(58, 50, 56, .6);
   font-size: clamp(1.25rem, 4.5vw, 1.6rem);
 }
 
 .badge-soft {
   background: var(--atelie-blush);
-  color: #8a6a1f;
+  color: #74570f;
   font-weight: 600;
   border-radius: 50rem;
   padding: .35em .75em;
@@ -417,6 +461,82 @@ img.rounded-4 {
   outline: none;
 }
 
+// Home "Destaques do ateliê": one row that scrolls sideways — 5 cards on desktop, fewer on smaller
+// screens — with snap points so a swipe always lands on a whole card.
+.featured-track {
+  --featured-per-view: 2;
+  --featured-gap: 1rem;
+  display: flex;
+  gap: var(--featured-gap);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  padding: .25rem .1rem 1rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.featured-track::-webkit-scrollbar { display: none; }
+
+.featured-slide {
+  flex: 0 0 calc((100% - (var(--featured-per-view) - 1) * var(--featured-gap)) / var(--featured-per-view));
+  scroll-snap-align: start;
+}
+
+@media (min-width: 768px) { .featured-track { --featured-per-view: 3; --featured-gap: 1.5rem; } }
+@media (min-width: 992px) { .featured-track { --featured-per-view: 4; } }
+@media (min-width: 1200px) { .featured-track { --featured-per-view: 5; } }
+
+.featured-carousel-control {
+  position: absolute;
+  top: 38%;
+  z-index: 3;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .95);
+  color: var(--atelie-text);
+  box-shadow: 0 .35rem 1rem rgba(58, 50, 56, .18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.featured-carousel-control.prev { left: -.5rem; }
+.featured-carousel-control.next { right: -.5rem; }
+.featured-carousel-control:hover { background: #fff; }
+.featured-carousel-control:focus-visible { outline: 3px solid var(--atelie-blush-text); outline-offset: 2px; }
+
+@media (max-width: 575.98px) {
+  .featured-carousel-control { display: none; } // phones swipe
+}
+
+// Heart on shop cards — sits over the photo's top-right corner.
+.card-favorite {
+  position: absolute;
+  top: .6rem;
+  right: .6rem;
+  z-index: 2;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .92);
+  color: var(--atelie-blush-text);
+  box-shadow: 0 .25rem .75rem rgba(58, 50, 56, .15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  transition: transform .15s ease, background-color .15s ease;
+}
+
+.card-favorite:hover { transform: scale(1.08); background: #fff; }
+.card-favorite.is-active { color: var(--atelie-danger-text); }
+.card-favorite:focus-visible { outline: 3px solid var(--atelie-blush-text); outline-offset: 2px; }
+
 // Shop grid: the previous results stay on screen, dimmed, while a filter/page change loads.
 .shop-grid {
   transition: opacity .2s ease;
@@ -469,7 +589,7 @@ img.rounded-4 {
 }
 
 .admin-sidebar .nav-link {
-  color: rgba(58, 50, 56, .65);
+  color: rgba(58, 50, 56, .8);
   border-radius: .75rem;
   padding: .65rem 1rem;
   font-weight: 500;

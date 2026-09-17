@@ -5,7 +5,9 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, NavigationStart, Router, RouterLink } from '@angular/router';
 import { filter } from 'rxjs';
 import { Product } from '@shared/core/models/product.model';
+import { AuthService } from '@shared/core/services/auth.service';
 import { ProductService } from '@shared/core/services/product.service';
+import { WishlistService } from '@shared/core/services/wishlist.service';
 import { SeoService } from '@shared/core/services/seo.service';
 import { LoadError } from '@shared/shared/components/load-error/load-error';
 import { Pagination } from '@shared/shared/components/pagination/pagination';
@@ -23,6 +25,13 @@ const SCROLL_KEY_PREFIX = 'atelie-bebe.shop-scroll:';
 export class Shop implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
+  private readonly auth = inject(AuthService);
+  private readonly wishlist = inject(WishlistService);
+
+  /** Favorites straight from the grid — before, a product had to be opened to be saved. */
+  readonly favoriteIds = signal<ReadonlySet<string>>(new Set());
+  readonly favoriteBusyId = signal<string | null>(null);
+  readonly favoriteError = signal<string | null>(null);
 
   readonly products = signal<Product[]>([]);
   readonly categories = signal<string[]>([]);
@@ -75,6 +84,13 @@ export class Shop implements OnInit {
 
     this.productService.listCategories().subscribe((categories) => this.categories.set(categories));
 
+    if (this.auth.isAuthenticated()) {
+      this.wishlist.list().subscribe({
+        next: (items) => this.favoriteIds.set(new Set(items.map((item) => item.product.id))),
+        error: () => {},
+      });
+    }
+
     this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const category = params.get('categoria');
       const search = params.get('busca') ?? '';
@@ -113,6 +129,39 @@ export class Shop implements OnInit {
       title: 'Loja — fraldas de ombro e boca bordadas',
       description: 'Fraldas de ombro e boca prontas para comprar, com opção de bordado personalizado — Kit Ombro e Boca, Fralda de Ombro e Fralda de Boca.',
       path: '/loja',
+    });
+  }
+
+  isFavorite(productId: string): boolean {
+    return this.favoriteIds().has(productId);
+  }
+
+  toggleFavorite(product: Product): void {
+    if (!this.auth.isAuthenticated()) {
+      this.router.navigate(['/entrar'], { queryParams: { returnUrl: this.router.url } });
+      return;
+    }
+    if (this.favoriteBusyId()) return;
+
+    const wasFavorite = this.isFavorite(product.id);
+    const apply = (favorite: boolean) =>
+      this.favoriteIds.update((ids) => {
+        const next = new Set(ids);
+        if (favorite) next.add(product.id);
+        else next.delete(product.id);
+        return next;
+      });
+
+    apply(!wasFavorite); // optimistic: the heart fills on tap, reverted if the request fails
+    this.favoriteBusyId.set(product.id);
+    this.favoriteError.set(null);
+    (wasFavorite ? this.wishlist.remove(product.id) : this.wishlist.add(product.id)).subscribe({
+      next: () => this.favoriteBusyId.set(null),
+      error: () => {
+        apply(wasFavorite);
+        this.favoriteBusyId.set(null);
+        this.favoriteError.set(`Não foi possível ${wasFavorite ? 'remover' : 'salvar'} "${product.name}" nos favoritos. Tente de novo.`);
+      },
     });
   }
 

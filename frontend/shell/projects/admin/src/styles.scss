@@ -115,13 +115,57 @@ a {
   text-decoration: none;
 }
 
-.text-blush { color: var(--atelie-blush-strong) !important; }
-.text-sage { color: var(--atelie-sage) !important; }
+.text-blush { color: var(--atelie-blush-text) !important; }
+.text-sage { color: var(--atelie-sage-text) !important; }
 .text-gold { color: var(--atelie-gold) !important; }
 .bg-blush { background-color: var(--atelie-blush) !important; }
 .bg-sage { background-color: var(--atelie-sage) !important; }
 .bg-sage-light { background-color: var(--atelie-sage-light) !important; }
 .bg-gold-light { background-color: var(--atelie-gold-light) !important; }
+
+// ---- Readable text (WCAG AA) ----
+// The brand pastels (sage #9cb89a, blush #e8a2ad, danger #e2777a, success #8fb996) read at about
+// 2:1 when used as TEXT on the cream/white grounds — an audit of the storefront found 63% of text
+// elements below the 4.5:1 minimum (descriptions, prices, links, hints, errors). They stay as-is for
+// fills, borders and buttons; words use these deeper tones of the same hues, each at least 4.5:1
+// on cream, white, blush and sage-light.
+:root {
+  --atelie-sage-text: #536b51;
+  --atelie-blush-text: #a8485e;
+  --atelie-success-text: #3f7a4a;
+  --atelie-danger-text: #b3363b;
+  --atelie-star: #b7862c;
+  --bs-link-color: #a8485e;
+  --bs-link-color-rgb: 168, 72, 94;
+  --bs-link-hover-color: #8a3a4d;
+  --bs-link-hover-color-rgb: 138, 58, 77;
+  --bs-form-invalid-color: #b3363b;
+}
+
+.text-secondary { color: var(--atelie-sage-text) !important; }
+.text-success { color: var(--atelie-success-text) !important; }
+.text-danger { color: var(--atelie-danger-text) !important; }
+// Star ratings (decorative icons with an aria-label) — 3:1 is the bar for meaningful graphics.
+.text-warning { color: var(--atelie-star) !important; }
+
+.btn-outline-secondary {
+  --bs-btn-color: var(--atelie-sage-text);
+  --bs-btn-hover-color: var(--atelie-text);
+  --bs-btn-active-color: var(--atelie-text);
+  --bs-btn-disabled-color: var(--atelie-sage-text);
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--atelie-blush-text);
+  --bs-btn-hover-color: var(--atelie-text);
+  --bs-btn-active-color: var(--atelie-text);
+  --bs-btn-disabled-color: var(--atelie-blush-text);
+}
+
+.btn-outline-danger {
+  --bs-btn-color: var(--atelie-danger-text);
+  --bs-btn-disabled-color: var(--atelie-danger-text);
+}
 
 .fw-script {
   font-family: "Playfair Display", "Poppins", serif;
@@ -283,7 +327,7 @@ img.rounded-4 {
 
 .badge-soft {
   background: var(--atelie-blush);
-  color: #8a6a1f;
+  color: #74570f;
   font-weight: 600;
   border-radius: 50rem;
   padding: .35em .75em;
@@ -395,7 +439,7 @@ img.rounded-4 {
 }
 
 .admin-sidebar .nav-link {
-  color: rgba(58, 50, 56, .65);
+  color: rgba(58, 50, 56, .8);
   border-radius: .75rem;
   padding: .65rem 1rem;
   font-weight: 500;

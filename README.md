@@ -350,6 +350,12 @@ aceite em EARS por requisito, mesmo padrão usado no `spec/` do monólito) vive 
   pendente, avaliações e bordados sinalizados), levando cada item à lista filtrada.
 - **RF37** — Uma cliente logada deve poder alterar o próprio nome e telefone e trocar a senha
   (informando a atual) em "Minha conta"; e-mail e CPF continuam alteráveis só pelo painel.
+- **RF38** — Uma administradora com a permissão de Encomendas deve poder registrar no painel uma
+  encomenda fechada fora do site (WhatsApp, pessoalmente), com os preços combinados, opcionalmente
+  vinculada à conta da cliente, marcada como paga e com o aviso de "pedido recebido"; o resumo que o
+  site gera no WhatsApp pode ser colado para preencher o formulário.
+- **RF39** — A auditoria do painel deve poder ser filtrada por administradora, ação, período (dias de
+  Brasília) e texto dos detalhes.
 
 ### Não funcionais
 
@@ -379,6 +385,10 @@ aceite em EARS por requisito, mesmo padrão usado no `spec/` do monólito) vive 
   — título, descrição, canonical, conteúdo, links e dados estruturados (Store/WebSite, Product,
   BreadcrumbList, FAQPage) — a partir de snapshots gerados a partir do sitemap, com o mesmo conteúdo
   exibido às pessoas; o sitemap deve informar `lastmod`, fotos dos produtos e as páginas de categoria.
+- **RNF09** — Todo texto da loja e do painel deve ter contraste de pelo menos 4,5:1 com o fundo
+  (WCAG AA; 3:1 para ícones com significado, como estrelas de avaliação).
+- **RNF10** — Fotos enviadas devem ser gravadas em WebP em dois tamanhos (até 1600 px e até 600 px para
+  cards e miniaturas), com a orientação aplicada e sem metadados (EXIF/GPS).
 
 ## Autenticação e Autorização
 
@@ -1060,6 +1070,31 @@ contra o Gateway via `docker run --network host`).
       `UpdatedAt`). *Nginx:* `www` → domínio principal (301) e cache de 30 dias para
       `/api/uploads/` (nomes únicos). *Desempenho:* a home baixava as 7 fotos do carrossel (uma com
       1,7 MB) antes de mostrar a primeira — agora só a atual e a próxima, com `fetchpriority` na primeira.
+- [x] **Legibilidade, fotos leves, encomendas do WhatsApp e ajustes (RF38, RF39, RNF09, RNF10)**
+      (2026-09-15) — *Legibilidade:* uma auditoria automática de contraste encontrou **242 de 383
+      textos (63%) abaixo de 4,5:1** na loja — textos em verde-sálvia e preços/links em rosa ficavam em
+      ~2:1 sobre o creme. As cores pastel da marca continuam em fundos, bordas e botões; textos,
+      links, preços, erros, estrelas e botões de contorno usam tons mais profundos das mesmas cores
+      (`--atelie-sage-text`, `--atelie-blush-text` etc.) — resultado: 0 de 545 textos em 10 páginas da
+      loja e 0 no painel. *Fotos:* o Catalog gravava cada foto no formato enviado (um PNG ia ao ar com
+      1,7 MB) e os cards baixavam o original de 1600 px; agora todo envio vira WebP (até 1600 px) mais
+      uma cópia "-sm" de até 600 px, com a orientação do celular aplicada e sem EXIF/GPS
+      (`LocalFileStorageService`/`ImageVariants` + testes); `UploadedImageOptimizer` converte na
+      inicialização as fotos já enviadas (produtos, galeria, imagens do site, avaliações), atualiza as
+      URLs no banco e mantém os originais; cards, miniaturas e carrinho usam `assetUrl:'sm'`.
+      *Encomendas do WhatsApp (RF38):* com o pagamento on-line desligado, os pedidos fechados pelo
+      WhatsApp não entravam no sistema — "Registrar encomenda" (`POST /api/admin/orders`, permissão
+      de Encomendas, registrado na auditoria) cria o pedido com os preços combinados, vínculo opcional
+      com a conta da cliente (busca por nome/e-mail/telefone), itens com bordado e cor da linha,
+      entrega com CEP ou retirada, frete, presente, "pagamento já recebido" e aviso opcional de pedido
+      recebido; colar o resumo que o site gera no WhatsApp preenche itens, bordados, endereço, frete,
+      contato e presente (`whatsapp-order-parser.ts`, testado com ida e volta do próprio gerador) e
+      avisa o que falta (CPF, endereço "a combinar", item fora do catálogo, cupom). *Auditoria (RF39):*
+      filtros por administradora, ação, período e texto, com a contagem corrigida (antes contava a
+      tabela inteira) e rótulos para todas as ações. *Loja:* favoritar direto no card (atualiza na
+      hora, desfaz se falhar, leva ao login quem não está logada); checkout mostra o endereço salvo
+      escolhido (antes só o apelido "Casa"); destaques da home viraram uma linha com 5 cards (4/3/2 em
+      telas menores) em carrossel que passa por todos, pausa com o mouse e desliza no celular.
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
       nos manifests; falta aplicar num cluster ativo e uma license key real. **Não avancei aqui** —
       exige um cluster de verdade e uma license key real da New Relic, que eu não tenho como

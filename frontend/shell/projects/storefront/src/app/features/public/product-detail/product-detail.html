@@ -48,7 +48,7 @@
                   [attr.aria-label]="'Ver foto ' + (i + 1) + ' de ' + galleryUrls().length"
                   [attr.aria-current]="i === activeImageIndex()" (click)="selectImage(i)">
                   <div class="ratio ratio-1x1 rounded-4 overflow-hidden" [class.border-thumb-active]="i === activeImageIndex()">
-                    <img [src]="url | assetUrl" alt="" class="w-100 h-100 object-fit-cover">
+                    <img [src]="url | assetUrl:'sm'" alt="" class="w-100 h-100 object-fit-cover">
                   </div>
                 </button>
               }
@@ -238,7 +238,7 @@
                 <div class="mb-3">
                   @if (reviewPhotoUrl()) {
                     <div class="d-flex align-items-center gap-2">
-                      <img [src]="reviewPhotoUrl() | assetUrl" alt="Foto enviada" class="rounded-3" style="width: 64px; height: 64px; object-fit: cover;">
+                      <img [src]="reviewPhotoUrl() | assetUrl:'sm'" alt="Foto enviada" class="rounded-3" style="width: 64px; height: 64px; object-fit: cover;">
                       <button type="button" class="btn btn-sm btn-outline-danger rounded-pill" (click)="removeReviewPhoto()">Remover foto</button>
                     </div>
                   } @else {
@@ -290,7 +290,7 @@
                   }
                   @if (review.photoUrl) {
                     <a [href]="review.photoUrl | assetUrl" target="_blank" rel="noopener" class="d-inline-block mt-2" title="Ver foto em tamanho real">
-                      <img [src]="review.photoUrl | assetUrl" [alt]="'Foto enviada por ' + review.customerName" class="rounded-3" style="width: 96px; height: 96px; object-fit: cover;" loading="lazy">
+                      <img [src]="review.photoUrl | assetUrl:'sm'" [alt]="'Foto enviada por ' + review.customerName" class="rounded-3" style="width: 96px; height: 96px; object-fit: cover;" loading="lazy">
                     </a>
                   }
                 </li>
@@ -311,7 +311,7 @@
             <div class="col-6 col-md-3">
               <div class="card card-product h-100">
                 <a [routerLink]="['/produto', related.slug]">
-                  <img [src]="related.imageUrl | assetUrl" class="card-img-top" [alt]="related.name" loading="lazy">
+                  <img [src]="related.imageUrl | assetUrl:'sm'" class="card-img-top" [alt]="related.name" loading="lazy">
                 </a>
                 <div class="card-body d-flex flex-column">
                   <h6 class="mb-1">

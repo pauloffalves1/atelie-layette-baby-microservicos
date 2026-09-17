@@ -60,7 +60,7 @@
                     <div class="list-group-item py-3 px-0 border-bottom">
                       <div class="row align-items-center g-3">
                         <div class="col-auto">
-                          <img [src]="item.product.imageUrl | assetUrl" [alt]="item.product.name" class="rounded-4 object-fit-cover"
+                          <img [src]="item.product.imageUrl | assetUrl:'sm'" [alt]="item.product.name" class="rounded-4 object-fit-cover"
                             style="width: 56px; height: 56px;" loading="lazy">
                         </div>
                         <div class="col-9 col-md-4">
@@ -136,7 +136,7 @@
                         <div class="col-4">
                           <button type="button" class="btn p-0 border-0 bg-transparent text-start w-100" (click)="addKitToCart(kit)">
                             <div class="ratio ratio-1x1 rounded-4 overflow-hidden mb-2 position-relative">
-                              <img [src]="kit.imageUrl | assetUrl" [alt]="kit.name" class="w-100 h-100 object-fit-cover">
+                              <img [src]="kit.imageUrl | assetUrl:'sm'" [alt]="kit.name" class="w-100 h-100 object-fit-cover">
                               @if (addedKitId() === kit.id) {
                                 <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background: rgba(255,255,255,.85);">
                                   <i class="bi bi-check-circle-fill text-success fs-2"></i>
@@ -228,6 +228,7 @@
                           <button type="button" class="btn btn-sm rounded-pill"
                             [class.btn-primary]="selectedAddressId() === address.id"
                             [class.btn-outline-secondary]="selectedAddressId() !== address.id"
+                            [attr.aria-pressed]="selectedAddressId() === address.id"
                             (click)="selectAddress(address)">
                             {{ address.label }}
                           </button>
@@ -239,6 +240,12 @@
                           <i class="bi bi-plus-lg me-1"></i>Novo endereço
                         </button>
                       </div>
+                      @if (selectedAddress(); as address) {
+                        <p class="small text-secondary mt-2 mb-0">
+                          <i class="bi bi-geo-alt me-1" aria-hidden="true"></i>{{ address.street }}, {{ address.number }}@if (address.complement) { — {{ address.complement }} } ·
+                          {{ address.neighborhood }} · {{ address.city }}/{{ address.state }} · CEP {{ address.zipCode }}
+                        </p>
+                      }
                     </div>
                   }
 

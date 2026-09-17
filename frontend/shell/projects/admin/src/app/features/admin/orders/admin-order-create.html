@@ -1,0 +1,283 @@
+<div class="p-3 p-md-4 p-lg-5">
+  <a routerLink="/admin/encomendas" class="small text-secondary d-inline-block mb-2"><i class="bi bi-arrow-left me-1"></i>Encomendas</a>
+  <h2 class="mb-1">Registrar encomenda</h2>
+  <p class="text-secondary mb-4">
+    Para pedidos fechados pelo WhatsApp ou pessoalmente — entram no dashboard, na lista de encomendas,
+    no rastreio da cliente e nos avisos de status como qualquer pedido do site.
+  </p>
+
+  <div class="stat-card mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <div>
+        <h3 class="h6 mb-1"><i class="bi bi-whatsapp me-1"></i>Colar resumo do WhatsApp</h3>
+        <p class="small text-secondary mb-0">Cole a mensagem que a cliente enviou pelo botão do site: itens, bordados, entrega e contato são preenchidos sozinhos.</p>
+      </div>
+      <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" [attr.aria-expanded]="pasteOpen()" (click)="pasteOpen.set(!pasteOpen())">
+        {{ pasteOpen() ? 'Fechar' : 'Colar mensagem' }}
+      </button>
+    </div>
+    @if (pasteOpen()) {
+      <label for="paste-message" class="visually-hidden">Mensagem da cliente</label>
+      <textarea id="paste-message" class="form-control mt-3" rows="8" placeholder="Olá! Quero fazer este pedido pelo site: …"
+        [ngModel]="pasteText()" (ngModelChange)="pasteText.set($event)"></textarea>
+      <button type="button" class="btn btn-sm btn-primary rounded-pill mt-2" [disabled]="!pasteText().trim()" (click)="applyPastedMessage()">
+        <i class="bi bi-magic me-1"></i>Preencher a encomenda
+      </button>
+    }
+    @if (pasteSummary(); as summary) {
+      <p class="small text-success mt-3 mb-1" role="status"><i class="bi bi-check-circle me-1"></i>{{ summary }}</p>
+    }
+    @if (pasteWarnings().length) {
+      <ul class="small text-danger mt-2 mb-0 ps-3" role="alert">
+        @for (warning of pasteWarnings(); track warning) {
+          <li>{{ warning }}</li>
+        }
+      </ul>
+    }
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="row g-4">
+    <div class="col-xl-8">
+      <!-- Cliente -->
+      <div class="stat-card mb-4">
+        <h3 class="h6 mb-3"><i class="bi bi-person me-1"></i>Cliente</h3>
+
+        @if (canSearchCustomers) {
+          @if (linkedCustomer(); as customer) {
+            <div class="alert alert-light border rounded-4 small d-flex justify-content-between align-items-center gap-2 py-2">
+              <span><i class="bi bi-link-45deg me-1"></i>Vinculada à conta de <strong>{{ customer.name }}</strong> — o pedido aparece em "Minhas encomendas" dela.</span>
+              <button type="button" class="btn btn-sm btn-link p-0" (click)="unlinkCustomer()">Desvincular</button>
+            </div>
+          } @else {
+            <div class="position-relative mb-3">
+              <label for="customer-search" class="form-label small fw-semibold">Buscar cliente cadastrada (opcional)</label>
+              <input id="customer-search" type="search" class="form-control form-control-sm" placeholder="Nome, e-mail ou telefone"
+                autocomplete="off" [ngModel]="customerQuery()" [ngModelOptions]="{ standalone: true }"
+                (ngModelChange)="customerQuery.set($event)" (focus)="loadCustomers()">
+              @if (customerMatches().length) {
+                <div class="list-group position-absolute w-100 shadow-sm mt-1" style="z-index: 5;">
+                  @for (customer of customerMatches(); track customer.id) {
+                    <button type="button" class="list-group-item list-group-item-action small" (click)="selectCustomer(customer)">
+                      <strong>{{ customer.name }}</strong> · {{ customer.email }}@if (customer.phone) { · {{ customer.phone }} }
+                    </button>
+                  }
+                </div>
+              } @else if (customerQuery().trim().length >= 2 && customers() !== null) {
+                <div class="form-text">Nenhuma cliente encontrada — preencha os dados abaixo.</div>
+              }
+            </div>
+          }
+        }
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label for="order-name" class="form-label small fw-semibold">Nome completo</label>
+            <input id="order-name" class="form-control" formControlName="customerName"
+              [class.is-invalid]="form.controls.customerName.invalid && form.controls.customerName.touched">
+            <div class="invalid-feedback">Informe o nome.</div>
+          </div>
+          <div class="col-md-6">
+            <label for="order-email" class="form-label small fw-semibold">E-mail</label>
+            <input id="order-email" type="email" class="form-control" formControlName="customerEmail"
+              [class.is-invalid]="form.controls.customerEmail.invalid && form.controls.customerEmail.touched">
+            <div class="invalid-feedback">Informe um e-mail válido — é para onde vão os avisos do pedido.</div>
+          </div>
+          <div class="col-md-6">
+            <label for="order-phone" class="form-label small fw-semibold">Telefone / WhatsApp</label>
+            <input id="order-phone" type="tel" class="form-control" formControlName="customerPhone" appPhoneMask
+              [class.is-invalid]="form.controls.customerPhone.invalid && form.controls.customerPhone.touched">
+            <div class="invalid-feedback">Informe o número com DDD.</div>
+          </div>
+          <div class="col-md-6">
+            <label for="order-cpf" class="form-label small fw-semibold">CPF</label>
+            <input id="order-cpf" class="form-control" formControlName="customerCpf" appCpfMask placeholder="000.000.000-00"
+              [class.is-invalid]="form.controls.customerCpf.invalid && form.controls.customerCpf.touched">
+            <div class="invalid-feedback">
+              {{ form.controls.customerCpf.hasError('required') ? 'O CPF é obrigatório no pedido — peça à cliente.' : 'CPF inválido — confira os números.' }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Itens -->
+      <div class="stat-card mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h3 class="h6 mb-0"><i class="bi bi-bag me-1"></i>Itens</h3>
+          <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" (click)="addItem()"><i class="bi bi-plus-lg me-1"></i>Adicionar item</button>
+        </div>
+
+        <div formArrayName="items">
+          @for (item of items.controls; track item; let i = $index) {
+            <div class="border rounded-4 p-3 mb-3" [formGroupName]="i">
+              <div class="row g-2 align-items-end">
+                <div class="col-md-6">
+                  <label [for]="'item-product-' + i" class="form-label small fw-semibold">Produto</label>
+                  <select [id]="'item-product-' + i" class="form-select form-select-sm" formControlName="productId" (change)="onProductSelected(i, $any($event.target).value)">
+                    <option value="">Item avulso (fora do catálogo)</option>
+                    @for (product of products(); track product.id) {
+                      <option [value]="product.id">{{ product.name }}{{ product.active ? '' : ' (inativo)' }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label [for]="'item-name-' + i" class="form-label small fw-semibold">Descrição no pedido</label>
+                  <input [id]="'item-name-' + i" class="form-control form-control-sm" formControlName="productName"
+                    [class.is-invalid]="item.controls.productName.invalid && item.controls.productName.touched">
+                  <div class="invalid-feedback">Descreva o item.</div>
+                </div>
+                <div class="col-md-5">
+                  <label [for]="'item-embroidery-' + i" class="form-label small fw-semibold">Bordado</label>
+                  <input [id]="'item-embroidery-' + i" class="form-control form-control-sm" formControlName="embroideryText" maxlength="30" placeholder="Ex: ANA">
+                </div>
+                <div class="col-md-3">
+                  <label [for]="'item-thread-' + i" class="form-label small fw-semibold">Cor da linha</label>
+                  <select [id]="'item-thread-' + i" class="form-select form-select-sm" formControlName="threadColor">
+                    <option value="">—</option>
+                    @for (color of threadColors; track color) {
+                      <option [value]="color">{{ color }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="col-4 col-md-1">
+                  <label [for]="'item-qty-' + i" class="form-label small fw-semibold">Qtd.</label>
+                  <input [id]="'item-qty-' + i" type="number" min="1" class="form-control form-control-sm" formControlName="quantity"
+                    [class.is-invalid]="item.controls.quantity.invalid && item.controls.quantity.touched">
+                </div>
+                <div class="col-5 col-md-2">
+                  <label [for]="'item-price-' + i" class="form-label small fw-semibold">Preço (R$)</label>
+                  <input [id]="'item-price-' + i" type="number" min="0" step="0.01" class="form-control form-control-sm" formControlName="unitPrice"
+                    [class.is-invalid]="item.controls.unitPrice.invalid && item.controls.unitPrice.touched">
+                </div>
+                <div class="col-3 col-md-1 text-end">
+                  <button type="button" class="btn btn-sm btn-outline-danger rounded-pill" [disabled]="items.length === 1"
+                    [attr.aria-label]="'Remover item ' + (i + 1)" (click)="removeItem(i)">
+                    <i class="bi bi-trash" aria-hidden="true"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Entrega -->
+      <div class="stat-card mb-4">
+        <h3 class="h6 mb-3"><i class="bi bi-truck me-1"></i>Entrega</h3>
+        <div class="d-flex flex-wrap column-gap-3 row-gap-1 mb-3">
+          <div class="form-check">
+            <input class="form-check-input" type="radio" id="delivery-ship" value="Entrega" formControlName="deliveryMethod">
+            <label class="form-check-label" for="delivery-ship">Entregar no endereço</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" id="delivery-pickup" value="Retirada" formControlName="deliveryMethod">
+            <label class="form-check-label" for="delivery-pickup">Retirada no ateliê</label>
+          </div>
+        </div>
+
+        @if (deliveryMethod() === 'Entrega') {
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label for="order-zip" class="form-label small fw-semibold">CEP</label>
+              <input id="order-zip" class="form-control" formControlName="zipCode" inputmode="numeric" maxlength="9"
+                [class.is-invalid]="(form.controls.zipCode.invalid && form.controls.zipCode.touched) || cepError()">
+              @if (cepLoading()) { <span class="form-text">Buscando…</span> }
+              @if (cepError(); as error) { <div class="invalid-feedback d-block">{{ error }}</div> }
+            </div>
+            <div class="col-md-7">
+              <label for="order-street" class="form-label small fw-semibold">Rua</label>
+              <input id="order-street" class="form-control" formControlName="street"
+                [class.is-invalid]="form.controls.street.invalid && form.controls.street.touched">
+            </div>
+            <div class="col-md-2">
+              <label for="order-number" class="form-label small fw-semibold">Número</label>
+              <input id="order-number" class="form-control" formControlName="number"
+                [class.is-invalid]="form.controls.number.invalid && form.controls.number.touched">
+            </div>
+            <div class="col-md-4">
+              <label for="order-complement" class="form-label small fw-semibold">Complemento</label>
+              <input id="order-complement" class="form-control" formControlName="complement">
+            </div>
+            <div class="col-md-3">
+              <label for="order-neighborhood" class="form-label small fw-semibold">Bairro</label>
+              <input id="order-neighborhood" class="form-control" formControlName="neighborhood"
+                [class.is-invalid]="form.controls.neighborhood.invalid && form.controls.neighborhood.touched">
+            </div>
+            <div class="col-md-3">
+              <label for="order-city" class="form-label small fw-semibold">Cidade</label>
+              <input id="order-city" class="form-control" formControlName="city"
+                [class.is-invalid]="form.controls.city.invalid && form.controls.city.touched">
+            </div>
+            <div class="col-md-2">
+              <label for="order-state" class="form-label small fw-semibold">UF</label>
+              <input id="order-state" class="form-control text-uppercase" formControlName="state" maxlength="2"
+                [class.is-invalid]="form.controls.state.invalid && form.controls.state.touched">
+            </div>
+            <div class="col-md-4">
+              <label for="order-shipping" class="form-label small fw-semibold">Frete combinado (R$)</label>
+              <input id="order-shipping" type="number" min="0" step="0.01" class="form-control" formControlName="shippingCost"
+                [class.is-invalid]="form.controls.shippingCost.invalid && form.controls.shippingCost.touched">
+            </div>
+          </div>
+          @if (form.controls.street.invalid && form.controls.street.touched) {
+            <p class="small text-danger mt-2 mb-0">Complete o endereço de entrega (CEP, rua, número, bairro, cidade e UF).</p>
+          }
+        }
+      </div>
+
+      <!-- Observações e presente -->
+      <div class="stat-card">
+        <label for="order-notes" class="form-label small fw-semibold">Observações</label>
+        <textarea id="order-notes" class="form-control mb-3" rows="2" formControlName="notes" placeholder="Ex: prazo combinado, forma de pagamento (PIX para a chave do ateliê)"></textarea>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="order-gift" formControlName="isGift">
+          <label class="form-check-label small fw-semibold" for="order-gift"><i class="bi bi-gift me-1"></i>É presente</label>
+        </div>
+        @if (form.controls.isGift.value) {
+          <div class="row g-2 mt-1">
+            <div class="col-md-5">
+              <label for="order-recipient" class="form-label small">Para quem</label>
+              <input id="order-recipient" class="form-control form-control-sm" formControlName="recipientName">
+            </div>
+            <div class="col-md-7">
+              <label for="order-gift-message" class="form-label small">Recado do cartão</label>
+              <input id="order-gift-message" class="form-control form-control-sm" formControlName="giftMessage" maxlength="300">
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Resumo -->
+    <div class="col-xl-4">
+      <div class="stat-card position-sticky" style="top: 1.5rem;">
+        <h3 class="h6 mb-3">Resumo</h3>
+        <div class="d-flex justify-content-between small mb-2"><span>Itens</span><span>{{ itemsTotal() | currency:'BRL' }}</span></div>
+        <div class="d-flex justify-content-between small mb-2">
+          <span>Frete</span>
+          <span>{{ deliveryMethod() === 'Retirada' ? 'Retirada' : (form.controls.shippingCost.value | currency:'BRL') }}</span>
+        </div>
+        <hr>
+        <div class="d-flex justify-content-between fw-bold fs-5 mb-3"><span>Total</span><span class="text-blush">{{ total() | currency:'BRL' }}</span></div>
+
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" id="order-paid" formControlName="paymentReceived">
+          <label class="form-check-label small" for="order-paid">Pagamento já recebido</label>
+        </div>
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" id="order-notify" formControlName="notifyCustomer">
+          <label class="form-check-label small" for="order-notify">Enviar "pedido recebido" à cliente (e-mail e WhatsApp)</label>
+        </div>
+
+        @if (saveError(); as error) {
+          <div class="alert alert-danger small rounded-4" role="alert">{{ error }}</div>
+        }
+
+        <button type="submit" class="btn btn-primary w-100 rounded-pill" [disabled]="saving()">
+          @if (saving()) { <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span> }
+          Registrar encomenda
+        </button>
+        <p class="small text-secondary mt-3 mb-0">Depois de registrada, ela segue o fluxo normal: status, rastreio e avisos.</p>
+      </div>
+    </div>
+  </form>
+</div>

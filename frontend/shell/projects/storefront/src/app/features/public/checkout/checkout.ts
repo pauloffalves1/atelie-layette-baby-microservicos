@@ -81,6 +81,9 @@ export class Checkout implements OnInit {
   readonly savedAddresses = signal<CustomerAddress[]>([]);
   readonly selectedAddressId = signal<string | 'new' | null>(null);
 
+  /** The saved address currently applied, shown under the pills — "Casa"/"Trabalho" alone didn't say where it ships. */
+  readonly selectedAddress = computed(() => this.savedAddresses().find((a) => a.id === this.selectedAddressId()) ?? null);
+
   readonly submitting = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly cepLoading = signal(false);

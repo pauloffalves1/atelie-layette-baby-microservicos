@@ -25,7 +25,7 @@
           <div class="col-6 col-md-4 col-lg-3">
             <div class="card card-product h-100">
               <a [routerLink]="['/produto', item.product.slug]">
-                <img [src]="item.product.imageUrl | assetUrl" class="card-img-top" [alt]="item.product.name" loading="lazy">
+                <img [src]="item.product.imageUrl | assetUrl:'sm'" class="card-img-top" [alt]="item.product.name" loading="lazy">
               </a>
               <div class="card-body d-flex flex-column">
                 <div class="d-flex flex-wrap gap-1 mb-2">
