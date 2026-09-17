@@ -111,6 +111,10 @@ substituição daquele relato.
       /api/payments/pagbank/status` consultado pelo frontend; enquanto `sandbox: true`, bloqueia e
       orienta contato via WhatsApp.
 
+- [x] **Credenciais de produção configuradas** (2026-09-17) — `PAGBANK_TOKEN` de produção e
+      `PAGBANK_SANDBOX=false` no `.env` do servidor; `status` responde `sandbox: false` e o checkout
+      cobra de verdade (cartão com 3DS em `PROD`, PIX, boleto), sem mudança de código.
+
 ## Requisito 17 — Encerramento de sessão por inatividade (RF27)
 
 - [x] **Logout automático (15 min)** (2026-09-10) — `IdleTimeoutService` testado de ponta a ponta com

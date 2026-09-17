@@ -1095,6 +1095,14 @@ contra o Gateway via `docker run --network host`).
       hora, desfaz se falhar, leva ao login quem não está logada); checkout mostra o endereço salvo
       escolhido (antes só o apelido "Casa"); destaques da home viraram uma linha com 5 cards (4/3/2 em
       telas menores) em carrossel que passa por todos, pausa com o mouse e desliza no celular.
+- [x] **Pagamento on-line no ar (PagBank de produção)** (2026-09-17) — o PagBank liberou as
+      credenciais de produção; a virada foi só configuração (`PAGBANK_TOKEN` de produção e
+      `PAGBANK_SANDBOX=false` no `.env` do servidor, container `orders` recriado) — não há nada no
+      código preso ao ambiente. `GET /api/payments/pagbank/status` passou a responder `sandbox:
+      false` e, com isso, o checkout deixou de exibir o aviso de "em construção" e passou a cobrar de
+      verdade (RF26): cartão com 3DS (`environment: PROD`), PIX e boleto. O caminho de fechar o
+      pedido pelo WhatsApp continua disponível para quem preferir combinar direto com o ateliê.
+
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já
       nos manifests; falta aplicar num cluster ativo e uma license key real. **Não avancei aqui** —
       exige um cluster de verdade e uma license key real da New Relic, que eu não tenho como
