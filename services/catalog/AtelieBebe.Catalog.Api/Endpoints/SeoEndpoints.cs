@@ -29,7 +29,7 @@ public static class SeoEndpoints
 
             try
             {
-                var product = await service.GetBySlugAsync(slug, null, ct);
+                var product = await service.GetBySlugAsync(slug, null, ct: ct);
                 var description = string.IsNullOrWhiteSpace(product.Description)
                     ? $"{product.Name} — peça bordada do {SiteName}, feita sob medida com carinho."
                     : product.Description;

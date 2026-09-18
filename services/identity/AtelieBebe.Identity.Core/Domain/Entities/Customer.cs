@@ -16,6 +16,9 @@ public sealed class Customer : Entity, IAggregateRoot
     public bool IsAnonymized { get; private set; }
     public bool EmailVerified { get; private set; }
 
+    /// <summary>A customer an admin approved as a test user (RF40) — see <see cref="SetTest"/>.</summary>
+    public bool IsTest { get; private set; }
+
     public string? AddressStreet { get; private set; }
     public string? AddressNumber { get; private set; }
     public string? AddressComplement { get; private set; }
@@ -144,6 +147,16 @@ public sealed class Customer : Entity, IAggregateRoot
     /// raw/malformed string) — Domain has no hashing abstraction, so the caller supplies it via
     /// <c>IPasswordHasher</c>.
     /// </summary>
+    /// <summary>
+    /// Approves or revokes this account as a test user (RF40) — always an admin decision, never
+    /// self-service. A test user is the only one who can see test products, and every order she
+    /// places is recorded as a test purchase, out of the ateliê's listings and figures.
+    /// </summary>
+    public void SetTest(bool isTest)
+    {
+        IsTest = isTest;
+    }
+
     public void Anonymize(string unusablePasswordHash)
     {
         if (IsAnonymized) return;

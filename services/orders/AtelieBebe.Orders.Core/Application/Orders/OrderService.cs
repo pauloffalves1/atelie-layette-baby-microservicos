@@ -30,7 +30,7 @@ public sealed class OrderService : IOrderService
         _logger = logger;
     }
 
-    public async Task<OrderDto> CreateStoreOrderAsync(CreateStoreOrderRequest request, Guid? customerId, CancellationToken ct = default)
+    public async Task<OrderDto> CreateStoreOrderAsync(CreateStoreOrderRequest request, Guid? customerId, bool isTestCustomer = false, CancellationToken ct = default)
     {
         _logger.LogInformation("Entrando em {Method}", nameof(CreateStoreOrderAsync));
         try
@@ -56,6 +56,11 @@ public sealed class OrderService : IOrderService
                 request.DeliveryMethod,
                 request.RecipientName);
 
+            // A customer an admin approved as a test user (RF40) is only ever shopping to exercise
+            // the checkout — everything she buys is a test purchase, whatever is in the basket.
+            if (isTestCustomer)
+                order.MarkAsTest();
+
             foreach (var itemRequest in request.Items)
             {
                 var embroideryText = ParseEmbroideryText(itemRequest.OptionsJson);
@@ -68,8 +73,9 @@ public sealed class OrderService : IOrderService
                     var product = await _catalogServiceClient.GetProductAsync(productId, ct)
                         ?? throw new NotFoundException("Produto", productId);
 
-                    // One test item is enough to make the whole order a test purchase (RF40) — it is
-                    // decided here, at creation, from what the catalog says the product is right now.
+                    // A test product in the basket marks the order too — the second half of the rule,
+                    // so a test purchase can't reach the ateliê's figures even if the account that
+                    // placed it wasn't (or is no longer) an approved test user.
                     if (product.IsTest)
                         order.MarkAsTest();
 

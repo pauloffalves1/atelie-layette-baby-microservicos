@@ -21,13 +21,13 @@ public sealed class ProductRepository : IProductRepository
     public async Task<IReadOnlyList<Product>> ListByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct = default) =>
         await ProductsWithAccess.Where(p => ids.Contains(p.Id)).ToListAsync(ct);
 
-    public Task<Product?> GetBySlugAsync(string slug, Guid? customerId = null, CancellationToken ct = default) =>
-        ApplyVisibility(ProductsWithAccess.Where(p => p.Slug == slug), customerId).FirstOrDefaultAsync(ct);
+    public Task<Product?> GetBySlugAsync(string slug, Guid? customerId = null, bool isTestCustomer = false, CancellationToken ct = default) =>
+        ApplyVisibility(ProductsWithAccess.Where(p => p.Slug == slug), customerId, isTestCustomer).FirstOrDefaultAsync(ct);
 
     public Task<bool> SlugExistsAsync(string slug, CancellationToken ct = default) =>
         _dbContext.Products.AnyAsync(p => p.Slug == slug, ct);
 
-    public async Task<(IReadOnlyList<Product> Items, int TotalItems)> ListAsync(string? category, bool onlyActive, int page, int pageSize, Guid? customerId = null, string? search = null, CancellationToken ct = default)
+    public async Task<(IReadOnlyList<Product> Items, int TotalItems)> ListAsync(string? category, bool onlyActive, int page, int pageSize, Guid? customerId = null, bool isTestCustomer = false, string? search = null, CancellationToken ct = default)
     {
         var query = ProductsWithAccess;
 
@@ -46,7 +46,7 @@ public sealed class ProductRepository : IProductRepository
         // Admin listings (onlyActive: false) show every product regardless of exclusivity;
         // only the customer-facing catalog (onlyActive: true) is restricted by access grants.
         if (onlyActive)
-            query = ApplyVisibility(query, customerId);
+            query = ApplyVisibility(query, customerId, isTestCustomer);
 
         query = query.OrderBy(p => p.Name);
 
@@ -56,9 +56,9 @@ public sealed class ProductRepository : IProductRepository
         return (items, totalItems);
     }
 
-    public async Task<(IReadOnlyList<Product> Items, int TotalItems)> SearchAsync(ProductSearchFilters filters, int page, int pageSize, Guid? customerId = null, CancellationToken ct = default)
+    public async Task<(IReadOnlyList<Product> Items, int TotalItems)> SearchAsync(ProductSearchFilters filters, int page, int pageSize, Guid? customerId = null, bool isTestCustomer = false, CancellationToken ct = default)
     {
-        var query = ApplyVisibility(ProductsWithAccess.Where(p => p.Active), customerId);
+        var query = ApplyVisibility(ProductsWithAccess.Where(p => p.Active), customerId, isTestCustomer);
 
         if (!string.IsNullOrWhiteSpace(filters.Category))
             query = query.Where(p => p.Category == filters.Category);
@@ -89,13 +89,13 @@ public sealed class ProductRepository : IProductRepository
         return (items, totalItems);
     }
 
-    public async Task<IReadOnlyList<Product>> ListFeaturedAsync(Guid? customerId = null, CancellationToken ct = default) =>
-        await ApplyVisibility(ProductsWithAccess.Where(p => p.Active && p.Featured), customerId)
+    public async Task<IReadOnlyList<Product>> ListFeaturedAsync(Guid? customerId = null, bool isTestCustomer = false, CancellationToken ct = default) =>
+        await ApplyVisibility(ProductsWithAccess.Where(p => p.Active && p.Featured), customerId, isTestCustomer)
             .OrderBy(p => p.Name)
             .ToListAsync(ct);
 
-    public async Task<IReadOnlyList<string>> ListCategoriesAsync(Guid? customerId = null, CancellationToken ct = default) =>
-        await ApplyVisibility(_dbContext.Products.Where(p => p.Active), customerId)
+    public async Task<IReadOnlyList<string>> ListCategoriesAsync(Guid? customerId = null, bool isTestCustomer = false, CancellationToken ct = default) =>
+        await ApplyVisibility(_dbContext.Products.Where(p => p.Active), customerId, isTestCustomer)
             .Select(p => p.Category)
             .Distinct()
             .OrderBy(c => c)
@@ -109,15 +109,18 @@ public sealed class ProductRepository : IProductRepository
     /// Restricts a product query to products that are public, or exclusive products the given customer
     /// was granted access to. Translated to SQL as an EXISTS subquery against ProductCustomerAccess.
     /// </summary>
-    private IQueryable<Product> ApplyVisibility(IQueryable<Product> query, Guid? customerId)
+    private IQueryable<Product> ApplyVisibility(IQueryable<Product> query, Guid? customerId, bool isTestCustomer = false)
     {
         var access = _dbContext.Set<ProductCustomerAccessEntry>();
 
-        // A test product (RF40) is never "public by absence of grants": it is visible only to the
-        // customers explicitly granted access, so forgetting to grant access hides it from everyone
-        // instead of exposing it to the whole store.
+        // Test products (RF40) answer to the test-user flag alone, not to the per-product access
+        // list: an approved test customer sees all of them, everyone else — anonymous visitors and
+        // ordinary customers alike — sees none, which is also what keeps them out of the sitemap
+        // and the crawler snapshots.
         return query.Where(p =>
-            (!p.IsTest && !access.Any(a => EF.Property<Guid>(a, "ProductId") == p.Id)) ||
-            (customerId != null && access.Any(a => EF.Property<Guid>(a, "ProductId") == p.Id && a.CustomerId == customerId)));
+            p.IsTest
+                ? isTestCustomer
+                : !access.Any(a => EF.Property<Guid>(a, "ProductId") == p.Id) ||
+                  (customerId != null && access.Any(a => EF.Property<Guid>(a, "ProductId") == p.Id && a.CustomerId == customerId)));
     }
 }

@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Observable, forkJoin } from 'rxjs';
 import { CustomerSummary } from '@shared/core/models/customer.model';
+import { AdminAuthService } from '@shared/core/services/admin-auth.service';
 import { CustomerAdminService } from '@shared/core/services/customer-admin.service';
 import { ProductService } from '@shared/core/services/product.service';
 import { resolveAssetUrl } from '@shared/core/utils/asset-url';
@@ -24,6 +25,10 @@ function toDatetimeLocal(iso: string | null): string {
 })
 export class AdminProductForm implements OnInit {
   private readonly fb = inject(FormBuilder);
+  private readonly auth = inject(AdminAuthService);
+
+  /** Approving a test product (RF40) needs the "Testes" permission — without it the switch isn't shown, matching what the API accepts. */
+  readonly canApproveTestProducts = computed(() => this.auth.hasPermission('Testing'));
 
   readonly isEditMode = signal(false);
   readonly loading = signal(false);

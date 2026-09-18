@@ -566,25 +566,32 @@ listas do administrativo.
 
 **Acceptance Criteria**
 
-1. Um produto PODE ser marcado como **produto de teste**. ENQUANTO marcado, ele só DEVE ser visível
-   — na listagem da loja, na busca, nos destaques e na própria página do produto — para clientes com
-   acesso exclusivo concedido a ele (RF02); para visitantes anônimos e para qualquer outra cliente
-   ele NÃO DEVE existir, o que também o mantém fora do sitemap e das páginas pré-renderizadas para
-   buscadores. Um produto de teste sem nenhuma concessão de acesso NÃO DEVE aparecer para ninguém.
-2. QUANDO um pedido contém pelo menos um item de um produto de teste, O SISTEMA DEVE marcá-lo como
-   pedido de teste no momento da criação, e essa marca NÃO DEVE mudar depois.
-3. Pedidos de teste NÃO DEVEM aparecer na listagem de encomendas do painel nem na exportação CSV, e
+1. Uma administradora com a permissão "Testes" PODE aprovar uma cliente como **usuária de teste** no
+   cadastro de Clientes, e PODE revogar essa aprovação. A cliente NÃO PODE se aprovar sozinha.
+2. Uma administradora com a permissão "Testes" PODE marcar um produto como **produto de teste** no
+   cadastro do produto.
+3. ENQUANTO um produto estiver marcado como produto de teste, ele só DEVE ser visível — na listagem
+   da loja, na busca, nos destaques e na própria página do produto — para usuárias de teste; para
+   visitantes anônimas e para qualquer outra cliente ele NÃO DEVE existir, o que também o mantém
+   fora do sitemap e das páginas pré-renderizadas para buscadores. A lista de acesso exclusivo
+   (RF02) NÃO DEVE abrir um produto de teste para quem não é usuária de teste.
+4. QUANDO a aprovação de uma usuária de teste muda, a mudança DEVE valer a partir do próximo login
+   dela — a marca viaja no token de autenticação.
+5. QUANDO um pedido é criado por uma usuária de teste, OU contém pelo menos um item de um produto de
+   teste, O SISTEMA DEVE marcá-lo como pedido de teste no momento da criação, e essa marca NÃO DEVE
+   mudar depois.
+6. Pedidos de teste NÃO DEVEM aparecer na listagem de encomendas do painel nem na exportação CSV, e
    NÃO DEVEM entrar em nenhum número do dashboard (faturamento, contagem de pedidos, ticket médio,
    vendas por dia, produtos mais vendidos, pedidos por status, pagamentos pendentes, itens sinalizados)
    nem no resumo gerado por IA.
-4. QUANDO um pedido de teste é criado, O SISTEMA DEVE enviar normalmente os avisos para a cliente
+7. QUANDO um pedido de teste é criado, O SISTEMA DEVE enviar normalmente os avisos para a cliente
    (e-mail de pedido recebido, confirmação de pagamento) e NÃO DEVE enviar o aviso de nova encomenda
    para o ateliê.
-5. Avaliações de um produto de teste NÃO DEVEM aparecer na loja nem na listagem de avaliações do painel.
-6. A contagem de clientes do dashboard NÃO DEVE incluir as contas listadas como contas de teste na
-   configuração do servidor.
-7. O painel DEVE ter uma tela de testes que lista exatamente os pedidos de teste, com situação,
-   forma e situação de pagamento, identificador do PagBank e total, e permite excluir um pedido de
-   teste para limpeza.
-8. A tela e os endpoints de teste DEVEM exigir a permissão "Testes" (`AdminPermission.Testing`), que
-   NÃO DEVE ser concedida por padrão a nenhuma administradora.
+8. Avaliações de um produto de teste NÃO DEVEM aparecer na loja nem na listagem de avaliações do painel.
+9. A contagem de clientes do dashboard NÃO DEVE incluir as usuárias de teste.
+10. O painel DEVE ter uma tela de testes que lista exatamente os pedidos de teste, com situação,
+    forma e situação de pagamento, identificador do PagBank e total, e permite excluir um pedido de
+    teste para limpeza.
+11. A tela de testes, a aprovação de usuária de teste e a aprovação de produto de teste DEVEM exigir
+    a permissão "Testes" (`AdminPermission.Testing`), que NÃO DEVE ser concedida por padrão a
+    nenhuma administradora.

@@ -38,6 +38,18 @@ public static class CustomerEndpoints
             return Results.Ok(updated);
         });
 
+        // Approving a test user (RF40) needs the Testing permission on top of the group's Customers:
+        // it decides who can see test products and whose orders leave the ateliê's figures, which is
+        // a testing decision rather than routine customer management.
+        adminGroup.MapPatch("/{id:guid}/test", async (Guid id, SetTestCustomerRequest request, HttpContext http, ICustomerAdminService service, AdminAuditPublisher auditPublisher, CancellationToken ct) =>
+        {
+            var updated = await service.SetTestAsync(id, request.IsTest, ct);
+            var state = request.IsTest ? "aprovado como usuário de teste" : "deixou de ser usuário de teste";
+            await auditPublisher.PublishAsync(http.User.GetUserId(), http.User.GetName(), "CustomerTestChanged", $"Cliente '{updated.Name}' {state}", ct);
+            return Results.Ok(updated);
+        })
+        .RequireAuthorization(JwtAuthenticationExtensions.PermissionPolicyName(AdminPermission.Testing));
+
         adminGroup.MapDelete("/{id:guid}", async (Guid id, HttpContext http, ICustomerAdminService service, AdminAuditPublisher auditPublisher, CancellationToken ct) =>
         {
             var before = await service.GetByIdAsync(id, ct);

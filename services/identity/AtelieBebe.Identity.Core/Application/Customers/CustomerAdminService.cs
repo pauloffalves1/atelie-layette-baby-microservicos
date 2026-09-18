@@ -91,6 +91,30 @@ public sealed class CustomerAdminService : ICustomerAdminService
         }
     }
 
+    public async Task<CustomerSummaryDto> SetTestAsync(Guid id, bool isTest, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Entrando em {Method} para {CustomerId}", nameof(SetTestAsync), id);
+        try
+        {
+            var customer = await _unitOfWork.Customers.GetByIdAsync(id, ct)
+                ?? throw new NotFoundException("Cliente", id);
+
+            if (customer.IsAnonymized)
+                throw new ConflictException("Esta conta foi excluída pelo cliente e não pode mais ser editada.");
+
+            customer.SetTest(isTest);
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            _logger.LogInformation("Saindo de {Method}", nameof(SetTestAsync));
+            return ToDto(customer);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro em {Method}", nameof(SetTestAsync));
+            throw;
+        }
+    }
+
     public async Task<CustomerSummaryDto> VerifyEmailAsync(Guid id, CancellationToken ct = default)
     {
         _logger.LogInformation("Entrando em {Method} para {CustomerId}", nameof(VerifyEmailAsync), id);
@@ -156,5 +180,6 @@ public sealed class CustomerAdminService : ICustomerAdminService
     private static CustomerSummaryDto ToDto(Customer c) =>
         new(
             c.Id, c.Name, c.Email.Value, c.Phone, c.Cpf?.Value, c.CreatedAt, c.IsAnonymized, c.EmailVerified,
-            c.AddressStreet, c.AddressNumber, c.AddressComplement, c.AddressNeighborhood, c.AddressCity, c.AddressState, c.AddressZipCode);
+            c.AddressStreet, c.AddressNumber, c.AddressComplement, c.AddressNeighborhood, c.AddressCity, c.AddressState, c.AddressZipCode,
+            c.IsTest);
 }

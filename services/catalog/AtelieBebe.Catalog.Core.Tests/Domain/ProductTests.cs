@@ -135,7 +135,7 @@ public class ProductTests
 
     /// <summary>RF40 — a test product exists only to exercise the real checkout.</summary>
     [Fact]
-    public void SetTest_HidesTheProductFromEveryoneWithoutAnAccessGrant()
+    public void SetTest_HidesTheProductFromEveryoneButApprovedTestUsers()
     {
         var product = CreateProduct();
 
@@ -144,19 +144,20 @@ public class ProductTests
         Assert.True(product.IsTest);
         Assert.False(product.HasAccess(null));
         Assert.False(product.HasAccess(Guid.NewGuid()));
+        Assert.True(product.HasAccess(Guid.NewGuid(), isTestCustomer: true));
     }
 
     [Fact]
-    public void SetTest_TestProductIsVisibleToTheCustomerItWasGrantedTo()
+    public void SetTest_AccessGrantsDoNotOpenATestProductToANonTestCustomer()
     {
         var product = CreateProduct();
-        var testerId = Guid.NewGuid();
+        var grantedCustomerId = Guid.NewGuid();
 
         product.SetTest(true);
-        product.SetAllowedCustomers([testerId]);
+        product.SetAllowedCustomers([grantedCustomerId]);
 
-        Assert.True(product.HasAccess(testerId));
-        Assert.False(product.HasAccess(Guid.NewGuid()));
+        Assert.False(product.HasAccess(grantedCustomerId));
+        Assert.True(product.HasAccess(grantedCustomerId, isTestCustomer: true));
     }
 
     [Fact]

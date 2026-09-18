@@ -21,7 +21,7 @@ public static class OrderEndpoints
         group.MapPost("/store", async (CreateStoreOrderRequest request, HttpContext http, IOrderService service, CancellationToken ct) =>
         {
             var customerId = http.User.GetUserIdOrNull();
-            return Results.Ok(await service.CreateStoreOrderAsync(request, customerId, ct));
+            return Results.Ok(await service.CreateStoreOrderAsync(request, customerId, http.User.IsTestUser(), ct));
         });
 
         group.MapPost("/custom", async (CreateCustomOrderRequest request, HttpContext http, IOrderService service, CancellationToken ct) =>

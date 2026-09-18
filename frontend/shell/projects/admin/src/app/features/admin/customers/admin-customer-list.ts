@@ -1,7 +1,8 @@
 import { DatePipe } from '@angular/common';
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CustomerSummary } from '@shared/core/models/customer.model';
+import { AdminAuthService } from '@shared/core/services/admin-auth.service';
 import { CustomerAdminService } from '@shared/core/services/customer-admin.service';
 import { whatsappUrl } from '@shared/core/utils/contact-links';
 
@@ -19,12 +20,19 @@ import { LoadError } from '@shared/shared/components/load-error/load-error';
   templateUrl: './admin-customer-list.html',
 })
 export class AdminCustomerList implements OnInit {
+  private readonly auth = inject(AdminAuthService);
+
   readonly customers = signal<CustomerSummary[]>([]);
   readonly loading = signal(true);
   readonly loadError = signal(false);
   readonly verifyingId = signal<string | null>(null);
   readonly removingId = signal<string | null>(null);
   readonly search = signal('');
+
+  /** Only an admin who holds "Testes" approves test users (RF40) — for everyone else the column isn't even rendered. */
+  readonly canApproveTestUsers = computed(() => this.auth.hasPermission('Testing'));
+  readonly testingId = signal<string | null>(null);
+  readonly testError = signal<string | null>(null);
 
   /** The admin customer endpoint already returns every account (unpaginated), so search filters
    * in memory — name/e-mail ignore case and accents, phone/CPF match on digits alone. */
@@ -62,6 +70,26 @@ export class AdminCustomerList implements OnInit {
           this.loading.set(false);
           this.loadError.set(true);
         },
+    });
+  }
+
+  /**
+   * Approves/revokes a test user (RF40). The flag rides in the customer's token, so it only takes
+   * effect on her next login — the warning next to the switch says so.
+   */
+  toggleTestUser(customer: CustomerSummary): void {
+    if (this.testingId()) return;
+    this.testingId.set(customer.id);
+    this.testError.set(null);
+    this.customerAdminService.setTest(customer.id, !customer.isTest).subscribe({
+      next: (updated) => {
+        this.customers.update((list) => list.map((c) => (c.id === updated.id ? updated : c)));
+        this.testingId.set(null);
+      },
+      error: () => {
+        this.testingId.set(null);
+        this.testError.set('Não foi possível alterar o acesso de teste desta cliente.');
+      },
     });
   }
 

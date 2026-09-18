@@ -29,7 +29,8 @@ public sealed class JwtTokenGenerator : IJwtTokenGenerator
     }
 
     public string GenerateCustomerToken(Customer customer) =>
-        GenerateToken(customer.Id, customer.Name, customer.Email.Value, Roles.Customer, []);
+        GenerateToken(customer.Id, customer.Name, customer.Email.Value, Roles.Customer,
+            customer.IsTest ? [new Claim(JwtAuthenticationExtensions.TestUserClaimType, "true")] : []);
 
     public string GenerateAdminToken(Admin admin) =>
         GenerateToken(admin.Id, admin.Name, admin.Email.Value, Roles.Admin,

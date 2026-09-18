@@ -18,6 +18,14 @@ public static class JwtAuthenticationExtensions
     /// <summary>Claim type Identity issues one instance of per permission an admin holds.</summary>
     public const string PermissionClaimType = "permission";
 
+    /// <summary>
+    /// Claim Identity puts on a test customer's token (RF40). It travels in the token for the same
+    /// reason permissions do — Catalog and Orders decide what a test customer may see and what
+    /// counts as a test purchase without calling Identity back on every request. Approving or
+    /// revoking a test customer therefore only takes effect on her next login.
+    /// </summary>
+    public const string TestUserClaimType = "test_user";
+
     /// <summary>The authorization policy name for a given permission — e.g. "Admin.Products".</summary>
     public static string PermissionPolicyName(AdminPermission permission) => $"Admin.{permission}";
 

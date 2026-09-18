@@ -40,7 +40,7 @@ public sealed class ProductService : IProductService
         _logger = logger;
     }
 
-    public async Task<PagedResult<ProductDto>> ListAsync(string? category, bool onlyActive, int page, int pageSize, Guid? customerId = null, string? search = null, CancellationToken ct = default)
+    public async Task<PagedResult<ProductDto>> ListAsync(string? category, bool onlyActive, int page, int pageSize, Guid? customerId = null, bool isTestCustomer = false, string? search = null, CancellationToken ct = default)
     {
         _logger.LogInformation("Entrando em {Method}", nameof(ListAsync));
         try
@@ -48,14 +48,14 @@ public sealed class ProductService : IProductService
             var (normalizedPage, normalizedPageSize) = Pagination.Normalize(page, pageSize);
 
             if (customerId is not null)
-                return await ListUncachedAsync(category, onlyActive, normalizedPage, normalizedPageSize, customerId, search, ct);
+                return await ListUncachedAsync(category, onlyActive, normalizedPage, normalizedPageSize, customerId, isTestCustomer, search, ct);
 
             var cacheKey = $"products:list:{category}:{onlyActive}:{normalizedPage}:{normalizedPageSize}:{search}";
             var result = await _cache.GetOrCreateAsync(cacheKey, async entry =>
             {
                 entry.SetOptions(new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = CacheDuration }
                     .AddExpirationToken(_cacheInvalidator.GetToken()));
-                return await ListUncachedAsync(category, onlyActive, normalizedPage, normalizedPageSize, customerId, search, ct);
+                return await ListUncachedAsync(category, onlyActive, normalizedPage, normalizedPageSize, customerId, isTestCustomer, search, ct);
             });
 
             _logger.LogInformation("Saindo de {Method}", nameof(ListAsync));
@@ -68,22 +68,22 @@ public sealed class ProductService : IProductService
         }
     }
 
-    private async Task<PagedResult<ProductDto>> ListUncachedAsync(string? category, bool onlyActive, int page, int pageSize, Guid? customerId, string? search, CancellationToken ct)
+    private async Task<PagedResult<ProductDto>> ListUncachedAsync(string? category, bool onlyActive, int page, int pageSize, Guid? customerId, bool isTestCustomer, string? search, CancellationToken ct)
     {
-        var (products, totalItems) = await _unitOfWork.Products.ListAsync(category, onlyActive, page, pageSize, customerId, search, ct);
+        var (products, totalItems) = await _unitOfWork.Products.ListAsync(category, onlyActive, page, pageSize, customerId, isTestCustomer, search, ct);
         return new PagedResult<ProductDto>(products.Select(ToDto).ToList(), page, pageSize, totalItems);
     }
 
-    public async Task<PagedResult<ProductDto>> SearchAsync(string naturalLanguageQuery, int page, int pageSize, Guid? customerId = null, CancellationToken ct = default)
+    public async Task<PagedResult<ProductDto>> SearchAsync(string naturalLanguageQuery, int page, int pageSize, Guid? customerId = null, bool isTestCustomer = false, CancellationToken ct = default)
     {
         _logger.LogInformation("Entrando em {Method}", nameof(SearchAsync));
         try
         {
             var (normalizedPage, normalizedPageSize) = Pagination.Normalize(page, pageSize);
 
-            var categories = await ListCategoriesAsync(customerId, ct);
+            var categories = await ListCategoriesAsync(customerId, isTestCustomer, ct);
             var filters = await _semanticSearchTranslator.TranslateAsync(naturalLanguageQuery, categories, ct);
-            var (products, totalItems) = await _unitOfWork.Products.SearchAsync(filters, normalizedPage, normalizedPageSize, customerId, ct);
+            var (products, totalItems) = await _unitOfWork.Products.SearchAsync(filters, normalizedPage, normalizedPageSize, customerId, isTestCustomer, ct);
 
             _logger.LogInformation("Saindo de {Method}", nameof(SearchAsync));
             return new PagedResult<ProductDto>(products.Select(ToDto).ToList(), normalizedPage, normalizedPageSize, totalItems);
@@ -95,19 +95,19 @@ public sealed class ProductService : IProductService
         }
     }
 
-    public async Task<IReadOnlyList<ProductDto>> ListFeaturedAsync(Guid? customerId = null, CancellationToken ct = default)
+    public async Task<IReadOnlyList<ProductDto>> ListFeaturedAsync(Guid? customerId = null, bool isTestCustomer = false, CancellationToken ct = default)
     {
         _logger.LogInformation("Entrando em {Method}", nameof(ListFeaturedAsync));
         try
         {
             if (customerId is not null)
-                return (await _unitOfWork.Products.ListFeaturedAsync(customerId, ct)).Select(ToDto).ToList();
+                return (await _unitOfWork.Products.ListFeaturedAsync(customerId, isTestCustomer, ct)).Select(ToDto).ToList();
 
             var result = await _cache.GetOrCreateAsync("products:featured", async entry =>
             {
                 entry.SetOptions(new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = CacheDuration }
                     .AddExpirationToken(_cacheInvalidator.GetToken()));
-                var products = await _unitOfWork.Products.ListFeaturedAsync(customerId, ct);
+                var products = await _unitOfWork.Products.ListFeaturedAsync(customerId, isTestCustomer, ct);
                 return products.Select(ToDto).ToList();
             });
 
@@ -121,19 +121,19 @@ public sealed class ProductService : IProductService
         }
     }
 
-    public async Task<IReadOnlyList<string>> ListCategoriesAsync(Guid? customerId = null, CancellationToken ct = default)
+    public async Task<IReadOnlyList<string>> ListCategoriesAsync(Guid? customerId = null, bool isTestCustomer = false, CancellationToken ct = default)
     {
         _logger.LogInformation("Entrando em {Method}", nameof(ListCategoriesAsync));
         try
         {
             if (customerId is not null)
-                return await _unitOfWork.Products.ListCategoriesAsync(customerId, ct);
+                return await _unitOfWork.Products.ListCategoriesAsync(customerId, isTestCustomer, ct);
 
             var result = await _cache.GetOrCreateAsync("products:categories", async entry =>
             {
                 entry.SetOptions(new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = CacheDuration }
                     .AddExpirationToken(_cacheInvalidator.GetToken()));
-                return await _unitOfWork.Products.ListCategoriesAsync(customerId, ct);
+                return await _unitOfWork.Products.ListCategoriesAsync(customerId, isTestCustomer, ct);
             });
 
             _logger.LogInformation("Saindo de {Method}", nameof(ListCategoriesAsync));
@@ -146,12 +146,12 @@ public sealed class ProductService : IProductService
         }
     }
 
-    public async Task<ProductDto> GetBySlugAsync(string slug, Guid? customerId = null, CancellationToken ct = default)
+    public async Task<ProductDto> GetBySlugAsync(string slug, Guid? customerId = null, bool isTestCustomer = false, CancellationToken ct = default)
     {
         _logger.LogInformation("Entrando em {Method}", nameof(GetBySlugAsync));
         try
         {
-            var product = await _unitOfWork.Products.GetBySlugAsync(slug, customerId, ct)
+            var product = await _unitOfWork.Products.GetBySlugAsync(slug, customerId, isTestCustomer, ct)
                 ?? throw new NotFoundException("Produto", slug);
 
             _logger.LogInformation("Saindo de {Method}", nameof(GetBySlugAsync));

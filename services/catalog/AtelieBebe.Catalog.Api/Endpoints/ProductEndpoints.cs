@@ -16,19 +16,19 @@ public static class ProductEndpoints
         // Anonymous-friendly: no RequireAuthorization, but an authenticated customer's token
         // (when present) is used to also surface exclusive products they were granted access to.
         group.MapGet("/", async (string? category, string? search, HttpContext http, IProductService service, CancellationToken ct, int page = 1, int pageSize = 12) =>
-            Results.Ok(await service.ListAsync(category, onlyActive: true, page, pageSize, http.User.GetUserIdOrNull(), search, ct)));
+            Results.Ok(await service.ListAsync(category, onlyActive: true, page, pageSize, http.User.GetUserIdOrNull(), http.User.IsTestUser(), search, ct)));
 
         group.MapGet("/search/semantic", async (string q, HttpContext http, IProductService service, CancellationToken ct, int page = 1, int pageSize = 12) =>
-            Results.Ok(await service.SearchAsync(q, page, pageSize, http.User.GetUserIdOrNull(), ct)));
+            Results.Ok(await service.SearchAsync(q, page, pageSize, http.User.GetUserIdOrNull(), http.User.IsTestUser(), ct)));
 
         group.MapGet("/featured", async (HttpContext http, IProductService service, CancellationToken ct) =>
-            Results.Ok(await service.ListFeaturedAsync(http.User.GetUserIdOrNull(), ct)));
+            Results.Ok(await service.ListFeaturedAsync(http.User.GetUserIdOrNull(), http.User.IsTestUser(), ct)));
 
         group.MapGet("/categories", async (HttpContext http, IProductService service, CancellationToken ct) =>
-            Results.Ok(await service.ListCategoriesAsync(http.User.GetUserIdOrNull(), ct)));
+            Results.Ok(await service.ListCategoriesAsync(http.User.GetUserIdOrNull(), http.User.IsTestUser(), ct)));
 
         group.MapGet("/{slug}", async (string slug, HttpContext http, IProductService service, CancellationToken ct) =>
-            Results.Ok(await service.GetBySlugAsync(slug, http.User.GetUserIdOrNull(), ct)));
+            Results.Ok(await service.GetBySlugAsync(slug, http.User.GetUserIdOrNull(), http.User.IsTestUser(), ct)));
 
         var adminGroup = app.MapGroup("/api/admin/products").WithTags("Produtos (admin)")
             .RequireAuthorization(JwtAuthenticationExtensions.PermissionPolicyName(AdminPermission.Products));
@@ -86,16 +86,17 @@ public static class ProductEndpoints
         adminGroup.MapPut("/{id:guid}/images", async (Guid id, SetProductImagesRequest request, IProductService service, CancellationToken ct) =>
             Results.Ok(await service.SetImagesAsync(id, request, ct)));
 
-        // Audited like the other "who can see this product" changes: turning a product into a test
-        // product takes it out of the store and takes every order for it out of the admin's figures,
-        // so it should be traceable to whoever flipped it.
+        // Approving a test product (RF40) takes the Testing permission on top of the group's Products,
+        // the same bar as approving a test user: it decides what leaves the store and whose orders
+        // leave the ateliê's figures. Audited, so it's traceable to whoever approved it.
         adminGroup.MapPatch("/{id:guid}/test", async (Guid id, SetTestProductRequest request, HttpContext http, IProductService service, AdminAuditPublisher auditPublisher, CancellationToken ct) =>
         {
             var updated = await service.SetTestAsync(id, request, ct);
-            var state = request.IsTest ? "marcado como produto de teste" : "deixou de ser produto de teste";
+            var state = request.IsTest ? "aprovado como produto de teste" : "deixou de ser produto de teste";
             await auditPublisher.PublishAsync(http.User.GetUserId(), http.User.GetName(), "ProductTestChanged", $"Produto '{updated.Name}' {state}", ct);
             return Results.Ok(updated);
-        });
+        })
+        .RequireAuthorization(JwtAuthenticationExtensions.PermissionPolicyName(AdminPermission.Testing));
 
         adminGroup.MapPatch("/{id:guid}/promotion", async (Guid id, SetPromotionRequest request, HttpContext http, IProductService service, AdminAuditPublisher auditPublisher, CancellationToken ct) =>
         {

@@ -9,6 +9,19 @@
       (keydown.escape)="search.set('')">
   </div>
 
+  @if (canApproveTestUsers()) {
+    <p class="form-text mb-3">
+      <i class="bi bi-bug me-1" aria-hidden="true"></i>
+      Marcar uma cliente como <strong>usuária de teste</strong> faz com que ela veja os produtos de
+      teste e que tudo o que ela comprar fique fora das encomendas e do dashboard, aparecendo só na
+      tela "Testes". Ela precisa sair e entrar de novo na loja para a mudança valer.
+    </p>
+  }
+
+  @if (testError()) {
+    <div class="alert alert-danger" role="alert">{{ testError() }}</div>
+  }
+
   <div class="stat-card p-0 overflow-hidden">
     @if (loading()) {
       <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
@@ -25,6 +38,9 @@
               <th>Telefone</th>
               <th>CPF</th>
               <th>Cadastro</th>
+              @if (canApproveTestUsers()) {
+                <th>Teste</th>
+              }
               <th class="text-end">Ações</th>
             </tr>
           </thead>
@@ -61,6 +77,24 @@
                 </td>
                 <td>{{ customer.cpf | cpfMask }}</td>
                 <td>{{ customer.createdAt | date:'dd/MM/yyyy' }}</td>
+                @if (canApproveTestUsers()) {
+                  <td>
+                    @if (customer.isAnonymized) {
+                      —
+                    } @else {
+                      <div class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox" role="switch"
+                          [id]="'test-user-' + customer.id" [checked]="customer.isTest"
+                          [disabled]="testingId() === customer.id"
+                          [attr.aria-label]="'Usuária de teste: ' + customer.name"
+                          (change)="toggleTestUser(customer)">
+                        <label class="form-check-label small" [for]="'test-user-' + customer.id">
+                          {{ customer.isTest ? 'Usuária de teste' : 'Não' }}
+                        </label>
+                      </div>
+                    }
+                  </td>
+                }
                 <td class="text-end">
                   @if (!customer.isAnonymized) {
                     @if (!customer.emailVerified) {
@@ -94,7 +128,7 @@
             }
             @if (filteredCustomers().length === 0) {
               <tr>
-                <td colspan="7" class="text-center text-secondary py-4">
+                <td [attr.colspan]="canApproveTestUsers() ? 8 : 7" class="text-center text-secondary py-4">
                   @if (search().trim()) {
                     Nenhum cliente encontrado para "{{ search() }}".
                     <button type="button" class="btn btn-link btn-sm p-0 align-baseline" (click)="search.set('')">Limpar busca</button>

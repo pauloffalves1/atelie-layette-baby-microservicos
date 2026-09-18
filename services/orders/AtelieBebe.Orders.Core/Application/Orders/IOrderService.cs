@@ -4,7 +4,7 @@ namespace AtelieBebe.Orders.Core.Application.Orders;
 
 public interface IOrderService
 {
-    Task<OrderDto> CreateStoreOrderAsync(CreateStoreOrderRequest request, Guid? customerId, CancellationToken ct = default);
+    Task<OrderDto> CreateStoreOrderAsync(CreateStoreOrderRequest request, Guid? customerId, bool isTestCustomer = false, CancellationToken ct = default);
     Task<OrderDto> CreateCustomOrderAsync(CreateCustomOrderRequest request, Guid? customerId, CancellationToken ct = default);
 
     /// <summary>Admin registration of an order agreed outside the site (see <see cref="CreateManualOrderRequest"/>).</summary>

@@ -339,3 +339,10 @@ substituição daquele relato.
       não sai para pedido de teste (e-mails da cliente continuam).
 - [x] Identity: contagem de clientes ignora `Testing:AccountEmails`.
 - [x] Tela "Testes" no painel (lista + exclusão) e rota do Gateway.
+- [x] Reescrita (2026-09-18): marca na cliente — `Customer.IsTest` (migração `AddCustomerTestFlag`),
+      `PATCH /api/admin/customers/{id}/test` exigindo `Customers` + `Testing`, claim `test_user` no
+      token da cliente e `ClaimsPrincipal.IsTestUser()`; produto de teste visível só para usuária de
+      teste (`isTestCustomer` propagado por repositório/serviço/endpoints do Catalog); pedido marcado
+      também quando a compradora é usuária de teste; aprovação de produto de teste passou a exigir
+      `Testing`; contagem de clientes usa a própria flag (env `TESTING_ACCOUNT_EMAILS` removido);
+      chave na tela de Clientes.

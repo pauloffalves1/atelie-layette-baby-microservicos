@@ -156,4 +156,23 @@ public class CustomerTests
 
         Assert.Contains(customer.DomainEvents, e => e.GetType().Name == "PasswordResetRequestedDomainEvent");
     }
+
+    /// <summary>RF40 — test users are approved by an admin; nothing about registering makes one.</summary>
+    [Fact]
+    public void NewCustomer_IsNotATestUser()
+    {
+        Assert.False(RegisterCustomer().IsTest);
+    }
+
+    [Fact]
+    public void SetTest_ApprovesAndRevokesTheTestUser()
+    {
+        var customer = RegisterCustomer();
+
+        customer.SetTest(true);
+        Assert.True(customer.IsTest);
+
+        customer.SetTest(false);
+        Assert.False(customer.IsTest);
+    }
 }

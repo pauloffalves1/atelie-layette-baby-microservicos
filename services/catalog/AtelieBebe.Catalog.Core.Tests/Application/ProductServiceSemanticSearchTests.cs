@@ -22,7 +22,7 @@ public class ProductServiceSemanticSearchTests
     public ProductServiceSemanticSearchTests()
     {
         _unitOfWork.Products.Returns(_productRepository);
-        _productRepository.ListCategoriesAsync(null, Arg.Any<CancellationToken>())
+        _productRepository.ListCategoriesAsync(null, false, Arg.Any<CancellationToken>())
             .Returns(new List<string> { "Fralda de Boca", "Fralda de Ombro", "Kit Ombro e Boca" });
     }
 
@@ -45,7 +45,7 @@ public class ProductServiceSemanticSearchTests
             .Returns(filters);
 
         var product = CreateProduct("Fralda de Boca Bordada", "Fralda de Boca");
-        _productRepository.SearchAsync(filters, 1, 20, null, Arg.Any<CancellationToken>())
+        _productRepository.SearchAsync(filters, 1, 20, null, false, Arg.Any<CancellationToken>())
             .Returns(([product], 1));
 
         var result = await BuildService().SearchAsync("body de algodão até 80 reais", 1, 20);
@@ -64,7 +64,7 @@ public class ProductServiceSemanticSearchTests
         var filters = new ProductSearchFilters(null, null, null, "unicórnio", OnlyOnPromotion: false);
         _translator.TranslateAsync(Arg.Any<string>(), Arg.Any<IReadOnlyList<string>>(), Arg.Any<CancellationToken>())
             .Returns(filters);
-        _productRepository.SearchAsync(filters, 1, 20, null, Arg.Any<CancellationToken>())
+        _productRepository.SearchAsync(filters, 1, 20, null, false, Arg.Any<CancellationToken>())
             .Returns((Array.Empty<Product>(), 0));
 
         var result = await BuildService().SearchAsync("unicórnio", 1, 20);

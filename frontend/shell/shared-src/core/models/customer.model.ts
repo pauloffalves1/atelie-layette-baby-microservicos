@@ -14,6 +14,8 @@ export interface CustomerSummary {
   addressCity: string | null;
   addressState: string | null;
   addressZipCode: string | null;
+  /** RF40 — aprovada por uma administradora como usuária de teste: vê os produtos de teste e tudo que compra é compra de teste. */
+  isTest?: boolean;
 }
 
 export interface UpdateCustomerRequest {

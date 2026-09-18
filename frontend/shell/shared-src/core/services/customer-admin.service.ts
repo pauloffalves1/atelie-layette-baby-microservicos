@@ -26,6 +26,11 @@ export class CustomerAdminService {
     return this.http.post<CustomerSummary>(`${this.baseUrl}/${id}/verify-email`, {});
   }
 
+  /** RF40 — aprova/revoga a cliente como usuária de teste. Exige a permissão Testes; só vale no próximo login dela. */
+  setTest(id: string, isTest: boolean): Observable<CustomerSummary> {
+    return this.http.patch<CustomerSummary>(`${this.baseUrl}/${id}/test`, { isTest });
+  }
+
   remove(id: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
