@@ -64,7 +64,7 @@
                 <label class="form-check-label small fw-semibold" for="featured">Produto em destaque</label>
               </div>
             </div>
-            @if (isEditMode() && canApproveTestProducts()) {
+            @if (canApproveTestProducts()) {
               <div class="col-12">
                 <div class="form-check form-switch">
                   <input class="form-check-input" type="checkbox" role="switch" id="isTest" formControlName="isTest">

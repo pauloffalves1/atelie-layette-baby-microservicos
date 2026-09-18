@@ -1,7 +1,8 @@
 import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Observable, forkJoin } from 'rxjs';
+import { Observable, forkJoin, of } from 'rxjs';
+import { map, switchMap } from 'rxjs/operators';
 import { CustomerSummary } from '@shared/core/models/customer.model';
 import { AdminAuthService } from '@shared/core/services/admin-auth.service';
 import { CustomerAdminService } from '@shared/core/services/customer-admin.service';
@@ -422,10 +423,22 @@ export class AdminProductForm implements OnInit {
     } else {
       // A new product can only get gallery photos, a promotion and exclusive access once it exists,
       // so land on its edit page (instead of back on the list) to make those next steps obvious.
-      this.productService.create(payload).subscribe({
-        next: (product) => this.leaveAfterSave(['/admin/produtos', product.id, 'editar'], { criado: 1 }),
-        error: onError,
-      });
+      // The test-product switch (RF40) is the exception: it is offered here at creation, because a
+      // product created for testing should never be visible in the store even briefly — it is applied
+      // right after the product exists, since marking it needs its id (and its own permission).
+      this.productService
+        .create(payload)
+        .pipe(
+          switchMap((product) =>
+            value.isTest
+              ? this.productService.setTest(product.id, true).pipe(map(() => product))
+              : of(product),
+          ),
+        )
+        .subscribe({
+          next: (product) => this.leaveAfterSave(['/admin/produtos', product.id, 'editar'], { criado: 1 }),
+          error: onError,
+        });
     }
   }
 
