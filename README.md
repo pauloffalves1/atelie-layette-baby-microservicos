@@ -1130,6 +1130,18 @@ contra o Gateway via `docker run --network host`).
       verdade (RF26): cartão com 3DS (`environment: PROD`), PIX e boleto. O caminho de fechar o
       pedido pelo WhatsApp continua disponível para quem preferir combinar direto com o ateliê.
 
+- [x] **Specs do `shared-src` passando a rodar; suíte inteira verde** (2026-09-18) — dez arquivos de
+      teste em `shared-src` (carrinho, guards, interceptor de autenticação, `assetUrl`, parser do
+      resumo do WhatsApp, SEO, frete) existiam no repositório **sem nunca terem sido executados**: o
+      builder `@angular/build:unit-test` coleta specs a partir do `sourceRoot` de um projeto, e
+      `shared-src` não é um projeto — é compilado dentro dos três. Agora rodam na execução do
+      **shell**, o único cuja raiz os contém (ver "Testes unitários do frontend"), uma vez só em vez
+      de três. Na mesma limpeza, as três `app.spec.ts` geradas pelo Angular pararam de falhar: cada
+      uma checava o `<h1>Hello, <app>` do template de scaffold, trocado pelo `router-outlet` antes
+      destas aplicações irem ao ar — estavam vermelhas desde o commit inicial, sem ninguém ver, e
+      agora verificam o outlet que de fato renderizam. Resultado dos três níveis rodados no mesmo
+      dia: **190 testes unitários .NET**, **77 unitários de frontend** e **7 e2e** — todos verdes.
+
 - [x] **Compras de teste em produção (RF40)** (2026-09-18) — com o PagBank ligado de verdade, testar
       pagamento passou a significar gerar pedido real no meio dos dados do ateliê. Quem compra é a
       cliente, então a marca é dela: em **Clientes**, uma administradora com a permissão `Testing`
