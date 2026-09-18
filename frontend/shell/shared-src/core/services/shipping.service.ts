@@ -39,24 +39,31 @@ const BASE_RATE_BY_REGION: Record<string, number> = {
 const DEFAULT_RATE = 24.9;
 
 /**
- * Approximate weight per product category (grams) — a burp cloth ships very differently from a
- * towel or a 3-piece kit, so a flat per-item surcharge understated heavier carts and overstated
- * light ones. These are rough real-world weights for this catalog's pieces, not a scale reading.
+ * Shipping weight the ateliê quotes per unit, as decided with the owner: a single piece counts as
+ * 500 g, while a kit — or a bath towel on its own — counts as 1 kg, each adding its own kilo
+ * (2 kits = 2 kg). These are posting weights, box and padding included, not the bare weight of the
+ * fabric, which is why a fraldinha alone is already quoted at half a kilo.
  */
-const CATEGORY_WEIGHT_GRAMS: Record<string, number> = {
-  'Fralda de Boca': 90,
-  'Fralda de Ombro': 160,
-  'Almofadinha': 300,
-  Toalha: 350,
-  'Kit Ombro e Boca': 240,
-  'Kit Ombro, Boca e Toalha': 480,
-};
-const DEFAULT_ITEM_WEIGHT_GRAMS = 200;
+const KIT_WEIGHT_GRAMS = 1000;
+const SINGLE_PIECE_WEIGHT_GRAMS = 500;
 
-/** The base regional rate below already covers a single light piece up to this weight. */
-const BASE_WEIGHT_GRAMS = 150;
-/** Correios' real PAC pricing climbs in steps roughly every 300g past the base weight. */
-const WEIGHT_STEP_GRAMS = 300;
+/**
+ * Categories quoted at a full kilo without being named "Kit ...": "Boca, Ombro e Maternidade" is a
+ * kit, and a bath towel on its own already fills a kilo's worth of box.
+ */
+const FULL_KILO_CATEGORIES = new Set(['Boca, Ombro e Maternidade', 'Toalha']);
+
+function itemWeightGrams(category: string): number {
+  const normalized = category.trim();
+  return normalized.toLocaleLowerCase('pt-BR').startsWith('kit') || FULL_KILO_CATEGORIES.has(normalized)
+    ? KIT_WEIGHT_GRAMS
+    : SINGLE_PIECE_WEIGHT_GRAMS;
+}
+
+/** The base regional rate already covers one piece — half a kilo. */
+const BASE_WEIGHT_GRAMS = 500;
+/** Past the base weight the quote climbs half a kilo at a time, so the steps land on whole pieces and kits. */
+const WEIGHT_STEP_GRAMS = 500;
 /**
  * Surcharge per weight step, as a fraction of the destination's base rate — farther destinations
  * also pay more per extra 300g, not just a flat national add-on, so this scales with baseRate
@@ -135,21 +142,18 @@ export class ShippingService {
   }
 
   /**
-   * Estimated freight for a destination state/city and the cart's actual items — the raw
-   * Correios-style rate, no markup — or 0 once the cart subtotal reaches this destination's
-   * free-shipping threshold. Weight is derived from each item's category (see
-   * CATEGORY_WEIGHT_GRAMS) rather than a flat per-item surcharge, so a cart of towels costs more
-   * to ship than the same number of burp cloths, matching how Correios actually prices.
+   * Freight for a destination state/city and the cart's actual items — the raw Correios-style
+   * rate, no markup — or 0 once the cart subtotal reaches this destination's free-shipping
+   * threshold. Each piece is quoted at 500 g and each kit at 1 kg (see itemWeightGrams), so the
+   * checkout can show a single "Frete" the ateliê is able to honour rather than an estimate that
+   * moves when the package is actually weighed.
    */
   estimate(state: string, items: { category: string; quantity: number }[], subtotal: number, city?: string): number {
     if (subtotal >= this.freeShippingThreshold(state, city)) return 0;
 
     const baseRate = BASE_RATE_BY_REGION[state.toUpperCase()] ?? DEFAULT_RATE;
 
-    const totalWeightGrams = items.reduce(
-      (sum, item) => sum + (CATEGORY_WEIGHT_GRAMS[item.category] ?? DEFAULT_ITEM_WEIGHT_GRAMS) * item.quantity,
-      0,
-    );
+    const totalWeightGrams = items.reduce((sum, item) => sum + itemWeightGrams(item.category) * item.quantity, 0);
     const extraWeightGrams = Math.max(totalWeightGrams - BASE_WEIGHT_GRAMS, 0);
     const weightSteps = Math.ceil(extraWeightGrams / WEIGHT_STEP_GRAMS);
 
