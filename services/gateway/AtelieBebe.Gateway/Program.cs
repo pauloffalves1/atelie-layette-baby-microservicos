@@ -4,7 +4,15 @@ using Microsoft.AspNetCore.RateLimiting;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddReverseProxy()
-    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
+    // Recycling pooled connections is what lets a deploy replace a backend container without
+    // restarting this one. Docker gives the recreated container a new IP; connections pooled
+    // against the old one keep failing until they are discarded, which is why the deploy used to
+    // end with "docker compose restart gateway" — and that restart, not the backend swap, is what
+    // dropped the requests in flight (Nginx logged "Connection reset by peer" from a customer
+    // browsing /loja on 2026-09-18). With a short lifetime the gateway re-resolves the name and
+    // heals on its own, so nothing has to be restarted in front of live traffic.
+    .ConfigureHttpClient((_, handler) => handler.PooledConnectionLifetime = TimeSpan.FromSeconds(30));
 
 // Single place the browser ever talks to (every backend service only accepts requests from inside
 // the docker/k8s network) — so CORS lives here now, not duplicated across four services.

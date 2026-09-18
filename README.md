@@ -1130,6 +1130,17 @@ contra o Gateway via `docker run --network host`).
       verdade (RF26): cartão com 3DS (`environment: PROD`), PIX e boleto. O caminho de fechar o
       pedido pelo WhatsApp continua disponível para quem preferir combinar direto com o ateliê.
 
+- [x] **Deploy de backend sem derrubar o Gateway** (2026-09-18) — **bug em produção:** todo deploy
+      terminava com `docker compose restart gateway`, e o Nginx registrou `Connection reset by peer`
+      em `/api/products` para uma cliente que navegava em `/loja` no exato segundo de um desses
+      restarts. O restart existia porque o Docker dá um IP novo ao container recriado e o YARP seguia
+      usando as conexões antigas do pool, devolvendo 502. A causa está no pool, não no container:
+      o Gateway agora recicla conexões a cada 30 s (`PooledConnectionLifetime` em `Program.cs`), então
+      ele re-resolve o nome e se recupera sozinho — nada mais é reiniciado na frente do tráfego.
+      O procedimento virou o script versionado [`ops/deploy-backend.sh`](ops/deploy-backend.sh)
+      (build → `up -d --no-deps` → espera o gateway responder 200 de novo, falhando com instrução
+      clara se não responder), em vez de viver só na cabeça de quem deploya.
+
 - [x] **Specs do `shared-src` passando a rodar; suíte inteira verde** (2026-09-18) — dez arquivos de
       teste em `shared-src` (carrinho, guards, interceptor de autenticação, `assetUrl`, parser do
       resumo do WhatsApp, SEO, frete) existiam no repositório **sem nunca terem sido executados**: o
