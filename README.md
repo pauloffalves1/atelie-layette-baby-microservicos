@@ -492,6 +492,21 @@ Rodar todos os de um serviço: `cd services/orders/AtelieBebe.Orders.Core.Tests 
 [`AtelieBebe.Microservices.slnx`](AtelieBebe.Microservices.slnx) na raiz deste repositório:
 `dotnet test AtelieBebe.Microservices.slnx` (usada também pelo job `unit-tests` do CI, abaixo).
 
+### Testes unitários do frontend (Vitest)
+
+`cd frontend/shell && npm test` roda os três projetos Angular — serviços, guards, interceptor e
+utilitários puros (carrinho, frete, `assetUrl`, parser do resumo do WhatsApp, SEO).
+
+**Onde os specs de `shared-src` rodam, e por quê:** `shared-src` é compilado dentro das três
+aplicações mas não é um projeto do `angular.json`, e o builder `@angular/build:unit-test` só coleta
+specs a partir do `sourceRoot` de um projeto. Até 2026-09-18, portanto, **nenhum** spec de
+`shared-src` era executado — eles existiam no repositório dando impressão de cobertura sem nunca
+rodar. Eles agora pertencem à execução do **shell**, o único projeto cuja raiz contém `shared-src`,
+via `include: ["**/*.spec.ts", "../shared-src/**/*.spec.ts"]` no alvo `test` do shell (globs
+relativos ao `sourceRoot`, apesar do que diz o esquema do builder) mais `shared-src/**/*.spec.ts` no
+`tsconfig.spec.json` — os dois precisam estar de acordo. Rodá-los só no shell evita executar a mesma
+suíte três vezes.
+
 ### TDD (red-green-refactor)
 
 Exemplo real, não hipotético: `Coupon.Create` normalizava o código (trim + uppercase) mas nunca

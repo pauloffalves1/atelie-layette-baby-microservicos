@@ -1,4 +1,4 @@
-import { ShippingService } from '@shared/core/services/shipping.service';
+import { ShippingService } from './shipping.service';
 
 /**
  * Posting weights agreed with the ateliê: one piece is quoted at 500 g, a kit at 1 kg, and each

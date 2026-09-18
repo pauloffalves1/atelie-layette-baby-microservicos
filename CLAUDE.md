@@ -34,6 +34,7 @@ dotnet test AtelieBebe.Microservices.slnx --nologo                  # 190 unit t
 cp .env.example .env && cd keys && openssl genrsa -out jwt-private.pem 2048 && \
   openssl rsa -in jwt-private.pem -pubout -out jwt-public.pem       # one-time local setup
 docker compose build && docker compose up -d                        # run everything locally
+cd frontend/shell && npm test                                        # 77 frontend unit tests, 3 projects
 cd frontend/shell && npm run test:e2e                                # 7 Playwright e2e specs
 k6 run load-tests/gateway-smoke.js                                   # load smoke test
 ```

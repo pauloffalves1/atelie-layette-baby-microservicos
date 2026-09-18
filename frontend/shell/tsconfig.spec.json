@@ -7,8 +7,14 @@
       "vitest/globals"
     ]
   },
+  /* shared-src is compiled into all three apps but is not a project of its own, so until 2026-09-18
+     nothing collected its specs and they silently never ran. They belong to the shell's run, the
+     only project whose root contains shared-src — see the "include" of its test target in
+     angular.json, whose globs are relative to sourceRoot ("src"), hence the "../shared-src" there
+     against the "shared-src" here. */
   "include": [
     "src/**/*.d.ts",
-    "src/**/*.spec.ts"
+    "src/**/*.spec.ts",
+    "shared-src/**/*.spec.ts"
   ]
 }
