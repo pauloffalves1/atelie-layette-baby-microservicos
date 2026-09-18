@@ -6,6 +6,7 @@ import { Order } from '@shared/core/models/order.model';
 import { AdminProduct } from '@shared/core/models/product.model';
 import { OrderService } from '@shared/core/services/order.service';
 import { ProductService } from '@shared/core/services/product.service';
+import { httpErrorMessage } from '@shared/core/utils/http-error-message';
 import { Pagination } from '@shared/shared/components/pagination/pagination';
 import { LoadError } from '@shared/shared/components/load-error/load-error';
 
@@ -28,6 +29,14 @@ export class AdminTestOrders implements OnInit {
 
   readonly loading = signal(true);
   readonly loadError = signal(false);
+
+  /**
+   * A permission this screen needs but the session doesn't carry looks exactly like a broken screen:
+   * the load fails, no table renders, and there is no button to click. That happened for real —
+   * hours were spent looking for a delete button on a screen that had answered 401 — so the message
+   * says what to do instead of "não foi possível carregar".
+   */
+  readonly loadErrorMessage = signal('Não foi possível carregar os dados de teste.');
   readonly page = signal(1);
   readonly totalPages = signal(0);
   readonly totalItems = signal(0);
@@ -67,9 +76,17 @@ export class AdminTestOrders implements OnInit {
         this.lastUpdated.set(new Date());
         this.loading.set(false);
       },
-      error: () => {
+      error: (err) => {
         this.loading.set(false);
         this.loadError.set(true);
+        this.loadErrorMessage.set(
+          httpErrorMessage(
+            err,
+            'Não foi possível carregar os dados de teste.',
+            'Sua sessão expirou. Entre de novo no painel.',
+            'Sua conta não tem a permissão "Testes" nesta sessão. Marque-a em Administradores e saia e entre de novo — a permissão vai dentro do token, então só vale no login seguinte.',
+          ),
+        );
       },
     });
   }
