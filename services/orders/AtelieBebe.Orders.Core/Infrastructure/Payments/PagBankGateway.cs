@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using AtelieBebe.Orders.Core.Application.Abstractions;
+using AtelieBebe.SharedKernel.Exceptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -387,7 +388,18 @@ public sealed partial class PagBankGateway : IPaymentGateway
         var response = await _httpClient.SendAsync(request, ct);
         var body = await response.Content.ReadAsStringAsync(ct);
         if (!response.IsSuccessStatusCode)
+        {
+            // A refusal the customer can act on is thrown rather than reported as a generic failure:
+            // the caller turns a null into "tente novamente em instantes", which is misleading for a
+            // rule that will refuse the very same request forever. Everything else still returns null.
+            if (PagBankErrorMessages.ForCustomer(body) is { } actionable)
+            {
+                _logger.LogWarning("PagBank recusou a cobrança por um motivo permanente (HTTP {Status}): {Body}", (int)response.StatusCode, body);
+                throw new ConflictException(actionable);
+            }
+
             return (null, $"HTTP {(int)response.StatusCode}: {body}");
+        }
 
         return (JsonDocument.Parse(body).RootElement, null);
     }
