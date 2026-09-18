@@ -68,6 +68,11 @@ export class ProductService {
     return this.http.patch<AdminProduct>(`${this.adminUrl}/${id}/test`, { isTest });
   }
 
+  /** RF40 — the test products, for the test dashboard. Requires the Testes permission, not Produtos. */
+  listTest(): Observable<AdminProduct[]> {
+    return this.http.get<AdminProduct[]>(`${environment.apiUrl}/admin/test-products`);
+  }
+
   setPromotion(id: string, request: SetPromotionRequest): Observable<AdminProduct> {
     return this.http.patch<AdminProduct>(`${this.adminUrl}/${id}/promotion`, request);
   }

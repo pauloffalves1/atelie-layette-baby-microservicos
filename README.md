@@ -1131,8 +1131,11 @@ contra o Gateway via `docker run --network host`).
       nova encomenda para o ateliê não sai (o evento `OrderCreatedDomainEvent` leva a marca), mas os
       e-mails da cliente saem normalmente — é justamente o que se quer testar. Avaliações de produto
       de teste não aparecem na loja nem na moderação, e a contagem de clientes do dashboard ignora as
-      usuárias de teste. A tela "Testes" lista essas compras (com o identificador do PagBank) e
-      permite excluí-las; ela e as duas aprovações exigem a permissão `Testing`, que não faz parte de
+      usuárias de teste. A tela "Testes" é um dashboard das compras de teste — os mesmos números do
+      dashboard do ateliê (compras, em aberto, valor movimentado, pagos, pendentes) calculados pelo
+      mesmo `OrdersDashboardStatsCalculator`, só que sobre os pedidos de teste, mais a contagem por
+      situação, os produtos de teste e a lista das compras (com o identificador do PagBank), que
+      podem ser excluídas ali; ela e as duas aprovações exigem a permissão `Testing`, que não faz parte de
       `AdminPermission.All` — precisa ser concedida na mão em Administradoras.
 
 - [ ] New Relic — chart do Helm identificado e testado (`newrelic/k8s-agents-operator`), anotações já

@@ -17,6 +17,9 @@ public interface IOrderRepository
 
     /// <summary>The test screen (RF40): exactly the orders <see cref="ListAsync"/> and <see cref="ListAllAsync"/> leave out, newest first.</summary>
     Task<(IReadOnlyList<Order> Items, int TotalItems)> ListTestAsync(int page, int pageSize, CancellationToken ct = default);
+
+    /// <summary>Every test order, unpaginated — feeds the test dashboard's figures, the same way the real dashboard reads every real order.</summary>
+    Task<IReadOnlyList<Order>> ListAllTestAsync(CancellationToken ct = default);
     Task<IReadOnlyList<Order>> ListByCustomerAsync(Guid customerId, CancellationToken ct = default);
 
     /// <summary>Used to gate product reviews to customers who actually bought the product — any order status counts, not just delivered.</summary>

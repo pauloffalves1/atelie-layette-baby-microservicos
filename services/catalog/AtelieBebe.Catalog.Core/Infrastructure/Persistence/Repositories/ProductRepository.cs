@@ -101,6 +101,9 @@ public sealed class ProductRepository : IProductRepository
             .OrderBy(c => c)
             .ToListAsync(ct);
 
+    public async Task<IReadOnlyList<Product>> ListTestAsync(CancellationToken ct = default) =>
+        await ProductsWithAccess.Where(p => p.IsTest).OrderBy(p => p.Name).ToListAsync(ct);
+
     public void Add(Product product) => _dbContext.Products.Add(product);
 
     public void Remove(Product product) => _dbContext.Products.Remove(product);

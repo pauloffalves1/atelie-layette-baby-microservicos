@@ -354,6 +354,23 @@ public sealed class ProductService : IProductService
         }
     }
 
+    public async Task<IReadOnlyList<AdminProductDto>> ListTestAsync(CancellationToken ct = default)
+    {
+        _logger.LogInformation("Entrando em {Method}", nameof(ListTestAsync));
+        try
+        {
+            var products = await _unitOfWork.Products.ListTestAsync(ct);
+
+            _logger.LogInformation("Saindo de {Method}", nameof(ListTestAsync));
+            return products.Select(ToAdminDto).ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro em {Method}", nameof(ListTestAsync));
+            throw;
+        }
+    }
+
     public async Task<AdminProductDto> SetImagesAsync(Guid id, SetProductImagesRequest request, CancellationToken ct = default)
     {
         _logger.LogInformation("Entrando em {Method}", nameof(SetImagesAsync));

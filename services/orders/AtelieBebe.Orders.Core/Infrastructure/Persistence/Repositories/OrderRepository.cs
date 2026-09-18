@@ -53,6 +53,9 @@ public sealed class OrderRepository : IOrderRepository
         return (items, totalItems);
     }
 
+    public async Task<IReadOnlyList<Order>> ListAllTestAsync(CancellationToken ct = default) =>
+        await _dbContext.Orders.Include(o => o.Items).Where(o => o.IsTest).ToListAsync(ct);
+
     private IQueryable<Order> FilteredQuery(OrderStatus? status, PaymentStatus? paymentStatus, string? search)
     {
         // Test purchases (RF40) never appear in an admin listing or in the CSV export — the one place

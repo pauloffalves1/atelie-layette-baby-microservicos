@@ -117,6 +117,9 @@ public static class OrderEndpoints
         testGroup.MapGet("/", async (IOrderService service, CancellationToken ct, int page = 1, int pageSize = 20) =>
             Results.Ok(await service.ListTestAsync(page, pageSize, ct)));
 
+        testGroup.MapGet("/dashboard", async (IOrderService service, CancellationToken ct) =>
+            Results.Ok(await service.GetTestDashboardAsync(ct)));
+
         testGroup.MapDelete("/{id:guid}", async (Guid id, HttpContext http, IOrderService service, AdminAuditPublisher auditPublisher, CancellationToken ct) =>
         {
             await service.RemoveTestAsync(id, ct);

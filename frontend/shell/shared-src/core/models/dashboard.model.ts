@@ -48,3 +48,10 @@ export interface Dashboard {
   flaggedOrdersCount: number;
   flaggedOrders: RecentOrderSummary[] | null;
 }
+
+/**
+ * The test dashboard (RF40) runs the ateliê's own aggregation over test orders only, so it carries
+ * every order-derived figure and none of the catalog/customer ones — test products are listed on
+ * their own and there is no such thing as a "test customer count" worth a tile.
+ */
+export type TestDashboard = Omit<Dashboard, 'totalProducts' | 'totalCustomers'>;

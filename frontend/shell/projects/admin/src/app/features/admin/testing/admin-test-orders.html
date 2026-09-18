@@ -1,77 +1,186 @@
 <div class="p-3 p-md-4 p-lg-5">
-  <h2 class="mb-1">Testes</h2>
-  <p class="text-secondary mb-4">
-    Compras feitas com um produto de teste, para conferir o pagamento de verdade em produção. Elas não
-    aparecem em Encomendas, no dashboard, nos relatórios nem no CSV, e não disparam aviso de nova
-    encomenda para o ateliê — os e-mails para a cliente saem normalmente.
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+    <div>
+      <h2 class="mb-1">Testes</h2>
+      <p class="text-secondary mb-0">Os mesmos números do dashboard, só que das compras de teste.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      @if (lastUpdated(); as updated) {
+        <span class="small text-secondary">Atualizado às {{ updated | date:'HH:mm' }}</span>
+      }
+      <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" [disabled]="loading()" (click)="load()" aria-label="Atualizar dados">
+        @if (loading()) {
+          <span class="spinner-border spinner-border-sm"></span>
+        } @else {
+          <i class="bi bi-arrow-clockwise"></i>
+        }
+      </button>
+    </div>
+  </div>
+
+  <p class="form-text mb-4">
+    Nada daqui aparece em Encomendas, no dashboard, nos relatórios ou no CSV, e uma compra de teste
+    não dispara aviso de nova encomenda para o ateliê — só os e-mails para a cliente, que é o que se
+    quer testar.
   </p>
 
   @if (errorMessage()) {
     <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
   }
 
-  @if (loading()) {
+  @if (loading() && !dashboard()) {
     <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
-  } @else if (loadError()) {
+  } @else if (loadError() && !dashboard()) {
     <app-load-error (retry)="load()" />
-  } @else if (orders().length === 0) {
-    <div class="stat-card text-center text-secondary py-5">
-      <i class="bi bi-bug fs-1 d-block mb-3"></i>
-      Nenhuma compra de teste ainda. Marque um produto como "produto de teste" no cadastro do produto,
-      libere o acesso exclusivo para a sua conta de cliente e faça uma compra na loja.
-    </div>
-  } @else {
-    <div class="stat-card p-0 overflow-hidden">
-      <div class="table-responsive">
-        <table class="table align-middle mb-0">
-          <thead class="table-light">
-            <tr>
-              <th>Pedido</th>
-              <th>Quando</th>
-              <th>Cliente</th>
-              <th>Forma</th>
-              <th>Pagamento</th>
-              <th>Situação</th>
-              <th class="text-end">Total</th>
-              <th><span class="visually-hidden">Ações</span></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (order of orders(); track order.id) {
-              <tr>
-                <td class="small text-nowrap">
-                  <span class="fw-semibold">#{{ shortId(order.id) }}</span>
-                  @if (order.externalPaymentId) {
-                    <span class="d-block text-secondary" [title]="order.externalPaymentId">{{ order.externalPaymentId }}</span>
-                  }
-                </td>
-                <td class="small text-secondary text-nowrap">{{ order.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
-                <td class="small">{{ order.customerName }}</td>
-                <td class="small">{{ paymentLabel(order) }}</td>
-                <td class="small"><span class="badge-soft">{{ order.paymentStatus }}</span></td>
-                <td class="small"><span class="badge-soft">{{ order.status }}</span></td>
-                <td class="small text-end text-nowrap">{{ order.total | currency:'BRL' }}</td>
-                <td class="text-end">
-                  <button type="button" class="btn btn-sm btn-outline-danger" [disabled]="removingId() === order.id"
-                    [attr.aria-label]="'Excluir pedido de teste #' + shortId(order.id)" (click)="remove(order)">
-                    @if (removingId() === order.id) {
-                      <span class="spinner-border spinner-border-sm"></span>
-                    } @else {
-                      <i class="bi bi-trash"></i>
-                    }
-                  </button>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
+  } @else if (dashboard(); as d) {
+    @if (loadError()) {
+      <div class="alert alert-warning small rounded-4 d-flex justify-content-between align-items-center gap-2" role="alert">
+        <span>Não foi possível atualizar — mostrando os dados de antes.</span>
+        <button type="button" class="btn btn-sm btn-link p-0" (click)="load()">Tentar de novo</button>
       </div>
-    </div>
+    }
 
-    <p class="small text-secondary mt-3" aria-live="polite">
-      {{ totalItems() }} {{ totalItems() === 1 ? 'compra de teste' : 'compras de teste' }}
-    </p>
+    @if (isEmpty()) {
+      <div class="stat-card text-center text-secondary py-5">
+        <i class="bi bi-bug fs-1 d-block mb-3"></i>
+        <p class="mb-1">Nada em teste ainda.</p>
+        <p class="small mb-0">
+          Marque um produto como "produto de teste" no cadastro, aprove uma cliente como usuária de
+          teste em Clientes, e compre na loja com ela.
+        </p>
+      </div>
+    } @else {
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+          <div class="stat-card h-100">
+            <span class="small text-secondary d-block">Compras de teste</span>
+            <span class="fs-4 fw-bold d-block">{{ d.totalOrders }}</span>
+            <span class="small text-secondary d-block">{{ d.openOrders }} em aberto</span>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="stat-card h-100">
+            <span class="small text-secondary d-block">Valor movimentado</span>
+            <span class="fs-4 fw-bold d-block">{{ d.revenueTotal | currency:'BRL' }}</span>
+            <span class="small text-secondary d-block">{{ d.revenueThisMonthPaid | currency:'BRL' }} pago no mês</span>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="stat-card h-100">
+            <span class="small text-secondary d-block">Pagamentos pendentes</span>
+            <span class="fs-4 fw-bold d-block">{{ d.pendingPaymentOrders }}</span>
+            <span class="small text-secondary d-block">{{ d.pendingPaymentAmount | currency:'BRL' }} aguardando</span>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="stat-card h-100">
+            <span class="small text-secondary d-block">Produtos de teste</span>
+            <span class="fs-4 fw-bold d-block">{{ products().length }}</span>
+            <span class="small text-secondary d-block">visíveis só para usuárias de teste</span>
+          </div>
+        </div>
+      </div>
 
-    <app-pagination [page]="page()" [totalPages]="totalPages()" (pageChange)="goToPage($event)" />
+      @if (d.ordersByStatus.length > 0) {
+        <div class="stat-card mb-4">
+          <h6 class="mb-3">Situação das compras de teste</h6>
+          <div class="d-flex flex-wrap gap-2">
+            @for (item of d.ordersByStatus; track item.status) {
+              <span class="badge-soft">{{ item.status }}: <strong>{{ item.count }}</strong></span>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="stat-card mb-4">
+        <h6 class="mb-3">Produtos de teste</h6>
+        @if (products().length === 0) {
+          <p class="text-secondary small mb-0">Nenhum produto marcado como teste.</p>
+        } @else {
+          <div class="table-responsive">
+            <table class="table align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Produto</th>
+                  <th>Categoria</th>
+                  <th class="text-end">Preço</th>
+                  <th>Situação</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (product of products(); track product.id) {
+                  <tr>
+                    <td class="small fw-semibold">{{ product.name }}</td>
+                    <td class="small text-secondary">{{ product.category }}</td>
+                    <td class="small text-end text-nowrap">{{ product.effectivePrice | currency:'BRL' }}</td>
+                    <td class="small">
+                      <span class="badge-soft">{{ product.active ? 'Ativo' : 'Inativo' }}</span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+
+      <div class="stat-card p-0 overflow-hidden">
+        <h6 class="px-3 pt-3 mb-3">Compras de teste</h6>
+        @if (orders().length === 0) {
+          <p class="text-secondary small px-3 pb-3 mb-0">Nenhuma compra de teste ainda.</p>
+        } @else {
+          <div class="table-responsive">
+            <table class="table align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Pedido</th>
+                  <th>Quando</th>
+                  <th>Cliente</th>
+                  <th>Forma</th>
+                  <th>Pagamento</th>
+                  <th>Situação</th>
+                  <th class="text-end">Total</th>
+                  <th><span class="visually-hidden">Ações</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (order of orders(); track order.id) {
+                  <tr>
+                    <td class="small text-nowrap">
+                      <span class="fw-semibold">#{{ shortId(order.id) }}</span>
+                      @if (order.externalPaymentId) {
+                        <span class="d-block text-secondary" [title]="order.externalPaymentId">{{ order.externalPaymentId }}</span>
+                      }
+                    </td>
+                    <td class="small text-secondary text-nowrap">{{ order.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+                    <td class="small">{{ order.customerName }}</td>
+                    <td class="small">{{ paymentLabel(order) }}</td>
+                    <td class="small"><span class="badge-soft">{{ order.paymentStatus }}</span></td>
+                    <td class="small"><span class="badge-soft">{{ order.status }}</span></td>
+                    <td class="small text-end text-nowrap">{{ order.total | currency:'BRL' }}</td>
+                    <td class="text-end">
+                      <button type="button" class="btn btn-sm btn-outline-danger" [disabled]="removingId() === order.id"
+                        [attr.aria-label]="'Excluir pedido de teste #' + shortId(order.id)" (click)="remove(order)">
+                        @if (removingId() === order.id) {
+                          <span class="spinner-border spinner-border-sm"></span>
+                        } @else {
+                          <i class="bi bi-trash"></i>
+                        }
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+
+      <p class="small text-secondary mt-3" aria-live="polite">
+        {{ totalItems() }} {{ totalItems() === 1 ? 'compra de teste' : 'compras de teste' }} · {{ paidOrders() }} paga(s) nesta página
+      </p>
+
+      <app-pagination [page]="page()" [totalPages]="totalPages()" (pageChange)="goToPage($event)" />
+    }
   }
 </div>

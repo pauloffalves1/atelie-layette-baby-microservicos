@@ -13,6 +13,9 @@ public interface IProductRepository
     Task<(IReadOnlyList<Product> Items, int TotalItems)> SearchAsync(ProductSearchFilters filters, int page, int pageSize, Guid? customerId = null, bool isTestCustomer = false, CancellationToken ct = default);
     Task<IReadOnlyList<Product>> ListFeaturedAsync(Guid? customerId = null, bool isTestCustomer = false, CancellationToken ct = default);
     Task<IReadOnlyList<string>> ListCategoriesAsync(Guid? customerId = null, bool isTestCustomer = false, CancellationToken ct = default);
+
+    /// <summary>Every test product (RF40), for the panel's test dashboard.</summary>
+    Task<IReadOnlyList<Product>> ListTestAsync(CancellationToken ct = default);
     void Add(Product product);
     void Remove(Product product);
 }

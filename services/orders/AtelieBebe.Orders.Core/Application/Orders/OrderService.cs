@@ -1,3 +1,4 @@
+using AtelieBebe.Orders.Core.Application.Dashboard;
 using AtelieBebe.Orders.Core.Application.Abstractions;
 using AtelieBebe.SharedKernel.Common;
 using AtelieBebe.SharedKernel.Exceptions;
@@ -537,6 +538,30 @@ public sealed class OrderService : IOrderService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro em {Method}", nameof(ListTestAsync));
+            throw;
+        }
+    }
+
+    public async Task<OrdersDashboardStatsDto> GetTestDashboardAsync(CancellationToken ct = default)
+    {
+        _logger.LogInformation("Entrando em {Method}", nameof(GetTestDashboardAsync));
+        try
+        {
+            // The very same aggregation the ateliê's dashboard runs, pointed at the test orders
+            // instead — so what the test screen reports and what the real dashboard reports can
+            // never drift apart in how they count.
+            var orders = (await _unitOfWork.Orders.ListAllTestAsync(ct))
+                .Where(o => o.Status != OrderStatus.Cancelado)
+                .Select(DashboardOrderSnapshot.From);
+
+            var result = OrdersDashboardStatsCalculator.Calculate(orders, DateTime.UtcNow);
+
+            _logger.LogInformation("Saindo de {Method}", nameof(GetTestDashboardAsync));
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro em {Method}", nameof(GetTestDashboardAsync));
             throw;
         }
     }

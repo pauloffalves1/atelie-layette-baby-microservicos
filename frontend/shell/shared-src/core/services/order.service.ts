@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '@shared/environment';
 import { CreateCustomOrderRequest, CreateManualOrderRequest, CreateStoreOrderRequest, Order } from '../models/order.model';
+import { TestDashboard } from '../models/dashboard.model';
 import { PagedResult } from '../models/pagination.model';
 
 @Injectable({ providedIn: 'root' })
@@ -80,6 +81,11 @@ export class OrderService {
   /** Cleanup from the test screen — the backend refuses anything that isn't a test order. */
   removeTest(id: string): Observable<void> {
     return this.http.delete<void>(`${this.testAdminUrl}/${id}`);
+  }
+
+  /** The ateliê's own dashboard aggregation, run over the test orders only. */
+  getTestDashboard(): Observable<TestDashboard> {
+    return this.http.get<TestDashboard>(`${this.testAdminUrl}/dashboard`);
   }
 
   /** True while PagBank still only has a sandbox token — checkout shows an "em construção" notice instead of a real payment form while this is true. */

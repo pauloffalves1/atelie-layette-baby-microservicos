@@ -30,6 +30,14 @@ public static class ProductEndpoints
         group.MapGet("/{slug}", async (string slug, HttpContext http, IProductService service, CancellationToken ct) =>
             Results.Ok(await service.GetBySlugAsync(slug, http.User.GetUserIdOrNull(), http.User.IsTestUser(), ct)));
 
+        // The test dashboard's product panel (RF40). Its own group, under the Testing permission
+        // alone: it lists only test products, which whoever tests payments needs to see without
+        // holding the whole Produtos area.
+        app.MapGet("/api/admin/test-products", async (IProductService service, CancellationToken ct) =>
+                Results.Ok(await service.ListTestAsync(ct)))
+            .WithTags("Testes (admin)")
+            .RequireAuthorization(JwtAuthenticationExtensions.PermissionPolicyName(AdminPermission.Testing));
+
         var adminGroup = app.MapGroup("/api/admin/products").WithTags("Produtos (admin)")
             .RequireAuthorization(JwtAuthenticationExtensions.PermissionPolicyName(AdminPermission.Products));
 

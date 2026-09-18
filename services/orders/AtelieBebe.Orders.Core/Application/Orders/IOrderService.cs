@@ -1,3 +1,4 @@
+using AtelieBebe.Orders.Core.Application.Dashboard;
 using AtelieBebe.SharedKernel.Common;
 
 namespace AtelieBebe.Orders.Core.Application.Orders;
@@ -43,4 +44,7 @@ public interface IOrderService
 
     /// <summary>Cleanup from the test screen. Refuses anything that isn't a test order, so it can't double as an unaudited delete for real orders.</summary>
     Task RemoveTestAsync(Guid orderId, CancellationToken ct = default);
+
+    /// <summary>The test screen's own dashboard — the ateliê's aggregation, run over test orders only.</summary>
+    Task<OrdersDashboardStatsDto> GetTestDashboardAsync(CancellationToken ct = default);
 }

@@ -346,3 +346,6 @@ substituição daquele relato.
       também quando a compradora é usuária de teste; aprovação de produto de teste passou a exigir
       `Testing`; contagem de clientes usa a própria flag (env `TESTING_ACCOUNT_EMAILS` removido);
       chave na tela de Clientes.
+- [x] Dashboard de testes (2026-09-18): `GET /api/admin/test-orders/dashboard` reaproveitando
+      `OrdersDashboardStatsCalculator` sobre os pedidos de teste, `GET /api/admin/test-products`
+      (permissão `Testing`) e a tela "Testes" com números, situação, produtos e compras.

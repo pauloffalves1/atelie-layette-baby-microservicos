@@ -589,9 +589,11 @@ listas do administrativo.
    para o ateliê.
 8. Avaliações de um produto de teste NÃO DEVEM aparecer na loja nem na listagem de avaliações do painel.
 9. A contagem de clientes do dashboard NÃO DEVE incluir as usuárias de teste.
-10. O painel DEVE ter uma tela de testes que lista exatamente os pedidos de teste, com situação,
-    forma e situação de pagamento, identificador do PagBank e total, e permite excluir um pedido de
-    teste para limpeza.
+10. O painel DEVE ter uma tela de testes que funcione como um dashboard das compras de teste: os
+    mesmos números do dashboard do ateliê (total de compras, em aberto, valor movimentado, pago no
+    mês, pagamentos pendentes) calculados só sobre pedidos de teste, a contagem por situação, a
+    lista dos produtos de teste e a lista das compras — com situação, forma e situação de pagamento,
+    identificador do PagBank e total — permitindo excluir um pedido de teste para limpeza.
 11. A tela de testes, a aprovação de usuária de teste e a aprovação de produto de teste DEVEM exigir
     a permissão "Testes" (`AdminPermission.Testing`), que NÃO DEVE ser concedida por padrão a
     nenhuma administradora.
