@@ -199,27 +199,22 @@
                 <div class="d-flex flex-wrap column-gap-3 row-gap-1 mb-3">
                   <div class="form-check">
                     <input class="form-check-input" type="radio" name="deliveryMethod" id="modal-delivery-entrega"
-                      [checked]="deliveryMethod() === 'Entrega'" (change)="deliveryMethod.set('Entrega')">
+                      [checked]="deliveryMethod() === 'Entrega'" (change)="chooseDelivery('Entrega')">
                     <label class="form-check-label" for="modal-delivery-entrega"><i class="bi bi-truck me-1"></i>Entregar</label>
                   </div>
                   <div class="form-check">
                     <input class="form-check-input" type="radio" name="deliveryMethod" id="modal-delivery-retirada"
-                      [checked]="deliveryMethod() === 'Retirada'" (change)="deliveryMethod.set('Retirada')">
+                      [checked]="deliveryMethod() === 'Retirada'" (change)="chooseDelivery('Retirada')">
                     <label class="form-check-label" for="modal-delivery-retirada"><i class="bi bi-shop me-1"></i>Retirar no ateliê</label>
                   </div>
                 </div>
 
-                @if (deliveryMethod() === 'Retirada' && paymentMethod() !== 'BOLETO') {
+                @if (deliveryMethod() === 'Retirada') {
                   <div class="alert alert-info small rounded-4 mb-0">
                     <i class="bi bi-geo-alt-fill me-1"></i>
                     Retirada em São Bernardo do Campo/SP — combinamos o endereço exato e o horário pelo WhatsApp. Sem custo de frete.
                   </div>
                 } @else {
-                  @if (deliveryMethod() === 'Retirada' && paymentMethod() === 'BOLETO') {
-                    <div class="alert alert-info small rounded-4 mb-3">
-                      <i class="bi bi-info-circle me-1"></i>O boleto exige um endereço de cobrança mesmo na retirada — preencha abaixo.
-                    </div>
-                  }
                   @if (savedAddresses().length > 0) {
                     <div class="mb-3">
                       <label class="form-label small fw-semibold">Endereço salvo</label>
@@ -341,12 +336,21 @@
                       [checked]="paymentMethod() === 'CREDIT_CARD'" (change)="paymentMethod.set('CREDIT_CARD')">
                     <label class="form-check-label" for="modal-payment-card"><i class="bi bi-credit-card-2-front me-1"></i>Cartão de crédito</label>
                   </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="radio" name="paymentMethod" id="modal-payment-boleto"
-                      [checked]="paymentMethod() === 'BOLETO'" (change)="paymentMethod.set('BOLETO')">
-                    <label class="form-check-label" for="modal-payment-boleto"><i class="bi bi-upc-scan me-1"></i>Boleto</label>
-                  </div>
+                  <!-- Boleto needs the payer's address and a pickup order has none (Order.Create),
+                       so the method is simply not offered when picking up. -->
+                  @if (deliveryMethod() !== 'Retirada') {
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" name="paymentMethod" id="modal-payment-boleto"
+                        [checked]="paymentMethod() === 'BOLETO'" (change)="paymentMethod.set('BOLETO')">
+                      <label class="form-check-label" for="modal-payment-boleto"><i class="bi bi-upc-scan me-1"></i>Boleto</label>
+                    </div>
+                  }
                 </div>
+                @if (deliveryMethod() === 'Retirada') {
+                  <p class="small text-secondary mb-3">
+                    <i class="bi bi-info-circle me-1"></i>O boleto só está disponível para entrega, porque o banco exige um endereço para emiti-lo.
+                  </p>
+                }
 
                 @if (paymentMethod() === 'PIX') {
                   <p class="small text-secondary mb-4">

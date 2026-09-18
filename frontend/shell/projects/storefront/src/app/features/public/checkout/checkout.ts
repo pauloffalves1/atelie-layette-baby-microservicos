@@ -100,6 +100,12 @@ export class Checkout implements OnInit {
 
   readonly deliveryMethod = signal<'Entrega' | 'Retirada'>('Entrega');
 
+  /** Switching to pickup with boleto chosen would leave a hidden, unpayable method selected. */
+  readonly chooseDelivery = (method: 'Entrega' | 'Retirada'): void => {
+    this.deliveryMethod.set(method);
+    if (method === 'Retirada' && this.paymentMethod() === 'BOLETO') this.paymentMethod.set('PIX');
+  };
+
   readonly couponCode = signal('');
   readonly couponApplying = signal(false);
   readonly couponError = signal<string | null>(null);
@@ -175,10 +181,9 @@ export class Checkout implements OnInit {
         this.form.controls.city,
         this.form.controls.state,
       ];
-      // Boleto needs a billing address from PagBank regardless of delivery method — a pickup
-      // ("Retirada") order paying by boleto still has to collect it, unlike PIX/card.
-      const validators =
-        this.deliveryMethod() === 'Entrega' || this.paymentMethod() === 'BOLETO' ? [Validators.required] : [];
+      // Boleto is not offered on pickup (it needs the payer's address, which a pickup order never
+      // has — see Order.Create), so the address is required exactly when there is a delivery.
+      const validators = this.deliveryMethod() === 'Entrega' ? [Validators.required] : [];
       addressControls.forEach((control) => {
         control.setValidators(validators);
         control.updateValueAndValidity({ emitEvent: false });
@@ -522,8 +527,7 @@ export class Checkout implements OnInit {
         customerPhone: value.customerPhone || null,
         customerCpf: value.customerCpf,
         notes: value.notes || null,
-        shippingAddressJson:
-          this.deliveryMethod() === 'Retirada' && paymentMethod !== 'BOLETO' ? null : JSON.stringify(shippingAddress),
+        shippingAddressJson: this.deliveryMethod() === 'Retirada' ? null : JSON.stringify(shippingAddress),
         shippingCost: this.shippingCost(),
         deliveryMethod: this.deliveryMethod(),
         couponCode: this.appliedCouponCode(),

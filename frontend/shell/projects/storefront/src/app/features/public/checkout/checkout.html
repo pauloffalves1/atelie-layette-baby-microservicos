@@ -54,12 +54,12 @@
           <div class="d-flex flex-wrap column-gap-3 row-gap-1 mb-3">
             <div class="form-check">
               <input class="form-check-input" type="radio" name="deliveryMethod" id="checkout-delivery-entrega"
-                [checked]="deliveryMethod() === 'Entrega'" (change)="deliveryMethod.set('Entrega')">
+                [checked]="deliveryMethod() === 'Entrega'" (change)="chooseDelivery('Entrega')">
               <label class="form-check-label" for="checkout-delivery-entrega"><i class="bi bi-truck me-1"></i>Entregar no meu endereço</label>
             </div>
             <div class="form-check">
               <input class="form-check-input" type="radio" name="deliveryMethod" id="checkout-delivery-retirada"
-                [checked]="deliveryMethod() === 'Retirada'" (change)="deliveryMethod.set('Retirada')">
+                [checked]="deliveryMethod() === 'Retirada'" (change)="chooseDelivery('Retirada')">
               <label class="form-check-label" for="checkout-delivery-retirada"><i class="bi bi-shop me-1"></i>Retirar no ateliê</label>
             </div>
           </div>
@@ -100,13 +100,7 @@
             </div>
           }
 
-          @if (deliveryMethod() === 'Retirada' && paymentMethod() === 'BOLETO') {
-            <div class="alert alert-info small rounded-4 mb-3">
-              <i class="bi bi-info-circle me-1"></i>O boleto exige um endereço de cobrança mesmo na retirada — preencha abaixo.
-            </div>
-          }
-
-          <div class="row g-3" [class.d-none]="deliveryMethod() === 'Retirada' && paymentMethod() !== 'BOLETO'">
+          <div class="row g-3" [class.d-none]="deliveryMethod() === 'Retirada'">
             <div class="col-md-4">
               <label for="checkout-zipCode" class="form-label small fw-semibold">CEP</label>
               <div class="position-relative">
@@ -207,12 +201,22 @@
                 [checked]="paymentMethod() === 'CREDIT_CARD'" (change)="paymentMethod.set('CREDIT_CARD')">
               <label class="form-check-label" for="checkout-payment-card"><i class="bi bi-credit-card-2-front me-1"></i>Cartão de crédito</label>
             </div>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="paymentMethod" id="checkout-payment-boleto"
-                [checked]="paymentMethod() === 'BOLETO'" (change)="paymentMethod.set('BOLETO')">
-              <label class="form-check-label" for="checkout-payment-boleto"><i class="bi bi-upc-scan me-1"></i>Boleto</label>
-            </div>
+            <!-- O boleto exige o endereço do sacado, e um pedido de retirada não tem endereço nenhum
+                 (ver Order.Create) — em vez de pedir um endereço só para a cobrança, a forma não é
+                 oferecida na retirada. -->
+            @if (deliveryMethod() !== 'Retirada') {
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="paymentMethod" id="checkout-payment-boleto"
+                  [checked]="paymentMethod() === 'BOLETO'" (change)="paymentMethod.set('BOLETO')">
+                <label class="form-check-label" for="checkout-payment-boleto"><i class="bi bi-upc-scan me-1"></i>Boleto</label>
+              </div>
+            }
           </div>
+          @if (deliveryMethod() === 'Retirada') {
+            <p class="small text-secondary mb-3">
+              <i class="bi bi-info-circle me-1"></i>O boleto só está disponível para entrega, porque o banco exige um endereço para emiti-lo.
+            </p>
+          }
 
           @if (paymentMethod() === 'PIX') {
             <p class="small text-secondary mb-0">
