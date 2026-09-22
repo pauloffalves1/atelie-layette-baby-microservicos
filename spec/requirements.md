@@ -182,6 +182,12 @@ uma prévia rica (imagem, título, descrição), para gerar mais cliques.
 2. Navegadores reais e crawlers que executam JavaScript (Googlebot) NÃO DEVEM ser afetados por essa
    distinção — apenas o roteamento nginx baseado em `$is_bot` direciona bots para a rota renderizada
    no servidor.
+3. O roteamento para `/api/seo/*` DEVE valer apenas para rotas de página: QUANDO um bot pede um
+   arquivo estático (`/images/x.jpg`, um `.css`), O SISTEMA DEVE entregar o arquivo. Sem essa
+   ressalva o próprio `og:image` do preview volta como HTML e o link é exibido com um quadrado cinza.
+4. A imagem declarada em `og:image` DEVE ser JPEG e ter `og:image:width`/`height` declarados —
+   Facebook, Instagram e WhatsApp não decodificam WebP (o formato em que as fotos são gravadas) e
+   não desenham o card grande antes de conhecer as dimensões da imagem.
 
 ---
 

@@ -46,6 +46,34 @@ public sealed class LocalFileStorageServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task SaveAsync_WritesTheLinkPreviewCopyAsJpegAtTheCardSize()
+    {
+        // Facebook/Instagram decode neither WebP nor an unpadded portrait reliably, so the "-og"
+        // copy is JPEG on exactly the 1200x630 canvas the endpoint declares in og:image:width/height.
+        await _storage.SaveAsync("products", "foto.png", PngStream(1113, 1391));
+
+        var ogPath = Path.Combine(_root, "products", "foto-og.jpg");
+        using var og = await Image.LoadAsync(ogPath);
+        Assert.Equal((LocalFileStorageService.OgWidth, LocalFileStorageService.OgHeight), (og.Width, og.Height));
+
+        await using var ogFile = File.OpenRead(ogPath);
+        Assert.Equal("JPEG", (await Image.DetectFormatAsync(ogFile)).Name);
+    }
+
+    [Fact]
+    public async Task OptimizeExistingAsync_BackfillsTheLinkPreviewCopyForAlreadyOptimizedPhotos()
+    {
+        // The state every product was left in before "-og" existed: full + small WebP, no JPEG copy.
+        var url = await _storage.SaveAsync("products", "antiga.png", PngStream(1200, 1500));
+        File.Delete(Path.Combine(_root, "products", "antiga-og.jpg"));
+
+        var result = await _storage.OptimizeExistingAsync(url);
+
+        Assert.Equal(url, result);
+        Assert.True(File.Exists(Path.Combine(_root, "products", "antiga-og.jpg")));
+    }
+
+    [Fact]
     public async Task SaveAsync_DoesNotUpscaleSmallPhotos()
     {
         await _storage.SaveAsync("reviews", "mini.jpg", PngStream(400, 300));
@@ -82,7 +110,7 @@ public sealed class LocalFileStorageServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task DeleteAsync_RemovesTheSmallVariantToo()
+    public async Task DeleteAsync_RemovesTheSmallAndLinkPreviewVariantsToo()
     {
         var url = await _storage.SaveAsync("gallery", "g.jpg", PngStream(800, 800));
 
@@ -90,6 +118,7 @@ public sealed class LocalFileStorageServiceTests : IDisposable
 
         Assert.False(File.Exists(Path.Combine(_root, "gallery", "g.webp")));
         Assert.False(File.Exists(Path.Combine(_root, "gallery", "g-sm.webp")));
+        Assert.False(File.Exists(Path.Combine(_root, "gallery", "g-og.jpg")));
     }
 
     [Theory]
@@ -99,5 +128,15 @@ public sealed class LocalFileStorageServiceTests : IDisposable
     public void ImageVariants_ToSmallUrl(string url, string expected)
     {
         Assert.Equal(expected, ImageVariants.ToSmallUrl(url));
+    }
+
+    [Theory]
+    [InlineData("/api/uploads/products/a.webp", "/api/uploads/products/a-og.jpg")]
+    [InlineData("/api/uploads/products/a-sm.webp", "/api/uploads/products/a-sm.webp")]
+    [InlineData("/api/uploads/products/a.jpg", "/api/uploads/products/a.jpg")]
+    [InlineData("https://picsum.photos/600", "https://picsum.photos/600")]
+    public void ImageVariants_ToOgUrl(string url, string expected)
+    {
+        Assert.Equal(expected, ImageVariants.ToOgUrl(url));
     }
 }

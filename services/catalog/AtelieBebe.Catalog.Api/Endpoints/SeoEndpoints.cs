@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using AtelieBebe.Catalog.Core.Application.Products;
 using AtelieBebe.Catalog.Core.Infrastructure;
+using AtelieBebe.Catalog.Core.Infrastructure.Storage;
 using Microsoft.Extensions.Options;
 
 namespace AtelieBebe.Catalog.Api.Endpoints;
@@ -19,6 +20,19 @@ public static class SeoEndpoints
     private const string SiteName = "Ateliê Layette Baby";
     private const string DefaultDescription = "Fraldas de ombro e boca bordadas com muito carinho para os primeiros dias do seu bebê.";
 
+    /// <summary>
+    /// The photo a preview points at. Always JPEG at a known size: Facebook and Instagram do not
+    /// decode WebP (the stored format), and without width/height they have to download and measure
+    /// the file before they will draw a large card — so the first share of a link shows a grey box.
+    /// </summary>
+    private readonly record struct PreviewImage(string Url, int Width, int Height)
+    {
+        public const string MimeType = "image/jpeg";
+    }
+
+    private static PreviewImage DefaultImage(string siteUrl) =>
+        new($"{siteUrl}/images/og-default.jpg", LocalFileStorageService.OgWidth, LocalFileStorageService.OgHeight);
+
     public static void MapSeoEndpoints(this WebApplication app)
     {
         var group = app.MapGroup("/api/seo").WithTags("SEO (bots)");
@@ -33,13 +47,19 @@ public static class SeoEndpoints
                 var description = string.IsNullOrWhiteSpace(product.Description)
                     ? $"{product.Name} — peça bordada do {SiteName}, feita sob medida com carinho."
                     : product.Description;
-                var image = string.IsNullOrWhiteSpace(product.ImageUrl) ? $"{siteUrl}/images/hero-fraldas.jpg" : ToAbsolute(product.ImageUrl, siteUrl);
+                var image = string.IsNullOrWhiteSpace(product.ImageUrl)
+                    ? DefaultImage(siteUrl)
+                    : new PreviewImage(
+                        ToAbsolute(ImageVariants.ToOgUrl(product.ImageUrl), siteUrl),
+                        LocalFileStorageService.OgWidth,
+                        LocalFileStorageService.OgHeight);
                 var url = $"{siteUrl}/produto/{product.Slug}";
 
                 return Results.Text(BuildHtml(
                     title: $"{product.Name} — {SiteName}",
                     description: description,
                     image: image,
+                    imageAlt: product.Name,
                     url: url,
                     type: "product",
                     bodyHeading: product.Name,
@@ -61,7 +81,8 @@ public static class SeoEndpoints
     private static string BuildDefaultHtml(string siteUrl) => BuildHtml(
         title: SiteName,
         description: DefaultDescription,
-        image: $"{siteUrl}/images/hero-fraldas.jpg",
+        image: DefaultImage(siteUrl),
+        imageAlt: SiteName,
         url: siteUrl,
         type: "website",
         bodyHeading: SiteName,
@@ -72,7 +93,7 @@ public static class SeoEndpoints
             ? url
             : $"{siteUrl}{url}";
 
-    private static string BuildHtml(string title, string description, string image, string url, string type, string bodyHeading, string bodyText)
+    private static string BuildHtml(string title, string description, PreviewImage image, string imageAlt, string url, string type, string bodyHeading, string bodyText)
     {
         string E(string s) => WebUtility.HtmlEncode(s);
 
@@ -89,13 +110,20 @@ public static class SeoEndpoints
               <meta property="og:description" content="{{E(description)}}">
               <meta property="og:type" content="{{E(type)}}">
               <meta property="og:url" content="{{E(url)}}">
-              <meta property="og:image" content="{{E(image)}}">
+              <meta property="og:image" content="{{E(image.Url)}}">
+              <meta property="og:image:secure_url" content="{{E(image.Url)}}">
+              <meta property="og:image:type" content="{{PreviewImage.MimeType}}">
+              <meta property="og:image:width" content="{{image.Width}}">
+              <meta property="og:image:height" content="{{image.Height}}">
+              <meta property="og:image:alt" content="{{E(imageAlt)}}">
               <meta property="og:site_name" content="{{E(SiteName)}}">
+              <meta property="og:locale" content="pt_BR">
 
               <meta name="twitter:card" content="summary_large_image">
               <meta name="twitter:title" content="{{E(title)}}">
               <meta name="twitter:description" content="{{E(description)}}">
-              <meta name="twitter:image" content="{{E(image)}}">
+              <meta name="twitter:image" content="{{E(image.Url)}}">
+              <meta name="twitter:image:alt" content="{{E(imageAlt)}}">
             </head>
             <body>
               <h1>{{E(bodyHeading)}}</h1>

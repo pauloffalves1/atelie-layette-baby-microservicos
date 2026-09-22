@@ -77,6 +77,8 @@ substituição daquele relato.
 ## Requisito 10 — Prévia de compartilhamento para bots / SEO (RF14)
 
 - [x] Preview OG/Twitter server-renderizado via roteamento nginx `$is_bot` → `/api/seo/*`.
+- [x] `$unfurl_page` restringe esse roteamento a rotas de página, para o bot receber a própria `og:image`.
+- [x] Cópia "-og.jpg" (1200x1200) de cada foto e `og-default.jpg` do site, com `og:image:width/height`.
 
 ## Requisito 11 — 2FA para administradoras (RF15)
 

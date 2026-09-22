@@ -10,7 +10,7 @@ generic title and no content. Link-preview bots already get a server-rendered OG
 |---|---|---|
 | `frontend/shell/scripts/prerender.mjs` | repo (run in place) | Reads `/api/sitemap.xml`, renders each URL in headless Chromium, strips executable scripts (keeps JSON-LD), writes `__prerender/<path>/index.html` (+ `q/<query>/` for category URLs). Aborts and keeps the old set if more than 20% fail. |
 | `ops/seo/prerender.sh` | run from the repo | Runs the script in `mcr.microsoft.com/playwright:v<same version as node_modules>-noble` (no browser libs on the host). |
-| `ops/seo/bot-detect.conf` | `/etc/nginx/conf.d/bot-detect.conf` | `$is_bot` (link previews, unchanged), `$is_search_bot`, `$prerender_page`, `$prerender_query`. |
+| `ops/seo/bot-detect.conf` | `/etc/nginx/conf.d/bot-detect.conf` | `$is_bot` + `$unfurl_page` (link previews), `$is_search_bot` + `$prerender_page`, `$prerender_query`. |
 
 Cron (root): `15 */6 * * * /var/www/atelie-layette-baby-microservicos/ops/seo/prerender.sh >> /var/log/atelie-prerender.log 2>&1`
 — also run it once after every frontend deploy. Price/stock changes reach crawlers within 6 hours.
@@ -50,13 +50,13 @@ Cron (root): `15 */6 * * * /var/www/atelie-layette-baby-microservicos/ops/seo/pr
     }
 
     location /produto/ {
-        if ($is_bot) { rewrite ^/produto/([^/]+)$ /api/seo/product/$1 last; }
+        if ($unfurl_page) { rewrite ^/produto/([^/]+)$ /api/seo/product/$1 last; }
         if ($prerender_page) { rewrite ^(.*)$ /__prerender$1 last; }
         try_files $uri $uri/ /index.html;
     }
 
     location / {
-        if ($is_bot) { rewrite ^(.*)$ /api/seo/default last; }
+        if ($unfurl_page) { rewrite ^(.*)$ /api/seo/default last; }
         if ($prerender_page) { rewrite ^(.*)$ /__prerender$1 last; }
         try_files $uri $uri/ /index.html;
     }
@@ -71,6 +71,21 @@ curl -sI -A Googlebot https://layettebaby.com.br/loja | grep -i x-prerendered   
 curl -s  -A Googlebot https://layettebaby.com.br/produto/<slug> | grep -o '<title>[^<]*'
 curl -sI https://www.layettebaby.com.br/loja                                    # 301 → apex
 ```
+
+The preview's own image has to come back as an **image** to the bot that just read the preview —
+the check that matters, and the one that was missing when every shared link unfurled as a grey box:
+
+```sh
+FB='facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)'
+img=$(curl -s -A "$FB" https://layettebaby.com.br/ | grep -o 'og:image" content="[^"]*"' | sed 's/.*content="//;s/"$//')
+curl -sI -A "$FB" "$img" | grep -i content-type    # image/jpeg — NOT text/html, NOT image/webp
+```
+
+`text/html` means a bot User-Agent is being rewritten to `/api/seo/*` for static files too
+(`$unfurl_page` missing from the site config); `image/webp` means `og:image` is pointing at the
+stored photo instead of its `-og.jpg` copy. Facebook caches a failed scrape, so after fixing either
+one, re-scrape the URL in [Sharing Debugger](https://developers.facebook.com/tools/debug/) —
+WhatsApp keeps its own cache for about 7 days and cannot be purged.
 
 Outside the code (owner's Google account): verify the domain in Google Search Console and Bing
 Webmaster Tools, submit `https://layettebaby.com.br/sitemap.xml` (same content as `/api/sitemap.xml`), and keep the Google Business

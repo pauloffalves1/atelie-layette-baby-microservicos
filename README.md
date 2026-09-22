@@ -285,7 +285,9 @@ aceite em EARS por requisito, mesmo padrão usado no `spec/` do monólito) vive 
 - **RF13** — Quando um carrinho fica montado sem finalizar por tempo demais, o sistema deve emitir
   um lembrete de carrinho abandonado.
 - **RF14** — Quando uma visitante compartilha o link de um produto num app de mensagens, o sistema
-  deve servir um preview OG/Twitter Card server-renderizado (bots não executam JavaScript).
+  deve servir um preview OG/Twitter Card server-renderizado (bots não executam JavaScript), com uma
+  `og:image` que o bot consiga de fato buscar e desenhar: JPEG, de dimensões declaradas, e servida
+  como arquivo mesmo quando quem pede é um bot.
 - **RF15** — Quando uma administradora ativa 2FA, o sistema deve exigir a verificação de um código
   TOTP contra o segredo antes de marcar a conta como protegida.
 - **RF16** — Quando uma cliente pede exclusão de conta (LGPD), o sistema deve anonimizar os dados
@@ -395,7 +397,8 @@ aceite em EARS por requisito, mesmo padrão usado no `spec/` do monólito) vive 
 - **RNF09** — Todo texto da loja e do painel deve ter contraste de pelo menos 4,5:1 com o fundo
   (WCAG AA; 3:1 para ícones com significado, como estrelas de avaliação).
 - **RNF10** — Fotos enviadas devem ser gravadas em WebP em dois tamanhos (até 1600 px e até 600 px para
-  cards e miniaturas), com a orientação aplicada e sem metadados (EXIF/GPS).
+  cards e miniaturas), com a orientação aplicada e sem metadados (EXIF/GPS), mais uma cópia JPEG
+  quadrada de 1200 px (`-og.jpg`) para as prévias de link, que não leem WebP.
 
 ## Autenticação e Autorização
 
@@ -1180,3 +1183,23 @@ contra o Gateway via `docker run --network host`).
       nos manifests; falta aplicar num cluster ativo e uma license key real. **Não avancei aqui** —
       exige um cluster de verdade e uma license key real da New Relic, que eu não tenho como
       provisionar.
+- [x] **Compartilhar o site mostrava um quadrado cinza (RF14, RNF10)** (2026-09-22) — **bug em
+      produção:** qualquer link do site colado no Instagram, no Facebook ou no WhatsApp aparecia com
+      título e descrição certos, mas sem foto. Eram duas causas somadas, cada uma bastando sozinha.
+      *A regra de Nginx:* `$is_bot` reescrevia para `/api/seo/*` **tudo** que um bot de link-preview
+      pedisse, não só rotas de página — então quando o Facebook lia o preview e ia buscar a
+      `og:image` que ele mesmo acabara de receber, vinha de volta o HTML do preview (`Content-Type:
+      text/html`, 163 KB) em vez do JPEG. O roteamento dos buscadores já tinha essa ressalva
+      (`$prerender_page`); o dos previews não. Agora tem: `$unfurl_page`, mesmo formato, e o bot
+      recebe o arquivo. *O formato das fotos:* desde que os envios passaram a ser gravados em WebP
+      (2026-09-15), `og:image` apontava para o `.webp` do produto — e Facebook, Instagram e WhatsApp
+      não decodificam WebP; 15 dos 16 produtos do catálogo estavam nessa situação. Cada foto passa a
+      ter também uma cópia `-og.jpg`, JPEG de 1200x1200 com a foto inteira centralizada sobre branco
+      (quadrado porque as fotos são retrato: no 1,91:1 que o Facebook documenta, o bordado ou é
+      cortado fora ou boia entre duas margens largas), gravada no envio e preenchida nas fotos
+      antigas pelo `UploadedImageOptimizer`, que já roda na inicialização. O site ganhou a sua
+      (`images/og-default.jpg`). Os previews agora declaram `og:image:width/height`, `og:image:type`
+      e `og:image:alt`: sem as dimensões o bot precisa baixar o arquivo para medi-lo antes de
+      desenhar o card grande — e a primeira tentativa costuma ser justamente a que mostra o quadrado
+      cinza. `ops/seo/README.md` ganhou o comando que testa isso de fora: buscar a `og:image` com o
+      User-Agent do Facebook e conferir que volta `image/jpeg`.
