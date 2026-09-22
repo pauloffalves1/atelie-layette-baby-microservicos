@@ -10,12 +10,17 @@ generic title and no content. Link-preview bots already get a server-rendered OG
 |---|---|---|
 | `frontend/shell/scripts/prerender.mjs` | repo (run in place) | Reads `/api/sitemap.xml`, renders each URL in headless Chromium, strips executable scripts (keeps JSON-LD), writes `__prerender/<path>/index.html` (+ `q/<query>/` for category URLs). Aborts and keeps the old set if more than 20% fail. |
 | `ops/seo/prerender.sh` | run from the repo | Runs the script in `mcr.microsoft.com/playwright:v<same version as node_modules>-noble` (no browser libs on the host). |
-| `ops/seo/bot-detect.conf` | `/etc/nginx/conf.d/bot-detect.conf` | `$is_bot` + `$unfurl_page` (link previews), `$is_search_bot` + `$prerender_page`, `$prerender_query`. |
+| `ops/seo/bot-detect.conf` | `/etc/nginx/conf.d/bot-detect.conf` | `$is_unfurl_ua` → `$is_bot` (link previews), `$is_search_bot` → `$prerender_page`, `$prerender_query`. |
 
 Cron (root): `15 */6 * * * /var/www/atelie-layette-baby-microservicos/ops/seo/prerender.sh >> /var/log/atelie-prerender.log 2>&1`
 — also run it once after every frontend deploy. Price/stock changes reach crawlers within 6 hours.
 
 ## Site config (`/etc/nginx/sites-enabled/atelie-bebe`, 443 server block)
+
+Note this file is a plain file in `sites-enabled`, not the usual symlink into `sites-available` —
+there *is* an `/etc/nginx/sites-available/atelie-bebe`, but it is a stale copy from before the
+microservices migration and nothing includes it (`nginx.conf` includes `sites-enabled/*` only).
+Edit the one in `sites-enabled`.
 
 ```nginx
     # One canonical host: https://www.layettebaby.com.br/* → https://layettebaby.com.br/*
@@ -50,13 +55,13 @@ Cron (root): `15 */6 * * * /var/www/atelie-layette-baby-microservicos/ops/seo/pr
     }
 
     location /produto/ {
-        if ($unfurl_page) { rewrite ^/produto/([^/]+)$ /api/seo/product/$1 last; }
+        if ($is_bot) { rewrite ^/produto/([^/]+)$ /api/seo/product/$1 last; }
         if ($prerender_page) { rewrite ^(.*)$ /__prerender$1 last; }
         try_files $uri $uri/ /index.html;
     }
 
     location / {
-        if ($unfurl_page) { rewrite ^(.*)$ /api/seo/default last; }
+        if ($is_bot) { rewrite ^(.*)$ /api/seo/default last; }
         if ($prerender_page) { rewrite ^(.*)$ /__prerender$1 last; }
         try_files $uri $uri/ /index.html;
     }
@@ -82,7 +87,7 @@ curl -sI -A "$FB" "$img" | grep -i content-type    # image/jpeg — NOT text/htm
 ```
 
 `text/html` means a bot User-Agent is being rewritten to `/api/seo/*` for static files too
-(`$unfurl_page` missing from the site config); `image/webp` means `og:image` is pointing at the
+(the page-route guard missing from `$is_bot`); `image/webp` means `og:image` is pointing at the
 stored photo instead of its `-og.jpg` copy. Facebook caches a failed scrape, so after fixing either
 one, re-scrape the URL in [Sharing Debugger](https://developers.facebook.com/tools/debug/) —
 WhatsApp keeps its own cache for about 7 days and cannot be purged.

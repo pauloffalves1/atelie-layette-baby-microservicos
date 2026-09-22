@@ -1190,8 +1190,10 @@ contra o Gateway via `docker run --network host`).
       pedisse, não só rotas de página — então quando o Facebook lia o preview e ia buscar a
       `og:image` que ele mesmo acabara de receber, vinha de volta o HTML do preview (`Content-Type:
       text/html`, 163 KB) em vez do JPEG. O roteamento dos buscadores já tinha essa ressalva
-      (`$prerender_page`); o dos previews não. Agora tem: `$unfurl_page`, mesmo formato, e o bot
-      recebe o arquivo. *O formato das fotos:* desde que os envios passaram a ser gravados em WebP
+      (`$prerender_page`); o dos previews não. Agora `$is_bot` é derivado — o casamento de
+      User-Agent virou `$is_unfurl_ua` e `$is_bot` só vale 1 quando a rota não tem extensão, tudo
+      dentro do `bot-detect.conf` versionado, sem depender de uma edição no config que só existe no
+      VPS. O bot recebe o arquivo. *O formato das fotos:* desde que os envios passaram a ser gravados em WebP
       (2026-09-15), `og:image` apontava para o `.webp` do produto — e Facebook, Instagram e WhatsApp
       não decodificam WebP; 15 dos 16 produtos do catálogo estavam nessa situação. Cada foto passa a
       ter também uma cópia `-og.jpg`, JPEG de 1200x1200 com a foto inteira centralizada sobre branco
