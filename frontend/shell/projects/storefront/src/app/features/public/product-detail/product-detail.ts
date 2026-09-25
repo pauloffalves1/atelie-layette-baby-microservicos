@@ -190,8 +190,13 @@ export class ProductDetail implements OnInit {
       },
       error: (err) => {
         if (!isCurrent()) return;
-        if (err instanceof HttpErrorResponse && err.status === 404) this.notFound.set(true);
-        else this.loadError.set(true);
+        if (err instanceof HttpErrorResponse && err.status === 404) {
+          this.notFound.set(true);
+          // A removed product's URL stays in Google's index until it sees this.
+          this.seo.markNotFound();
+        } else {
+          this.loadError.set(true);
+        }
         this.loading.set(false);
       },
     });

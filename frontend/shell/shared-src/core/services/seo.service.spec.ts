@@ -13,4 +13,10 @@ describe('SeoService.trimDescription', () => {
     expect(trimmed).not.toMatch(/\s…$/);
     expect(long.startsWith(trimmed.slice(0, -1))).toBe(true);
   });
+
+  it('drops emoji and bullets pasted into product descriptions', () => {
+    expect(SeoService.trimDescription('👶✨ KIT 3 FRALDAS ✨👶\n🤍 O kit contém:\n• 3 Fraldas de Ombro')).toBe(
+      'KIT 3 FRALDAS O kit contém: 3 Fraldas de Ombro',
+    );
+  });
 });

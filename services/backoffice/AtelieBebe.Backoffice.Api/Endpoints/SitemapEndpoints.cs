@@ -17,7 +17,8 @@ public static class SitemapEndpoints
     /// </summary>
     public static void MapSitemapEndpoints(this WebApplication app)
     {
-        app.MapGet("/api/sitemap.xml", async (ICatalogServiceClient catalogServiceClient, IOptions<AppUrlOptions> appUrls, CancellationToken ct) =>
+        // HEAD too: sitemap validators and some crawlers probe with it first, and got a 405.
+        app.MapMethods("/api/sitemap.xml", [HttpMethods.Get, HttpMethods.Head],async (ICatalogServiceClient catalogServiceClient, IOptions<AppUrlOptions> appUrls, CancellationToken ct) =>
         {
             var products = await catalogServiceClient.GetSitemapProductsAsync(ct);
             var xml = SitemapXmlBuilder.Build(appUrls.Value.PublicUrl, products);

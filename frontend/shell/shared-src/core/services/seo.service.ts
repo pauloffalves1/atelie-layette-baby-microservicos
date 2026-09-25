@@ -36,6 +36,15 @@ export interface SeoData {
 /** Search results cut descriptions around here; a longer one gets truncated mid-word by Google. */
 const MAX_DESCRIPTION_LENGTH = 160;
 
+/** What every indexable page carries — the same value index.html starts with. */
+const INDEXABLE_ROBOTS = 'index, follow, max-image-preview:large';
+
+/**
+ * Emoji, pictographs and list bullets admins paste into product descriptions ("👶✨ KIT… • 3
+ * Fraldas"). Fine on the product page, noise in a 160-character search snippet.
+ */
+const SNIPPET_NOISE = /[\p{Extended_Pictographic}\u{1F3FB}-\u{1F3FF}\u{FE0F}\u{200D}•●▪►]/gu;
+
 /** JSON-LD blocks a page can add; all of them are dropped on the next page's update(). */
 type StructuredDataKey = 'product' | 'breadcrumb' | 'faq';
 
@@ -62,6 +71,7 @@ export class SeoService {
 
     this.titleService.setTitle(fullTitle);
 
+    this.setTag({ name: 'robots' }, INDEXABLE_ROBOTS);
     this.setTag({ name: 'description' }, description);
     this.setTag({ property: 'og:title' }, fullTitle);
     this.setTag({ property: 'og:description' }, description);
@@ -79,6 +89,18 @@ export class SeoService {
 
     // Cleared on every navigation so a product's rich-snippet data never lingers on the next,
     // unrelated page visited in this same SPA session — each page re-adds its own right after.
+    for (const key of ['product', 'breadcrumb', 'faq'] as const) this.removeJsonLd(key);
+  }
+
+  /**
+   * For a URL that turned out not to exist (unknown route, removed product). Nginx still answers
+   * 200 with the SPA, so without this Google indexes the "não encontrado" page as a soft 404 — with
+   * index.html's canonical still pointing at the home page. The next update() makes the page
+   * indexable again.
+   */
+  markNotFound(): void {
+    this.setTag({ name: 'robots' }, 'noindex');
+    this.document.querySelector('link[rel="canonical"]')?.remove();
     for (const key of ['product', 'breadcrumb', 'faq'] as const) this.removeJsonLd(key);
   }
 
@@ -157,9 +179,12 @@ export class SeoService {
     });
   }
 
-  /** Cuts at a word boundary with an ellipsis, collapsing whitespace/line breaks from admin-typed text. */
+  /**
+   * Cuts at a word boundary with an ellipsis, collapsing whitespace/line breaks and dropping emoji
+   * and bullets from admin-typed text.
+   */
   static trimDescription(text: string): string {
-    const clean = text.replace(/\s+/g, ' ').trim();
+    const clean = text.replace(SNIPPET_NOISE, ' ').replace(/\s+/g, ' ').trim();
     if (clean.length <= MAX_DESCRIPTION_LENGTH) return clean;
     const cut = clean.slice(0, MAX_DESCRIPTION_LENGTH - 1);
     const lastSpace = cut.lastIndexOf(' ');

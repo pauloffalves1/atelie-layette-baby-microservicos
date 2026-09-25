@@ -1,6 +1,6 @@
-import { Component, OnDestroy, inject } from '@angular/core';
-import { Meta } from '@angular/platform-browser';
+import { Component, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { SeoService } from '@shared/core/services/seo.service';
 
 /**
  * Catch-all for URLs that match no route. The storefront used to redirect them silently to the
@@ -13,16 +13,10 @@ import { Router, RouterLink } from '@angular/router';
   imports: [RouterLink],
   templateUrl: './not-found-page.html',
 })
-export class NotFoundPage implements OnDestroy {
-  private readonly meta = inject(Meta);
+export class NotFoundPage {
   readonly path = inject(Router).url;
 
   constructor() {
-    // Nginx still answers these URLs with 200 + index.html, so tell crawlers not to index them.
-    this.meta.updateTag({ name: 'robots', content: 'noindex' });
-  }
-
-  ngOnDestroy(): void {
-    this.meta.updateTag({ name: 'robots', content: 'index, follow, max-image-preview:large' });
+    inject(SeoService).markNotFound();
   }
 }
