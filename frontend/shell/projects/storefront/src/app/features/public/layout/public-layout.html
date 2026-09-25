@@ -9,9 +9,9 @@
 
       <!-- Below xl the nav collapses, and the cart used to live only inside it — invisible on phones and
            tablets until the menu was opened. This compact copy stays next to the toggler. -->
-      <button type="button" class="btn btn-primary rounded-circle position-relative ms-auto me-2 d-xl-none" style="width: 2.75rem; height: 2.75rem; padding: 0;"
+      <button type="button" class="btn btn-primary rounded-circle position-relative ms-auto me-2 d-xl-none has-tooltip" style="width: 2.75rem; height: 2.75rem; padding: 0;"
         (click)="checkoutModal.open('cart')"
-        [attr.aria-label]="cart.totalItems() === 0 ? 'Carrinho vazio' : 'Carrinho, ' + cart.totalItems() + (cart.totalItems() === 1 ? ' item' : ' itens')">
+        [attr.aria-label]="cartLabel()" [attr.data-tooltip]="cartLabel()">
         <i class="bi bi-bag-heart" aria-hidden="true"></i>
         @if (cart.totalItems() > 0) {
           <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-sage" aria-hidden="true">{{ cart.totalItems() }}</span>
@@ -58,8 +58,8 @@
             <a routerLink="/entrar" class="btn btn-lg btn-primary rounded-pill">Entrar</a>
           }
 
-          <button type="button" class="btn btn-lg btn-primary rounded-pill position-relative d-none d-xl-inline-block" (click)="checkoutModal.open('cart')"
-            [attr.aria-label]="cart.totalItems() === 0 ? 'Carrinho vazio' : 'Carrinho, ' + cart.totalItems() + (cart.totalItems() === 1 ? ' item' : ' itens')">
+          <button type="button" class="btn btn-lg btn-primary rounded-pill position-relative d-none d-xl-inline-block has-tooltip" (click)="checkoutModal.open('cart')"
+            [attr.aria-label]="cartLabel()" [attr.data-tooltip]="cartLabel()">
             <i class="bi bi-bag-heart" aria-hidden="true"></i>
             @if (cart.totalItems() > 0) {
               <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-sage" aria-hidden="true">

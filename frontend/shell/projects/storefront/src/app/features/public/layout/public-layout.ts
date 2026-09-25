@@ -1,4 +1,4 @@
-import { Component, HostListener, effect, signal } from '@angular/core';
+import { Component, HostListener, computed, effect, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
@@ -33,6 +33,12 @@ export class PublicLayout {
   // actually wired either one up to open on click.
   readonly accountMenuOpen = signal(false);
   readonly mobileMenuOpen = signal(false);
+
+  /** The cart buttons are just a bag icon — this is both their tooltip and their accessible name. */
+  readonly cartLabel = computed(() => {
+    const count = this.cart.totalItems();
+    return count === 0 ? 'Carrinho vazio' : `Ver carrinho — ${count} ${count === 1 ? 'item' : 'itens'}`;
+  });
 
   constructor(
     readonly cart: CartService,

@@ -1149,3 +1149,42 @@ a.status-row:focus-visible .status-row-fill {
     transition: none;
   }
 }
+
+// ---- Tooltip for icon-only buttons (the header cart): <button class="has-tooltip" data-tooltip="…">.
+// Pure CSS because Bootstrap's JS bundle is never loaded. Shown on mouse hover (only where there is
+// a real hover — a tap on a phone would leave it stuck) and on keyboard focus.
+.has-tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + .5rem);
+  right: 0;
+  z-index: 1080;
+  padding: .35rem .7rem;
+  border-radius: .5rem;
+  background: var(--atelie-text);
+  color: #fff;
+  font-size: .8rem;
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-.25rem);
+  transition: opacity .15s ease, transform .15s ease;
+}
+
+@media (hover: hover) {
+  .has-tooltip:hover::after {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.has-tooltip:focus-visible::after {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .has-tooltip::after { transition: none; }
+}
