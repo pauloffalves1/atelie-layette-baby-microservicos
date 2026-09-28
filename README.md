@@ -1224,7 +1224,8 @@ contra o Gateway via `docker run --network host`).
       catálogo inteiro (16 produtos), para que um produto novo chegue ao Google sozinho.
 - [x] **Política de Trocas e Devoluções** (2026-09-28) — página própria em `/politica-de-devolucao`
       (antes a regra vivia só num parágrafo dos Termos de Uso), com a mesma política declarada ao
-      Google Merchant Center (RF41): 7 dias após o recebimento, peça sem uso e sem lavagem, devolução
-      pelos Correios com frete por conta de quem compra — por conta do ateliê em defeito de fabricação,
-      que é refeito ou reembolsado — e reembolso na mesma forma de pagamento, sem taxa. Linkada no
-      rodapé, nos Termos, nas Perguntas Frequentes e no sitemap (e portanto no prerender).
+      Google Merchant Center (RF41): **só troca, nunca reembolso**. Em até 7 dias após o recebimento a
+      peça volta pelos Correios e o ateliê envia outra: com defeito de fabricação, o frete fica por
+      conta do ateliê; sem defeito (peça sem uso e sem lavagem), o frete da devolução fica por conta de
+      quem compra. Sem taxa de troca. Linkada no rodapé, nos Termos, nas Perguntas Frequentes e no
+      sitemap (e portanto no prerender).

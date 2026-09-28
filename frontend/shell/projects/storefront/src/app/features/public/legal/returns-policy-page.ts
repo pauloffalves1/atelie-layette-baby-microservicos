@@ -15,7 +15,7 @@ export class ReturnsPolicyPage implements OnInit {
     this.seo.update({
       title: 'Política de Trocas e Devoluções',
       description:
-        'Como trocar ou devolver uma peça do Ateliê Layette Baby: prazo de 7 dias, condições, frete da devolução e reembolso.',
+        'Como trocar uma peça do Ateliê Layette Baby: prazo de 7 dias, condições, peça com defeito e frete da devolução.',
       path: '/politica-de-devolucao',
     });
   }

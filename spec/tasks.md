@@ -361,7 +361,7 @@ substituição daquele relato.
 - [x] Feed com todos os produtos ativos quando `ProductSlugs` está vazio (padrão); `shipping_weight`
       por item.
 - [x] Merchant Center: frete por faixa de CEP × peso, separação 7–14 dias, política de devolução.
-- [ ] Cadastrar o feed no Merchant Center (busca programada diária).
+- [x] Cadastrar o feed no Merchant Center (busca programada diária).
 - [x] Página `/politica-de-devolucao` (Política de Trocas e Devoluções) com o que foi declarado ao
-      Merchant Center — 7 dias, sem uso, Correios, frete da devolução por conta de quem compra salvo
-      defeito, reembolso na mesma forma de pagamento; links no rodapé, Termos, FAQ e sitemap.
+      Merchant Center — só troca, sem reembolso: 7 dias, Correios, defeito com frete do ateliê e
+      troca sem defeito (peça sem uso) com frete de quem compra; links no rodapé, Termos, FAQ e sitemap.
