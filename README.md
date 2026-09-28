@@ -1222,3 +1222,9 @@ contra o Gateway via `docker run --network host`).
       cadastradas lá: o Google mostra o frete de uma unidade, e nenhum produto sozinho chega a R$ 599. Peças artesanais não têm GTIN (`identifier_exists` = no) e
       a marca é o próprio ateliê. Começou com 6 produtos escolhidos e, no mesmo dia, passou a levar o
       catálogo inteiro (16 produtos), para que um produto novo chegue ao Google sozinho.
+- [x] **Política de Trocas e Devoluções** (2026-09-28) — página própria em `/politica-de-devolucao`
+      (antes a regra vivia só num parágrafo dos Termos de Uso), com a mesma política declarada ao
+      Google Merchant Center (RF41): 7 dias após o recebimento, peça sem uso e sem lavagem, devolução
+      pelos Correios com frete por conta de quem compra — por conta do ateliê em defeito de fabricação,
+      que é refeito ou reembolsado — e reembolso na mesma forma de pagamento, sem taxa. Linkada no
+      rodapé, nos Termos, nas Perguntas Frequentes e no sitemap (e portanto no prerender).

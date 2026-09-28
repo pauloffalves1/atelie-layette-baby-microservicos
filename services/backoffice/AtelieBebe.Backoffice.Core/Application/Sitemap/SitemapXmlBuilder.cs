@@ -23,6 +23,7 @@ public static class SitemapXmlBuilder
         "/dicas-para-o-casal",
         "/contato",
         "/politica-de-envio",
+        "/politica-de-devolucao",
         "/perguntas-frequentes",
         "/termos-de-uso",
         "/politica-de-privacidade",

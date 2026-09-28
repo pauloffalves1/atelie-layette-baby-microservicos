@@ -67,6 +67,12 @@ export const routes: Routes = [
           import('./features/public/legal/shipping-policy-page').then((m) => m.ShippingPolicyPage),
       },
       {
+        path: 'politica-de-devolucao',
+        title: `Política de Trocas e Devoluções — ${SITE_NAME}`,
+        loadComponent: () =>
+          import('./features/public/legal/returns-policy-page').then((m) => m.ReturnsPolicyPage),
+      },
+      {
         path: 'perguntas-frequentes',
         title: `Perguntas Frequentes — ${SITE_NAME}`,
         loadComponent: () => import('./features/public/faq/faq-page').then((m) => m.FaqPage),

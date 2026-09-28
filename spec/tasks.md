@@ -362,3 +362,6 @@ substituição daquele relato.
       por item.
 - [x] Merchant Center: frete por faixa de CEP × peso, separação 7–14 dias, política de devolução.
 - [ ] Cadastrar o feed no Merchant Center (busca programada diária).
+- [x] Página `/politica-de-devolucao` (Política de Trocas e Devoluções) com o que foi declarado ao
+      Merchant Center — 7 dias, sem uso, Correios, frete da devolução por conta de quem compra salvo
+      defeito, reembolso na mesma forma de pagamento; links no rodapé, Termos, FAQ e sitemap.
