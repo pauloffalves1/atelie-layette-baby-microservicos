@@ -72,8 +72,8 @@ const WEIGHT_STEP_GRAMS = 500;
 const WEIGHT_STEP_FACTOR = 0.22;
 
 /**
- * São Bernardo do Campo (the ateliê's own city) gets the lowest free-shipping threshold (R$399),
- * below the rest of the state (R$599). Matched against the ViaCEP `localidade` field, normalized
+ * São Bernardo do Campo (the ateliê's own city) gets the lowest free-shipping threshold (R$599),
+ * below the rest of the state (R$799). Matched against the ViaCEP `localidade` field, normalized
  * (uppercase, no accents) for robust comparison.
  */
 const SAO_BERNARDO_DO_CAMPO = 'SAO BERNARDO DO CAMPO';
@@ -90,43 +90,43 @@ function normalizeCity(city: string): string {
 
 /**
  * Free-shipping subtotal threshold by destination — ateliê policy:
- * São Bernardo do Campo acima de R$399; resto do estado de São Paulo acima de R$599; Sul/Sudeste/Centro-Oeste
- * acima de R$699; Norte/Nordeste acima de R$799. Falls back to the Norte/Nordeste (highest) threshold
+ * São Bernardo do Campo acima de R$599; resto do estado de São Paulo acima de R$799; Sul/Sudeste/Centro-Oeste
+ * acima de R$899; Norte/Nordeste acima de R$999. Falls back to the Norte/Nordeste (highest) threshold
  * for an unrecognized state.
  */
-const SAO_BERNARDO_DO_CAMPO_THRESHOLD = 399;
+const SAO_BERNARDO_DO_CAMPO_THRESHOLD = 599;
 
 const FREE_SHIPPING_THRESHOLD_BY_REGION: Record<string, number> = {
-  SP: 599,
-  PR: 699,
-  SC: 699,
-  RS: 699,
-  RJ: 699,
-  MG: 699,
-  ES: 699,
-  DF: 699,
-  GO: 699,
-  MT: 699,
-  MS: 699,
-  BA: 799,
-  SE: 799,
-  AL: 799,
-  PE: 799,
-  PB: 799,
-  RN: 799,
-  CE: 799,
-  PI: 799,
-  MA: 799,
-  AC: 799,
-  AM: 799,
-  AP: 799,
-  PA: 799,
-  RO: 799,
-  RR: 799,
-  TO: 799,
+  SP: 799,
+  PR: 899,
+  SC: 899,
+  RS: 899,
+  RJ: 899,
+  MG: 899,
+  ES: 899,
+  DF: 899,
+  GO: 899,
+  MT: 899,
+  MS: 899,
+  BA: 999,
+  SE: 999,
+  AL: 999,
+  PE: 999,
+  PB: 999,
+  RN: 999,
+  CE: 999,
+  PI: 999,
+  MA: 999,
+  AC: 999,
+  AM: 999,
+  AP: 999,
+  PA: 999,
+  RO: 999,
+  RR: 999,
+  TO: 999,
 };
 
-const DEFAULT_FREE_SHIPPING_THRESHOLD = 799;
+const DEFAULT_FREE_SHIPPING_THRESHOLD = 999;
 
 @Injectable({ providedIn: 'root' })
 export class ShippingService {

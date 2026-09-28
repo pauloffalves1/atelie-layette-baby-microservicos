@@ -43,7 +43,15 @@ describe('ShippingService.estimate', () => {
   });
 
   it('is free once the destination threshold is reached', () => {
-    expect(service.estimate('SP', [{ category: 'Kit Ombro e Boca', quantity: 5 }], 599)).toBe(0);
-    expect(service.estimate('SP', [{ category: 'Kit Ombro e Boca', quantity: 5 }], 399, 'São Bernardo do Campo')).toBe(0);
+    expect(service.estimate('SP', [{ category: 'Kit Ombro e Boca', quantity: 5 }], 799)).toBe(0);
+    expect(service.estimate('SP', [{ category: 'Kit Ombro e Boca', quantity: 5 }], 599, 'São Bernardo do Campo')).toBe(0);
+    expect(service.estimate('RJ', [{ category: 'Kit Ombro e Boca', quantity: 5 }], 898)).toBeGreaterThan(0);
+    expect(service.estimate('RJ', [{ category: 'Kit Ombro e Boca', quantity: 5 }], 899)).toBe(0);
+  });
+
+  it('only frees Norte/Nordeste shipping from R$ 999', () => {
+    expect(service.estimate('BA', [{ category: 'Kit Ombro e Boca', quantity: 5 }], 998)).toBeGreaterThan(0);
+    expect(service.estimate('BA', [{ category: 'Kit Ombro e Boca', quantity: 5 }], 999)).toBe(0);
+    expect(service.estimate('AM', [{ category: 'Kit Ombro e Boca', quantity: 5 }], 999)).toBe(0);
   });
 });
