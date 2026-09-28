@@ -22,8 +22,8 @@ public sealed record MerchantFeedProduct(
 /// schedule, so price, promotion and photos follow the catalog without re-uploading anything.
 /// Every piece is made to order, so each item is always <c>in_stock</c> (the 7–14 day production
 /// time belongs in Merchant Center's handling time, not here), handmade with no GTIN
-/// (<c>identifier_exists</c> = no), and the ateliê itself is the brand. Shipping and the regional
-/// free-shipping thresholds are configured in Merchant Center, not per item.
+/// (<c>identifier_exists</c> = no), and the ateliê itself is the brand. Freight comes from a
+/// region × weight rate table in Merchant Center, fed by each item's <c>shipping_weight</c>.
 /// </summary>
 public static class GoogleMerchantFeedBuilder
 {
@@ -77,6 +77,7 @@ public static class GoogleMerchantFeedBuilder
             AppendField(sb, "identifier_exists", "no");
             if (!string.IsNullOrWhiteSpace(product.Category))
                 AppendField(sb, "product_type", product.Category.Trim());
+            AppendField(sb, "shipping_weight", $"{ShippingWeightGrams(product.Category)} g");
             sb.AppendLine("    </item>");
         }
 
@@ -84,6 +85,21 @@ public static class GoogleMerchantFeedBuilder
         sb.AppendLine("</rss>");
         return sb.ToString();
     }
+
+    /// <summary>
+    /// The posting weight checkout quotes freight by (shipping.service.ts, itemWeightGrams): a kit —
+    /// or a category that ships like one — counts as 1 kg, any other piece as 500 g. Merchant
+    /// Center's weight-based rate table turns this into the same freight the site charges.
+    /// </summary>
+    public static int ShippingWeightGrams(string category)
+    {
+        var normalized = category.Trim();
+        return normalized.StartsWith("kit", StringComparison.OrdinalIgnoreCase) || FullKiloCategories.Contains(normalized)
+            ? 1000
+            : 500;
+    }
+
+    private static readonly HashSet<string> FullKiloCategories = ["Boca, Ombro e Maternidade", "Toalha"];
 
     private static void AppendField(StringBuilder sb, string name, string value) =>
         sb.AppendLine($"      <g:{name}>{Escape(value)}</g:{name}>");

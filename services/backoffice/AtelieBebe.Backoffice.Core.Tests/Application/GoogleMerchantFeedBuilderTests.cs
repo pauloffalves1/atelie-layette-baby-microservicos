@@ -41,8 +41,19 @@ public class GoogleMerchantFeedBuilderTests
         Assert.Equal("Ateliê Layette Baby", Field(item, "brand"));
         Assert.Equal("no", Field(item, "identifier_exists"));
         Assert.Equal("Fralda de Boca", Field(item, "product_type"));
+        Assert.Equal("500 g", Field(item, "shipping_weight"));
         Assert.Null(item.Element(G + "sale_price"));
     }
+
+    [Theory]
+    [InlineData("Fralda de Boca", 500)]
+    [InlineData("Almofadinha", 500)]
+    [InlineData("Kit Ombro e Boca", 1000)]
+    [InlineData("Kit Ombro, Boca e Toalha", 1000)]
+    [InlineData("Toalha", 1000)]
+    [InlineData("Boca, Ombro e Maternidade", 1000)]
+    public void ShippingWeightGrams_MatchesTheWeightCheckoutQuotesBy(string category, int grams) =>
+        Assert.Equal(grams, GoogleMerchantFeedBuilder.ShippingWeightGrams(category));
 
     [Fact]
     public void Build_ListsExtraPhotosOnceAndKeepsAbsoluteUrls()

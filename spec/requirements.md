@@ -627,4 +627,6 @@ preço e fotos sempre iguais aos da loja, sem ter que reenviar nada ao Google qu
 4. ENQUANTO o produto estiver em promoção, o item DEVE trazer também `sale_price` e, quando início e
    fim forem conhecidos, `sale_price_effective_date`.
 5. Um produto sem nenhuma foto NÃO DEVE entrar no feed.
-6. Frete e faixas de frete grátis por região são configurados no Merchant Center, não no feed.
+6. Cada item DEVE trazer `shipping_weight` com o mesmo peso de postagem que o checkout usa (kit,
+   toalha e "Boca, Ombro e Maternidade" = 1 kg; demais peças = 500 g); o valor do frete por região
+   e peso fica numa tabela no Merchant Center, com os mesmos valores do checkout.
