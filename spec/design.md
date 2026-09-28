@@ -19,7 +19,7 @@ Seis serviços .NET 10, cada um com sua própria árvore Clean Architecture
 | **Identity** | Autenticação (cliente e admin), permissões granulares, 2FA, redefinição de senha | `IdentityDb`: `Admin`, `Customer`, `CustomerAddress`, `EmailVerificationToken`, `PasswordResetToken` |
 | **Catalog** | Produtos, avaliações, cupons\*, imagens do site, galeria, favoritos | `CatalogDb`: `Product`, `ProductImage`, `ProductCustomerAccessEntry`, `ProductReview`, `SiteImage`, `GalleryImage`, `WishlistItem` |
 | **Orders** | Pedidos, itens, cupons, snapshot de carrinho, pagamento | `OrdersDb`: `Order`, `OrderItem`, `Coupon`, `CartSnapshot` |
-| **Backoffice** | Dashboard agregado, mensagens de contato, newsletter, auditoria, sitemap | `BackofficeDb`: `AuditLog`, `ContactMessage`, `NewsletterSubscriber` |
+| **Backoffice** | Dashboard agregado, mensagens de contato, newsletter, auditoria, sitemap, feed do Google Merchant | `BackofficeDb`: `AuditLog`, `ContactMessage`, `NewsletterSubscriber` |
 | **Notifications** | Worker que consome eventos e despacha e-mail | sem banco próprio — só consome RabbitMQ |
 | **Gateway** | Roteamento YARP + rate limiting nas rotas de auth | sem banco |
 

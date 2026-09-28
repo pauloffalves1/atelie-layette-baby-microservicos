@@ -32,6 +32,7 @@ public static class DependencyInjection
         services.AddScoped<IOutboxDbContext>(sp => sp.GetRequiredService<BackofficeDbContext>());
 
         services.Configure<AppUrlOptions>(configuration.GetSection(AppUrlOptions.SectionName));
+        services.Configure<GoogleMerchantOptions>(configuration.GetSection(GoogleMerchantOptions.SectionName));
 
         services.AddScoped<IContactMessageRepository, ContactMessageRepository>();
         services.AddScoped<INewsletterSubscriberRepository, NewsletterSubscriberRepository>();

@@ -1,5 +1,6 @@
 using AtelieBebe.Catalog.Core.Application.Products;
 using AtelieBebe.Catalog.Core.Domain.Repositories;
+using AtelieBebe.SharedKernel.Exceptions;
 
 namespace AtelieBebe.Catalog.Api.Endpoints;
 
@@ -69,6 +70,36 @@ public static class InternalEndpoints
                 }));
                 if (entries.Count >= result.TotalItems || result.Items.Count == 0) break;
                 page++;
+            }
+            return Results.Ok(entries);
+        });
+
+        // Backoffice's Google Merchant Center feed: what a Shopping listing needs (title,
+        // description, price, promotion, photos) for the active products whose slugs it asks for.
+        // Looked up as an anonymous visitor, so exclusive and test products stay out; slugs that
+        // are unknown or inactive are simply left out too.
+        app.MapGet("/internal/products/merchant-feed-entries", async (string[] slug, IProductService service, CancellationToken ct) =>
+        {
+            var entries = new List<object>();
+            foreach (var s in slug.Distinct())
+            {
+                ProductDto p;
+                try { p = await service.GetBySlugAsync(s, ct: ct); }
+                catch (NotFoundException) { continue; }
+                if (!p.Active || p.IsTest) continue;
+                entries.Add(new
+                {
+                    p.Slug,
+                    p.Name,
+                    p.Description,
+                    p.Category,
+                    p.Price,
+                    p.EffectivePrice,
+                    p.IsOnPromotion,
+                    p.PromotionStartsAt,
+                    p.PromotionEndsAt,
+                    ImageUrls = (p.ImageUrl is null ? Array.Empty<string>() : [p.ImageUrl]).Concat(p.ImageUrls).ToList(),
+                });
             }
             return Results.Ok(entries);
         });

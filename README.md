@@ -365,6 +365,9 @@ aceite em EARS por requisito, mesmo padrão usado no `spec/` do monólito) vive 
   ou que contenha um produto de teste, deve ser marcado como pedido de teste e ficar fora da listagem
   de encomendas, do CSV, do dashboard e do aviso de nova encomenda para o ateliê (os avisos para a
   cliente continuam), aparecendo apenas na tela de testes do painel.
+- **RF41** — O sistema deve publicar um feed de produtos para o Google Merchant Center
+  (`/api/google-merchant-feed.xml`) com os produtos escolhidos na configuração, sempre com o preço,
+  a promoção e as fotos atuais do catálogo.
 
 ### Não funcionais
 
@@ -1206,3 +1209,14 @@ contra o Gateway via `docker run --network host`).
       desenhar o card grande — e a primeira tentativa costuma ser justamente a que mostra o quadrado
       cinza. `ops/seo/README.md` ganhou o comando que testa isso de fora: buscar a `og:image` com o
       User-Agent do Facebook e conferir que volta `image/jpeg`.
+- [x] **Produtos no Google Shopping (RF41)** (2026-09-28) — `/api/google-merchant-feed.xml`, o feed
+      RSS 2.0 que o Google Merchant Center busca por agendamento. É gerado a cada requisição, como o
+      sitemap: o Backoffice pede ao Catalog (`/internal/products/merchant-feed-entries`) os produtos
+      listados em `GoogleMerchant:ProductSlugs` (`appsettings.json` do Backoffice — incluir um
+      produto no Google é acrescentar o slug ali) e o `GoogleMerchantFeedBuilder` monta os itens.
+      Preço, promoção (`sale_price` + janela) e fotos acompanham o catálogo sozinhos. Toda peça é
+      feita sob encomenda, então o item vai sempre `in_stock`; o prazo de produção fica no "tempo
+      de manuseio" do Merchant Center, junto com o frete e as faixas de frete grátis por região —
+      o feed não repete o frete por item. Peças artesanais não têm GTIN (`identifier_exists` = no) e
+      a marca é o próprio ateliê. Começou com 6 produtos: Almofadinha Santo Anjo, Kit Ombro, Boca e
+      Toalha, Fralda de Ombro avulso, Toalha Forrada, Fralda de Boca avulso e Kit Ursinho.

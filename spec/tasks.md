@@ -351,3 +351,12 @@ substituição daquele relato.
 - [x] Dashboard de testes (2026-09-18): `GET /api/admin/test-orders/dashboard` reaproveitando
       `OrdersDashboardStatsCalculator` sobre os pedidos de teste, `GET /api/admin/test-products`
       (permissão `Testing`) e a tela "Testes" com números, situação, produtos e compras.
+
+## Requisito 33 — Produtos no Google Shopping (RF41)
+
+- [x] Catalog: `GET /internal/products/merchant-feed-entries?slug=...` (busca como visitante anônima,
+      então exclusivo e teste ficam de fora; ignora slug inexistente/inativo).
+- [x] Backoffice: `GoogleMerchantFeedBuilder` + testes, `GoogleMerchantOptions` (lista de slugs em
+      `appsettings.json`), `GET/HEAD /api/google-merchant-feed.xml`; rota no Gateway.
+- [ ] Cadastrar o feed no Merchant Center (busca programada diária) e configurar frete e prazo de
+      manuseio (7–14 dias) por lá.

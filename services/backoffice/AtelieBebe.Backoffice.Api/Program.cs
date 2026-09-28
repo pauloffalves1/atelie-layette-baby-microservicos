@@ -32,6 +32,7 @@ app.MapNewsletterEndpoints();
 app.MapAuditLogEndpoints();
 app.MapDashboardEndpoints();
 app.MapSitemapEndpoints();
+app.MapGoogleMerchantFeedEndpoints();
 app.MapHealthChecks("/health");
 
 using (var scope = app.Services.CreateScope())
