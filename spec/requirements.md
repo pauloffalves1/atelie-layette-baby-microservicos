@@ -608,7 +608,7 @@ listas do administrativo.
 
 ## Requisito 33: Produtos no Google Shopping
 
-**User Story:** Como ateliê, quero que alguns produtos escolhidos apareçam no Google Shopping, com
+**User Story:** Como ateliê, quero que os produtos da loja apareçam no Google Shopping, com
 preço e fotos sempre iguais aos da loja, sem ter que reenviar nada ao Google quando algo muda.
 
 **Rastreamento:** RF41
@@ -617,9 +617,9 @@ preço e fotos sempre iguais aos da loja, sem ter que reenviar nada ao Google qu
 
 1. O sistema DEVE publicar um feed de produtos no formato do Google Merchant Center (RSS 2.0,
    namespace `g:`) em `/api/google-merchant-feed.xml`, gerado a cada requisição a partir do catálogo.
-2. O feed DEVE conter somente os produtos cuja lista de slugs está na configuração
-   (`GoogleMerchant:ProductSlugs`), na ordem configurada; um slug inexistente, inativo, exclusivo
-   ou de teste NÃO DEVE aparecer.
+2. O feed DEVE conter todos os produtos ativos e públicos da loja; SE a configuração
+   `GoogleMerchant:ProductSlugs` listar slugs, ENTÃO somente esses, na ordem configurada. Um produto
+   inexistente, inativo, exclusivo ou de teste NÃO DEVE aparecer.
 3. Cada item DEVE trazer id (slug), título, descrição (o nome, se não houver descrição), link da
    página do produto, foto principal e até 10 fotos adicionais em URL absoluta, disponibilidade
    `in_stock` (produção sob encomenda), preço em BRL, condição nova, a marca do ateliê,

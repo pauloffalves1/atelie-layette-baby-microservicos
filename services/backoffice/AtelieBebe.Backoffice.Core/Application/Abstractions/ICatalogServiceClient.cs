@@ -8,5 +8,6 @@ public interface ICatalogServiceClient
 {
     Task<int> GetProductCountAsync(CancellationToken ct = default);
     Task<IReadOnlyList<SitemapProduct>> GetSitemapProductsAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<string>> GetActiveProductSlugsAsync(CancellationToken ct = default);
     Task<IReadOnlyList<MerchantFeedProduct>> GetMerchantFeedProductsAsync(IReadOnlyList<string> slugs, CancellationToken ct = default);
 }

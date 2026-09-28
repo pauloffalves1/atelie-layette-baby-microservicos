@@ -366,8 +366,8 @@ aceite em EARS por requisito, mesmo padrão usado no `spec/` do monólito) vive 
   de encomendas, do CSV, do dashboard e do aviso de nova encomenda para o ateliê (os avisos para a
   cliente continuam), aparecendo apenas na tela de testes do painel.
 - **RF41** — O sistema deve publicar um feed de produtos para o Google Merchant Center
-  (`/api/google-merchant-feed.xml`) com os produtos escolhidos na configuração, sempre com o preço,
-  a promoção e as fotos atuais do catálogo.
+  (`/api/google-merchant-feed.xml`) com os produtos ativos da loja (ou só os listados na
+  configuração), sempre com o preço, a promoção e as fotos atuais do catálogo.
 
 ### Não funcionais
 
@@ -1211,14 +1211,14 @@ contra o Gateway via `docker run --network host`).
       User-Agent do Facebook e conferir que volta `image/jpeg`.
 - [x] **Produtos no Google Shopping (RF41)** (2026-09-28) — `/api/google-merchant-feed.xml`, o feed
       RSS 2.0 que o Google Merchant Center busca por agendamento. É gerado a cada requisição, como o
-      sitemap: o Backoffice pede ao Catalog (`/internal/products/merchant-feed-entries`) os produtos
-      listados em `GoogleMerchant:ProductSlugs` (`appsettings.json` do Backoffice — incluir um
-      produto no Google é acrescentar o slug ali) e o `GoogleMerchantFeedBuilder` monta os itens.
+      sitemap: o Backoffice pede ao Catalog (`/internal/products/merchant-feed-entries`) todos os
+      produtos ativos — ou só os listados em `GoogleMerchant:ProductSlugs`, se a lista não estiver
+      vazia — e o `GoogleMerchantFeedBuilder` monta os itens.
       Preço, promoção (`sale_price` + janela) e fotos acompanham o catálogo sozinhos. Toda peça é
       feita sob encomenda, então o item vai sempre `in_stock`; o prazo de produção fica no "tempo
       de manuseio" do Merchant Center. O feed leva o peso de postagem (`shipping_weight`, mesma regra
       do checkout: kit/toalha 1 kg, peça avulsa 500 g) e o Merchant Center tem uma tabela de frete por
       faixa de CEP × peso com os mesmos valores do checkout. As faixas de frete grátis não foram
       cadastradas lá: o Google mostra o frete de uma unidade, e nenhum produto sozinho chega a R$ 599. Peças artesanais não têm GTIN (`identifier_exists` = no) e
-      a marca é o próprio ateliê. Começou com 6 produtos: Almofadinha Santo Anjo, Kit Ombro, Boca e
-      Toalha, Fralda de Ombro avulso, Toalha Forrada, Fralda de Boca avulso e Kit Ursinho.
+      a marca é o próprio ateliê. Começou com 6 produtos escolhidos e, no mesmo dia, passou a levar o
+      catálogo inteiro (16 produtos), para que um produto novo chegue ao Google sozinho.

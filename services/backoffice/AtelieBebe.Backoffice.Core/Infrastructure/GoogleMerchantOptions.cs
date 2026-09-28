@@ -1,9 +1,10 @@
 namespace AtelieBebe.Backoffice.Core.Infrastructure;
 
 /// <summary>
-/// Which products go to Google Merchant Center (Shopping). Only the slugs listed here appear in
-/// /api/google-merchant-feed.xml, in this order — adding a product to Google is adding its slug
-/// (in production, <c>GoogleMerchant__ProductSlugs__N</c> env vars override the list).
+/// Which products go to Google Merchant Center (Shopping). Empty (the default) means every active,
+/// publicly listed product, so a new product reaches Google on its own; listing slugs here narrows
+/// /api/google-merchant-feed.xml down to just those, in this order (in production,
+/// <c>GoogleMerchant__ProductSlugs__N</c> env vars override the list).
 /// </summary>
 public sealed class GoogleMerchantOptions
 {

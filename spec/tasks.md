@@ -358,5 +358,7 @@ substituição daquele relato.
       então exclusivo e teste ficam de fora; ignora slug inexistente/inativo).
 - [x] Backoffice: `GoogleMerchantFeedBuilder` + testes, `GoogleMerchantOptions` (lista de slugs em
       `appsettings.json`), `GET/HEAD /api/google-merchant-feed.xml`; rota no Gateway.
-- [ ] Cadastrar o feed no Merchant Center (busca programada diária) e configurar frete e prazo de
-      manuseio (7–14 dias) por lá.
+- [x] Feed com todos os produtos ativos quando `ProductSlugs` está vazio (padrão); `shipping_weight`
+      por item.
+- [x] Merchant Center: frete por faixa de CEP × peso, separação 7–14 dias, política de devolução.
+- [ ] Cadastrar o feed no Merchant Center (busca programada diária).

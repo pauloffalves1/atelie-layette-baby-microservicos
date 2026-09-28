@@ -23,6 +23,12 @@ public sealed class CatalogServiceClient : ICatalogServiceClient
         return result ?? [];
     }
 
+    public async Task<IReadOnlyList<string>> GetActiveProductSlugsAsync(CancellationToken ct = default)
+    {
+        var result = await _httpClient.GetFromJsonAsync<List<string>>("/internal/products/active-slugs", ct);
+        return result ?? [];
+    }
+
     public async Task<IReadOnlyList<MerchantFeedProduct>> GetMerchantFeedProductsAsync(IReadOnlyList<string> slugs, CancellationToken ct = default)
     {
         if (slugs.Count == 0) return [];
