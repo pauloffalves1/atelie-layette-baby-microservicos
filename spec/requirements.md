@@ -630,3 +630,25 @@ preço e fotos sempre iguais aos da loja, sem ter que reenviar nada ao Google qu
 6. Cada item DEVE trazer `shipping_weight` com o mesmo peso de postagem que o checkout usa (kit,
    toalha e "Boca, Ombro e Maternidade" = 1 kg; demais peças = 500 g); o valor do frete por região
    e peso fica numa tabela no Merchant Center, com os mesmos valores do checkout.
+
+---
+
+## Requisito 34: Trocar o link de um produto
+
+**User Story:** Como administradora, quero trocar o link (`/produto/{slug}`) de um produto — por
+exemplo quando o nome mudou e o link ainda carrega o nome antigo — sem quebrar o link antigo que já
+está no Google, em conversas de WhatsApp e em e-mails enviados.
+
+**Rastreamento:** RF42
+
+**Acceptance Criteria**
+
+1. A tela de edição do produto DEVE ter o campo "Link do produto"; o valor DEVE ser normalizado pela
+   mesma regra do cadastro (minúsculas, sem acentos, só letras, números e hífens).
+2. QUANDO o link for trocado, o link anterior DEVE ser guardado e continuar abrindo o produto; a
+   página do produto DEVE trocar o endereço pelo link atual sem criar entrada no histórico.
+3. SE o novo link for o atual ou um link anterior de outro produto, ENTÃO a troca DEVE ser recusada
+   (409); voltar a um link anterior do próprio produto DEVE ser permitido.
+4. O seed do catálogo NÃO DEVE recriar um produto de demonstração cujo link foi trocado.
+5. A troca DEVE entrar na auditoria ("Link: antigo → novo"), e a tela DEVE avisar que o Google
+   Merchant trata o produto como novo (o slug é o id do item no feed).

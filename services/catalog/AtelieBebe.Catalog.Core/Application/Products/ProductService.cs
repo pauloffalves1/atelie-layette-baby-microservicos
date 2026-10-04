@@ -206,7 +206,7 @@ public sealed class ProductService : IProductService
         try
         {
             var slug = SlugHelper.Slugify(request.Name);
-            if (await _unitOfWork.Products.SlugExistsAsync(slug, ct))
+            if (await _unitOfWork.Products.SlugExistsAsync(slug, ct: ct))
                 slug = $"{slug}-{Guid.NewGuid().ToString()[..6]}";
 
             var product = Product.Create(
@@ -249,6 +249,17 @@ public sealed class ProductService : IProductService
                 request.ImageUrl,
                 request.Featured,
                 request.ProductionLeadTimeDays);
+
+            if (!string.IsNullOrWhiteSpace(request.Slug))
+            {
+                var slug = SlugHelper.Slugify(request.Slug);
+                if (slug.Length == 0)
+                    throw new DomainException("O link do produto precisa ter ao menos uma letra ou número.");
+                if (slug != product.Slug && await _unitOfWork.Products.SlugExistsAsync(slug, product.Id, ct))
+                    throw new ConflictException($"O link '{slug}' já é (ou já foi) usado por outro produto.");
+
+                product.ChangeSlug(slug);
+            }
 
             await _unitOfWork.SaveChangesAsync(ct);
             _cacheInvalidator.Invalidate();

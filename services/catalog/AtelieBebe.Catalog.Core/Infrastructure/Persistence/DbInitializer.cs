@@ -42,7 +42,11 @@ public static class DbInitializer
         // products (Almofadinha, Toalha, kits) the moment this container restarted, since the
         // catalog had grown beyond this list without the list being updated. Seeding must only ever
         // add missing demo rows, never delete live data based on a hardcoded allowlist.
-        var existingSlugs = (await dbContext.Products.Select(p => p.Slug).ToListAsync()).ToHashSet();
+        // A seed product whose link an admin later changed lives on under its old slug in
+        // ProductPreviousSlugs — counting those too keeps it from being re-seeded as a duplicate.
+        var existingSlugs = (await dbContext.Products.Select(p => p.Slug).ToListAsync())
+            .Concat(await dbContext.Set<ProductPreviousSlug>().Select(s => s.Slug).ToListAsync())
+            .ToHashSet();
 
         var newProducts = seedData
             .Select((p, index) => (Product: p, ImageIndex: index + 1))

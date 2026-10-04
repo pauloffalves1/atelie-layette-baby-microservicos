@@ -37,5 +37,12 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
             .WithOne()
             .HasForeignKey("ProductId")
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Required: the slug lookups filter on ProductId as a non-null Guid.
+        builder.HasMany<ProductPreviousSlug>("_previousSlugs")
+            .WithOne()
+            .HasForeignKey("ProductId")
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

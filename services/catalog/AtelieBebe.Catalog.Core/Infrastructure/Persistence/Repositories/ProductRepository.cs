@@ -16,16 +16,24 @@ public sealed class ProductRepository : IProductRepository
         _dbContext.Products.Include("_allowedCustomerAccess").Include("_images");
 
     public Task<Product?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
-        ProductsWithAccess.FirstOrDefaultAsync(p => p.Id == id, ct);
+        ProductsWithAccess.Include("_previousSlugs").FirstOrDefaultAsync(p => p.Id == id, ct);
 
     public async Task<IReadOnlyList<Product>> ListByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct = default) =>
         await ProductsWithAccess.Where(p => ids.Contains(p.Id)).ToListAsync(ct);
 
-    public Task<Product?> GetBySlugAsync(string slug, Guid? customerId = null, bool isTestCustomer = false, CancellationToken ct = default) =>
-        ApplyVisibility(ProductsWithAccess.Where(p => p.Slug == slug), customerId, isTestCustomer).FirstOrDefaultAsync(ct);
+    /// <summary>Also answers to a link the product had before an admin changed it (see <see cref="Product.ChangeSlug"/>).</summary>
+    public Task<Product?> GetBySlugAsync(string slug, Guid? customerId = null, bool isTestCustomer = false, CancellationToken ct = default)
+    {
+        var previousSlugs = _dbContext.Set<ProductPreviousSlug>();
+        var query = ProductsWithAccess.Where(p =>
+            p.Slug == slug || previousSlugs.Any(s => s.Slug == slug && EF.Property<Guid>(s, "ProductId") == p.Id));
 
-    public Task<bool> SlugExistsAsync(string slug, CancellationToken ct = default) =>
-        _dbContext.Products.AnyAsync(p => p.Slug == slug, ct);
+        return ApplyVisibility(query, customerId, isTestCustomer).FirstOrDefaultAsync(ct);
+    }
+
+    public async Task<bool> SlugExistsAsync(string slug, Guid? exceptProductId = null, CancellationToken ct = default) =>
+        await _dbContext.Products.AnyAsync(p => p.Slug == slug && p.Id != exceptProductId, ct) ||
+        await _dbContext.Set<ProductPreviousSlug>().AnyAsync(s => s.Slug == slug && EF.Property<Guid>(s, "ProductId") != exceptProductId, ct);
 
     public async Task<(IReadOnlyList<Product> Items, int TotalItems)> ListAsync(string? category, bool onlyActive, int page, int pageSize, Guid? customerId = null, bool isTestCustomer = false, string? search = null, CancellationToken ct = default)
     {

@@ -66,7 +66,8 @@ public static class ProductEndpoints
                 AuditDiff.Field("Descrição", before.Description, updated.Description),
                 AuditDiff.Field("Preço", before.Price, updated.Price),
                 AuditDiff.Field("Categoria", before.Category, updated.Category),
-                AuditDiff.Field("Destaque", before.Featured, updated.Featured));
+                AuditDiff.Field("Destaque", before.Featured, updated.Featured),
+                AuditDiff.Field("Link", before.Slug, updated.Slug));
             await auditPublisher.PublishAsync(http.User.GetUserId(), http.User.GetName(), "ProductUpdated", $"Produto '{updated.Name}' — {diff}", ct);
             return Results.Ok(updated);
         });

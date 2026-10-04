@@ -52,4 +52,6 @@ export interface UpdateProductRequest {
   imageUrl: string | null;
   featured: boolean;
   productionLeadTimeDays?: number | null;
+  /** New link (/produto/{slug}); omitted or unchanged keeps the current one. */
+  slug?: string | null;
 }

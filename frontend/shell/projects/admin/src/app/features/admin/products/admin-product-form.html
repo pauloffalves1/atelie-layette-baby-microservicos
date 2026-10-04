@@ -58,6 +58,21 @@
               <label for="product-lead-time" class="form-label small fw-semibold">Prazo de produção (dias úteis)</label>
               <input type="number" min="0" step="1" id="product-lead-time" class="form-control" formControlName="productionLeadTimeDays" placeholder="Ex: 5">
             </div>
+            @if (isEditMode()) {
+              <div class="col-12">
+                <label for="product-slug" class="form-label small fw-semibold">Link do produto</label>
+                <div class="input-group">
+                  <span class="input-group-text">/produto/</span>
+                  <input type="text" id="product-slug" class="form-control" formControlName="slug" autocomplete="off">
+                </div>
+                @if (slugChanged()) {
+                  <div class="form-text text-warning-emphasis">
+                    <i class="bi bi-exclamation-circle me-1"></i>Novo link: /produto/{{ slugPreview() }}. O link antigo continua
+                    levando a este produto, mas o Google Merchant vai tratá-lo como um produto novo (passa por revisão de novo).
+                  </div>
+                }
+              </div>
+            }
             <div class="col-md-6 d-flex align-items-end">
               <div class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" role="switch" id="featured" formControlName="featured">

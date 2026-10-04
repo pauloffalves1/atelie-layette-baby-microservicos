@@ -125,6 +125,12 @@ export class ProductDetail implements OnInit {
     this.productService.getBySlug(slug).subscribe({
       next: (product) => {
         if (!isCurrent()) return;
+        // An old link of a product whose link the admin changed: swap the address for the current
+        // one (no history entry), which reloads the page through paramMap above.
+        if (product.slug !== slug) {
+          this.router.navigate(['/produto', product.slug], { replaceUrl: true });
+          return;
+        }
         this.product.set(product);
         this.loading.set(false);
         this.activeImageIndex.set(0);

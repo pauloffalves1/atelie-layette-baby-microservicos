@@ -18,6 +18,16 @@ function toDatetimeLocal(iso: string | null): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+/** Same rule as the API's SlugHelper.Slugify, to preview the link the server will store. */
+function slugify(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/\p{Mn}/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 @Component({
   selector: 'app-admin-product-form',
   standalone: true,
@@ -96,7 +106,20 @@ export class AdminProductForm implements OnInit {
     featured: [false],
     productionLeadTimeDays: [null as number | null],
     isTest: [false],
+    /** Edit mode only — a new product gets its link from its name, on the server. */
+    slug: [''],
   });
+
+  /** The product's link as the server has it, to tell whether the admin is changing it. */
+  private savedSlug = '';
+
+  slugPreview(): string {
+    return slugify(this.form.controls.slug.value);
+  }
+
+  slugChanged(): boolean {
+    return this.slugPreview() !== '' && this.slugPreview() !== this.savedSlug;
+  }
 
   /** Last saved value of the test-product switch (RF40) — it has its own endpoint, so it's only sent when it actually changed. */
   private readonly savedIsTest = signal(false);
@@ -146,7 +169,9 @@ export class AdminProductForm implements OnInit {
           featured: product.featured,
           productionLeadTimeDays: product.productionLeadTimeDays,
           isTest: product.isTest ?? false,
+          slug: product.slug,
         });
+        this.savedSlug = product.slug;
         this.savedIsTest.set(product.isTest ?? false);
         this.form.markAsPristine();
         this.selectedCustomerIds.set(product.allowedCustomerIds);
@@ -414,7 +439,8 @@ export class AdminProductForm implements OnInit {
       const id = this.productId;
       // Gallery photos and exclusive access used to need their own "Salvar" clicks, and "Salvar
       // produto" navigated away without them — losing freshly uploaded photos. Save them together.
-      const requests: Observable<unknown>[] = [this.productService.update(id, payload)];
+      const update = { ...payload, slug: this.slugChanged() ? this.slugPreview() : null };
+      const requests: Observable<unknown>[] = [this.productService.update(id, update)];
       if (this.galleryDirty()) requests.push(this.productService.setImages(id, this.galleryImages()));
       if (this.customersDirty()) requests.push(this.productService.setAllowedCustomers(id, this.selectedCustomerIds()));
       if (value.isTest !== this.savedIsTest()) requests.push(this.productService.setTest(id, value.isTest));

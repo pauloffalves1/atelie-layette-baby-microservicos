@@ -365,3 +365,11 @@ substituição daquele relato.
 - [x] Página `/politica-de-devolucao` (Política de Trocas e Devoluções) com o que foi declarado ao
       Merchant Center — só troca, sem reembolso: 7 dias, Correios, defeito com frete do ateliê e
       troca sem defeito (peça sem uso) com frete de quem compra; links no rodapé, Termos, FAQ e sitemap.
+
+## Requisito 34 — Trocar o link de um produto (RF42)
+
+- [x] Catalog: `ProductPreviousSlug` (tabela `ProductPreviousSlugs`, slug único), `Product.ChangeSlug`
+      + testes, `UpdateProductRequest.Slug`, busca por slug também pelos links anteriores, conflito
+      contra link atual/anterior de outro produto, seed ignora slugs anteriores, auditoria.
+- [x] Admin: campo "Link do produto" na edição, com prévia e aviso sobre o Merchant.
+- [x] Storefront: link antigo troca o endereço pelo atual (`replaceUrl`).

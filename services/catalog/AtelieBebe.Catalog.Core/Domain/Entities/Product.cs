@@ -34,12 +34,16 @@ public sealed class Product : Entity, IAggregateRoot
 
     private readonly List<ProductCustomerAccessEntry> _allowedCustomerAccess = new();
     private readonly List<ProductImage> _images = new();
+    private readonly List<ProductPreviousSlug> _previousSlugs = new();
 
     /// <summary>Customers this product is restricted to. Empty means the product is public.</summary>
     public IReadOnlyCollection<Guid> AllowedCustomerIds => _allowedCustomerAccess.Select(e => e.CustomerId).ToList().AsReadOnly();
 
     /// <summary>Additional gallery photos, beyond the cover photo (<see cref="ImageUrl"/>), in display order.</summary>
     public IReadOnlyList<string> ImageUrls => _images.OrderBy(i => i.SortOrder).Select(i => i.Url).ToList();
+
+    /// <summary>Links this product had before, which still lead to it (see <see cref="ChangeSlug"/>).</summary>
+    public IReadOnlyList<string> PreviousSlugs => _previousSlugs.Select(s => s.Slug).ToList();
 
     /// <summary>A product with at least one allowed customer is exclusive — invisible to everyone else.</summary>
     public bool IsExclusive => _allowedCustomerAccess.Count > 0;
@@ -103,6 +107,27 @@ public sealed class Product : Entity, IAggregateRoot
         ImageUrl = imageUrl;
         Featured = featured;
         ProductionLeadTimeDays = productionLeadTimeDays;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Gives the product a new link (/produto/{slug}). The slug doubles as the product's id in the
+    /// Google Merchant feed, so Google treats the renamed product as a new item. The old slug is kept
+    /// in <see cref="PreviousSlugs"/> so its address keeps working; changing back to a previous slug
+    /// simply restores it. The caller must already have checked that no other product uses
+    /// <paramref name="slug"/>, as its current or previous link.
+    /// </summary>
+    public void ChangeSlug(string slug)
+    {
+        if (string.IsNullOrWhiteSpace(slug))
+            throw new DomainException("O link do produto é obrigatório.");
+
+        slug = slug.Trim().ToLowerInvariant();
+        if (slug == Slug) return;
+
+        _previousSlugs.RemoveAll(s => s.Slug == slug);
+        _previousSlugs.Add(new ProductPreviousSlug(Slug));
+        Slug = slug;
         UpdatedAt = DateTime.UtcNow;
     }
 

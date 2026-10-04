@@ -66,6 +66,7 @@ public sealed record GenerateProductDescriptionRequest(string Name, string Categ
 
 public sealed record GenerateProductDescriptionResponse(string Description);
 
+/// <param name="Slug">New link for the product (/produto/{slug}). Null or the current one leaves it unchanged.</param>
 public sealed record UpdateProductRequest(
     string Name,
     string? Description,
@@ -73,4 +74,5 @@ public sealed record UpdateProductRequest(
     string Category,
     string? ImageUrl,
     bool Featured,
-    int? ProductionLeadTimeDays = null);
+    int? ProductionLeadTimeDays = null,
+    string? Slug = null);

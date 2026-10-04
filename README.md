@@ -368,6 +368,8 @@ aceite em EARS por requisito, mesmo padrão usado no `spec/` do monólito) vive 
 - **RF41** — O sistema deve publicar um feed de produtos para o Google Merchant Center
   (`/api/google-merchant-feed.xml`) com os produtos ativos da loja (ou só os listados na
   configuração), sempre com o preço, a promoção e as fotos atuais do catálogo.
+- **RF42** — O sistema deve permitir à administradora trocar o link de um produto
+  (`/produto/{slug}`), mantendo os links anteriores funcionando (levam ao link atual).
 
 ### Não funcionais
 
@@ -1229,3 +1231,11 @@ contra o Gateway via `docker run --network host`).
       conta do ateliê; sem defeito (peça sem uso e sem lavagem), o frete da devolução fica por conta de
       quem compra. Sem taxa de troca. Linkada no rodapé, nos Termos, nas Perguntas Frequentes e no
       sitemap (e portanto no prerender).
+- [x] **Trocar o link de um produto (RF42)** (2026-10-04) — o slug nascia do nome no cadastro e
+      nunca mudava: a "Fralda de Ombro Bordada Golfinho" foi renomeada para "Fralda de Ombro Avulso"
+      e seguiu em `/produto/fralda-de-ombro-bordada-golfinho`. A edição do produto ganhou o campo
+      "Link do produto". O link anterior fica em `ProductPreviousSlugs` e continua abrindo o produto
+      (a página troca o endereço pelo atual); nenhum outro produto pode assumi-lo, e o seed do
+      catálogo o conta como existente — sem isso, o produto de demonstração renomeado voltaria
+      duplicado no próximo restart. Como o slug é o id do item no feed do Merchant (RF41), trocar
+      o link faz o Google tratar a peça como um produto novo, que passa por revisão de novo.

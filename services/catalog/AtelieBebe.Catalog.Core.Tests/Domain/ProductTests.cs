@@ -171,4 +171,48 @@ public class ProductTests
         Assert.False(product.IsTest);
         Assert.True(product.HasAccess(null));
     }
+
+    [Fact]
+    public void ChangeSlug_KeepsTheOldLinkAsPrevious()
+    {
+        var product = CreateProduct();
+
+        product.ChangeSlug("  Kit-Nuvem  ");
+
+        Assert.Equal("kit-nuvem", product.Slug);
+        Assert.Equal(["kit-ombro-e-boca-nuvem"], product.PreviousSlugs);
+    }
+
+    [Fact]
+    public void ChangeSlug_SameSlug_ChangesNothing()
+    {
+        var product = CreateProduct();
+
+        product.ChangeSlug("kit-ombro-e-boca-nuvem");
+
+        Assert.Equal("kit-ombro-e-boca-nuvem", product.Slug);
+        Assert.Empty(product.PreviousSlugs);
+    }
+
+    [Fact]
+    public void ChangeSlug_BackToAPreviousSlug_RestoresIt()
+    {
+        var product = CreateProduct();
+
+        product.ChangeSlug("kit-nuvem");
+        product.ChangeSlug("kit-ombro-e-boca-nuvem");
+
+        Assert.Equal("kit-ombro-e-boca-nuvem", product.Slug);
+        Assert.Equal(["kit-nuvem"], product.PreviousSlugs);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void ChangeSlug_Blank_ThrowsDomainException(string slug)
+    {
+        var product = CreateProduct();
+
+        Assert.Throws<DomainException>(() => product.ChangeSlug(slug));
+    }
 }
