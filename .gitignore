@@ -20,8 +20,11 @@ services/catalog/AtelieBebe.Catalog.Api/uploads/
 # RSA key pair used to sign/validate JWTs — generated once locally (see README), never committed
 keys/
 
-# Production secrets for docker-compose.yml — see .env.example for the documented keys
+# Production secrets for docker-compose.yml — see .env.example for the documented keys.
+# Also any copy of it (the VPS has an .env.bak.<date> from a past edit); .env.example is the only one tracked.
 .env
+.env.*
+!.env.example
 
 # Angular
 node_modules/
