@@ -53,6 +53,6 @@ app.MapAdminManagementEndpoints();
 app.MapInternalEndpoints();
 app.MapHealthChecks("/health");
 
-await DbInitializer.InitializeAsync(app.Services);
+await DbInitializer.InitializeAsync(app.Services, app.Environment.IsDevelopment());
 
 app.Run();
